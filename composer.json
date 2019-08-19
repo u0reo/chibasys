@@ -1,0 +1,6 @@
+{
+    "require": {
+        "google/apiclient": "^2.0",
+        "paragonie/constant_time_encoding": "^2.2"
+    }
+}
