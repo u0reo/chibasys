@@ -33,9 +33,7 @@
                 $(btn).click(function() {
                     // Retrieve all buttons siblings of the clicked one with an
                     // `active` class !
-                    var activeBtn = (self.attr("id") == 'kaikoKubunCode') ?
-                        $(btn).parent().parent().find(".active") :
-                        $(btn).siblings(".active");
+                    var activeBtn = $(btn).siblings(".active");
                     var total = [];
 
                     // Remove all selected property on options.
@@ -44,7 +42,7 @@
                     // Check if the clicked button has the class `active`.
                     // Add or remove it according to the check.
                     if ($(btn).hasClass("active"))  {
-                        //$(btn).removeClass("active");
+                        $(btn).removeClass("active");
                     }
                     else {
                         $(btn).addClass("active");
@@ -55,7 +53,7 @@
                     // If the select allow multiple values, remove all active
                     // class to the other buttons (to keep only the last clicked
                     // button).
-                    if (!multiple) {
+                    if (!multiple || btn.value === '' || activeBtn.val() === '') {
                         activeBtn.removeClass("active");
                     }
 
@@ -68,21 +66,10 @@
                     self.val(total).change();
                 });
             });
-
-            if (self.attr("id") == 'kaikoKubunCode')
-            {
-                var bt1 = $("<div class='btn-group btn-group-chirdren'>").append(buttons.slice(0, 5));
-                var bt2 = $("<div class='btn-group btn-group-chirdren'>").append(buttons.slice(5, 12));
-                var bt3 = $("<div class='btn-group btn-group-chirdren'>").append(buttons.slice(12, 16));
-                self.after($("<div class='btn-group-parent'>").append(bt1).append(bt2).append(bt3));
-            }
-            else
-            {
-                // Group all the buttons in a `div` element.
-                var btnGroup = $("<div class='btn-group'>").append(buttons);
-                // Include the buttons group after the select element.
-                self.after(btnGroup);
-            }
+            // Group all the buttons in a `div` element.
+            var btnGroup = $("<div id='" + self[0].id + "-btn' class='btn-group'>").append(buttons);
+            // Include the buttons group after the select element.
+            self.after(btnGroup);
             // Hide the display element.
             self.hide();
         });

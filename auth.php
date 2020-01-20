@@ -1,12 +1,11 @@
 <?php
 require_once($_SERVER['DOCUMENT_ROOT'].'/core.php');
-$client = getGoogleClient();
+init();
+$client = google_client_create();
 if (!isset($_GET['mode']))
   http_response_code(400);
-else if ($_GET['mode'] === 'login'){
-  //ログイン画面へ遷移
-  locateLogin($client);
-}
+else if ($_GET['mode'] === 'login')
+  locate_login();
 else if ($_GET['mode'] === 'success'){
   //ログインに成功したはず
   if (isset($_GET['code'])){
@@ -14,16 +13,21 @@ else if ($_GET['mode'] === 'success'){
     session_regenerate_id(true);
     $client->authenticate($_GET['code']);
     $_SESSION['accessToken'] = $client->getAccessToken();
-    if (!$_SESSION['accessToken']) locateWelcome('?error=accesstoken_null');
-    else sessionCheck(true);
+    if (!$client->getAccessToken()) locate_login($client);
+		if ($client->isAccessTokenExpired()) locate_login($client);
+    //GoogleのPeople APIでユーザーの情報を取得
+    $people = new Google_Service_PeopleService($client);
+    $userinfo = $people->people->get('people/me', ['personFields'=>'names,photos']);
+    $_SESSION['id'] = explode("/", $userinfo['resourceName'])[1];
+    $_SESSION['google_photo_url'] = $userinfo['photos'][0]['url'];
+    $_SESSION['google_user_name'] = $userinfo['names'][0]['displayName'];
     session_write_close();
     header('location: /');
-    exit();
   }
   else if (isset($_GET['error']))
-    locateWelcome('?error='.$_GET['error']);
+    locate_welcome('?error='.$_GET['error']);
   else
-    locateWelcome();
+    locate_welcome();
 }
 else if ($_GET['mode'] === 'logout'){
   //ログアウト
@@ -31,13 +35,15 @@ else if ($_GET['mode'] === 'logout'){
   $_SESSION = [];
   session_write_close();
   session_destroy();
-  locateWelcome('?msg=logout_completed');
+  locate_welcome('?msg=logout_completed');
 }
 else if ($_GET['mode'] === 'revoke'){
   //退会 データベースの内容削除も
   $client->revokeToken();
-  locateWelcome();
+  locate_welcome();
 }
 else
-  locateWelcome();
+  locate_welcome();
+
+finalize();
 ?>

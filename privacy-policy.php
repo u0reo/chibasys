@@ -13,7 +13,7 @@
     <div class="overflow-hidden p-3 p-md-5 m-md-3 bg-light">
         <h1 class="display-4 font-weight-normal">プライバシーポリシー</h1>
         <p>
-          本プライバシーポリシーは、chibasys(https://chibasys.xperd.net）（以下、「当サイト」とします。)の各種サービス
+          本プライバシーポリシーは、chibasys(https://<?php echo($_SERVER['HTTP_HOST']); ?>）（以下、「当サイト」とします。)の各種サービス
           （当サイトによる情報提供、各種お問合せの受付等）において、当サイトの訪問者（以下、「訪問者」とします。）
           の個人情報もしくはそれに準ずる情報を取り扱う際に、当サイトが遵守する方針を示したものです。
         </p>

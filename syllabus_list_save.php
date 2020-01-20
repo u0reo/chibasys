@@ -239,7 +239,7 @@ mysqli_close($link);
 curl_close($curl);
 
 if ($index <= 0) exit;
-echo('<html><head><meta http-equiv="refresh" content="1;URL=https://chibasys.xperd.net/syllabus_list_save?index='.($index - 1).'"></head>');
+echo('<html><head><meta http-equiv="refresh" content="1;URL=syllabus_list_save?index='.($index - 1).'"></head>');
 echo('<body><h1>キャッシュ成功！ インデックス: '.($_GET['index'] + 1).'/223</h1>');
 echo('<h2>1秒後に一つ前のインデックスに遷移します...</h2></body></html>');
 ?>

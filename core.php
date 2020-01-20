@@ -1,1532 +1,1599 @@
 <?php
-//use ___PHPSTORM_HELPERS\object;
+	$maria;
+	$curl;
 
-noDirectAccess();
-ini_set('display_errors', 1);
-set_time_limit(60);
+	const jikanwariShozoku = [
+		''=>'指定なし', 'G1'=>'普遍教育', 'L1'=>'文学部', 'E1'=>'教育学部', 'A1'=>'法経学部', 'B1'=>'法政経学部',
+		'S1'=>'理学部', 'S11'=>'数学・情報数理学科', 'S12'=>'物理学科', 'S13'=>'化学科', 'S14'=>'生物学科',
+		'S15'=>'地球科学科', 'S18'=>'先進科学プログラム', 'M1'=>'医学部', 'M11'=>'医学科', 'P1'=>'薬学部', 'P13'=>'薬学科',
+		'P14'=>'薬科学科', 'N1'=>'看護学部', 'N11'=>'看護学科', 'T1'=>'工学部', 'T1V'=>'総合工学科','T1V1'=>'建築学コース',
+		'T1V2'=>'都市環境システムコース', 'T1V3'=>'デザインコース', 'T1V4'=>'機械工学コース', 'T1V5'=>'医工学コース',
+		'T1V6'=>'電気電子工学コース', 'T1V7'=>'物質科学コース', 'T1V8'=>'共生応用化学コース', 'T1V9'=>'情報工学コース',
+		'T1E'=>'都市環境システム学科', 'T1K'=>'先進科学プログラム', 'T1K2'=>'工学部先進科学プログラム(フロンティア)',
+		'T1L'=>'メディカルシステム工学科', 'T1M'=>'共生応用化学科Aコース', 'T1N'=>'建築学科', 'T1P'=>'デザイン学科',
+		'T1Q'=>'機械工学科', 'T1R'=>'電気電子工学科', 'T1S'=>'ナノサイエンス学科', 'T1T'=>'画像科学科', 'T1U'=>'情報画像学科',
+		'T1F'=>'デザイン工学科Aコース', 'T1F4'=>'建築コース', 'H1'=>'園芸学部', 'Z1'=>'国際教養学部', 'Z11'=>'国際教養学科',
+		'E2'=>'教育学研究科', 'E21'=>'学校教育専攻', 'E215'=>'学校心理学コース', 'E216'=>'発達教育科学コース',
+		'E22'=>'国語教育専攻', 'E23'=>'社会科教育専攻', 'E24'=>'数学教育専攻', 'E25'=>'理科教育専攻', 'E26'=>'音楽教育専攻',
+		'E27'=>'美術教育専攻', 'E28'=>'保健体育専攻', 'E2A'=>'家政教育専攻', 'E2B'=>'英語教育専攻', 'E2C'=>'養護教育専攻',
+		'E2D'=>'学校教育臨床専攻', 'E2E'=>'カリキュラム開発専攻', 'E2F'=>'特別支援専攻', 'E2G'=>'スクールマネジメント専攻',
+		'E2H'=>'学校教育科学専攻', 'E2H1'=>'教育発達支援系', 'E2H2'=>'教育開発臨床系', 'E2I'=>'教科教育科学専攻',
+		'E2I1'=>'言語・社会系', 'E2I2'=>'理数・技術系', 'E2I3'=>'芸術・体育系', 'S2'=>'理学研究科', 'S21'=>'基盤理学専攻',
+		'S211'=>'数学・情報数理学コース', 'S212'=>'物理学コース', 'S213'=>'化学コース', 'S22'=>'地球生命圏科学専攻',
+		'S221'=>'生物学コース', 'S222'=>'地球科学コース', 'S23'=>'基盤理学専攻', 'S231'=>'数学・情報数理学コース',
+		'S232'=>'物理学コース', 'S233'=>'化学コース', 'S24'=>'地球生命圏科学専攻', 'S241'=>'生物学コース',
+		'S242'=>'地球科学コース', 'N2'=>'看護学研究科', 'N21'=>'看護学専攻', 'N265'=>'国際プログラム(訪問)',
+		'N266'=>'国際プログラム(看護管理)', 'N267'=>'国際プログラム(看護病態)', 'T2'=>'工学研究科', 'T21'=>'建築・都市科学専攻',
+		'T211'=>'建築学コース', 'T212'=>'都市環境システムコース', 'T22'=>'デザイン科学専攻', 'T221'=>'デザイン科学コース',
+		'T23'=>'人工システム科学専攻', 'T231'=>'機械系コース', 'T232'=>'電気電子系コース', 'T233'=>'メディカルシステムコース',
+		'T24'=>'共生応用化学専攻', 'T241'=>'共生応用化学コース', 'T25'=>'建築・都市科学専攻', 'T251'=>'建築学コース',
+		'T252'=>'都市環境システムコース', 'T26'=>'デザイン科学専攻', 'T261'=>'デザイン科学コース', 'T27'=>'人工システム科学専攻',
+		'T271'=>'機械系コース', 'T272'=>'電気電子系コース', 'T273'=>'メディカルシステムコース', 'T28'=>'共生応用化学専攻',
+		'T281'=>'共生応用化学コース', 'H2'=>'園芸学研究科', 'I2'=>'人文社会科学研究科', 'I21'=>'地域文化形成専攻',
+		'I213'=>'言語行動', 'I22'=>'公共研究専攻', 'I221'=>'公共思想制度研究', 'I222'=>'共生社会基盤研究',
+		'I23'=>'社会科学研究専攻', 'I232'=>'経済理論・政策学(経)', 'I233'=>'経済理論・政策学(金)', 'I24'=>'総合文化研究専攻',
+		'I241'=>'言語構造', 'I243'=>'人間行動', 'I25'=>'先端経営科学専攻', 'I26'=>'公共研究専攻', 'I261'=>'公共哲学',
+		'I27'=>'社会科学研究専攻', 'I28'=>'文化科学研究専攻', 'I281'=>'比較言語文化', 'Y2'=>'融合科学研究科',
+		'Y21'=>'ナノサイエンス専攻', 'Y211'=>'ナノ物性コース', 'Y212'=>'ナノバイオロジーコース', 'Y22'=>'情報科学専攻',
+		'Y221'=>'画像マテリアルコース', 'Y222'=>'知能情報コース(前期)', 'Y23'=>'ナノサイエンス専攻',
+		'Y231'=>'ナノ物性コース(後期)', 'Y232'=>'ナノバイオロジーコース', 'Y24'=>'情報科学専攻', 'Y241'=>'画像マテリアル(後期)',
+		'Y242'=>'知能情報コース', 'J2'=>'医学薬学府', 'J21'=>'総合薬品科学専攻', 'J22'=>'医療薬学専攻', 'J23'=>'環境健康科学専攻',
+		'J231'=>'医学領域', 'J232'=>'薬学領域', 'J24'=>'先進医療科学専攻', 'J241'=>'医学領域', 'J242'=>'薬学領域',
+		'J25'=>'先端生命科学専攻', 'J251'=>'医学領域', 'J252'=>'薬学領域', 'J26'=>'創薬生命科学専攻', 'J27'=>'医科学専攻',
+		'J28'=>'先端医学薬学専攻', 'J281'=>'先端生命(医学)', 'J282'=>'先端生命(薬学)', 'J283'=>'免疫統御(医学)',
+		'J284'=>'免疫統御(薬学)', 'J285'=>'先端臨床(医学)', 'J286'=>'先端臨床(薬学)', 'J287'=>'がん先端(医学)',
+		'J288'=>'がん先端(薬学)', 'J29'=>'先端創薬科学専攻', 'J2A'=>'先進予防医学共同専攻', 'K2'=>'専門法務研究科',
+		'W2'=>'融合理工学府', 'W20'=>'数学情報科学専攻', 'W201'=>'数学・情報数理学コース', 'W202'=>'情報科学コース',
+		'W21'=>'地球環境科学専攻', 'W211'=>'地球科学コース', 'W212'=>'リモートセンシングコース',
+		'W213'=>'都市環境システムコース', 'W22'=>'先進理化学専攻', 'W221'=>'物理学コース', 'W222'=>'物質科学コース',
+		'W223'=>'化学コース', 'W224'=>'共生応用化学コース', 'W225'=>'生物学コース', 'W23'=>'創成工学専攻',
+		'W231'=>'建築学コース', 'W232'=>'イメージング科学コース', 'W233'=>'デザインコース', 'W24'=>'基幹工学専攻',
+		'W241'=>'機械工学コース', 'W242'=>'医工学コース', 'W243'=>'電気電子工学コース', 'W25'=>'数学情報科学専攻',
+		'W251'=>'数学・情報数理学コース', 'W252'=>'情報科学コース', 'W26'=>'地球環境科学専攻', 'W261'=>'地球科学コース',
+		'W262'=>'リモートセンシングコース', 'W263'=>'都市環境システムコース', 'W27'=>'先進理化学専攻', 'W271'=>'物理学コース',
+		'W272'=>'物質科学コース', 'W273'=>'化学コース', 'W274'=>'共生応用化学コース', 'W275'=>'生物学コース',
+		'W28'=>'創成工学専攻', 'W281'=>'建築学コース', 'W282'=>'イメージング科学コース', 'W283'=>'デザインコース',
+		'W29'=>'基幹工学専攻', 'W291'=>'機械工学コース', 'W292'=>'医工学コース', 'W293'=>'電気電子工学コース',
+		'D2'=>'人文公共学府', 'D21'=>'人文科学専攻', 'D22'=>'公共社会科学専攻', 'D23'=>'人文公共学専攻',
+		'H3'=>'園芸学部園芸別科', 'C1'=>'留学生', 'G2'=>'大学院共通教育'
+	];
 
-//Google Client 関連のライブラリの読み込み
-require_once('vendor/autoload.php');
-//PHP Query ライブラリの読み込み
-require_once('phpQuery-onefile.php');
+	const class_type = [
+		''=>'指定なし', 'A'=>'個別領域科目 特論科目', 'B'=>'共通基礎科目', 'B1'=>'共通基礎科目(必修)', 'B2'=>'共通基礎科目(選択必修)',
+		'C'=>'共通科目', 'D'=>'実習科目', 'E'=>'実践研究指導科目', 'F'=>'実践科目',	/*ない*/'G'=>'専門教育科目', 'G1'=>'共通基礎科目',
+		'G2'=>'専門基礎科目', 'G3'=>'専門科目', 'G4'=>'自由科目', 'H'=>'専門科目', 'H1'=>'専門科目', 'H2'=>'特別研究',
+		'H3'=>'自コース', /*結合しない*/'I'=>'必修科目', 'I1'=>'必修科目A', 'I2'=>'必修科目B', 'I3'=>'必修科目C',
+		'J'=>'教育実践に関する科目', 'K'=>'普遍教育科目', 'K1'=>'スポーツ・健康科目', 'K2'=>'外国語科目', 'K3'=>'情報リテラシー科目',
+		'K4'=>'教養コア科目', 'K5'=>'教養展開科目', 'L'=>'系統講義科目', 'M'=>'自由選択', 'M1'=>'自由選択科目', 'N'=>'論文指導科目',
+		/*ない*/'O'=>'講義科目', 'O1'=>'総合薬品科学科目', 'P'=>'選択科目', 'P1'=>'所属コース外の科目', 'P2'=>'所属コース科目', 'Q'=>'その他'
+	];
 
-/**
- * HTMLの改行コードを普通の改行に変換
- * http://hi.seseragiseven.com/archives/559
- *
- * @param string $string <br>などを含む文字列
- * @return string \nに置換された文字列
- */
-function br2n($string) {
-	return preg_replace('/<br[[:space:]]*\/?[[:space:]]*>/i', "\n", $string);
-}
+	const time_day = [ ''=>'全て', '1'=>'月', '2'=>'火', '3'=>'水', '4'=>'木', '5'=>'金', '6'=>'土' ];
 
-/**
- * 文字列を整形(スペースや改行削除、全角英字を半角英字へ、半角カナを全角カナへ、最初最後のトリム)
- *
- * @param string $string 汚い文字列
- * @return string 整形された文字列
- */
-function shape_line($string) {
-	return trim(shape_punc(shape_space(mb_convert_kana(preg_replace('/(?:\n|\r|\r\n|\s)/', '', br2n($string)), 'asKV'))));
-}
-
-/**
- * 文字列を整形(スペースや改行削除、全角英字を半角英字へ、半角カナを全角カナへ、最初最後のトリム)
- *
- * @param string $string 汚い文字列
- * @return string 整形された文字列
- */
-function shape_content($string) {
-	return trim(shape_punc(shape_space(mb_convert_kana(br2n($string), 'asKV'))));
-}
-
-function shape_punc($string) {
-	return preg_replace('/([!-~])。/', '$1.', preg_replace('/([!-~])。/', '$1.', str_replace('.', '。', str_replace(',', '、', $string))));
-}
-
-function shape_space($string) {
-	return preg_replace('/ +/s', ' ', str_replace('　', ' ', $string));
-}
-
-/**
- * Google Clientのインスタンスを取得
- *
- * @return Google Clientのインスタンス
- */
-function getGoogleClient() {
-	$client = new Google_Client();
-	$client->setApplicationName('chibasys by reolink');
-	$client->setAuthConfig(__DIR__.'/client_secret.json');
-	//$client->setAccessType("offline");
-	$client->setIncludeGrantedScopes(true);
-	$client->addScope(Google_Service_Calendar::CALENDAR);
-	$client->addScope(Google_Service_Calendar::CALENDAR_EVENTS);
-	$client->addScope(Google_Service_People::USERINFO_PROFILE);
-	//$client->setApprovalPrompt('force');
-	$client->setRedirectUri('https://chibasys.xperd.net/auth?mode=success');
-	$client->setDeveloperKey('AIzaSyAY3LxdQdnM1s2P7ztXiCkK_95YDs-Tl-w');
-	return $client;
-}
-
-/**
- * 直接アクセスを禁止、直接アクセスしたときは400 Bad Requestに
- *
- * @return void
- */
-function noDirectAccess() {
-	$gif = get_included_files();
-	if (array_shift($gif) === __FILE__) {
-		http_response_code(400);
-		exit();
+	/**
+	 * 各種設定と初期化
+	 *
+	 * @param bool $accessable
+	 * @return void
+	 */
+	function init(bool $accessable = false): void {
+		global $maria, $curl;
+		//ダイレクトアクセス禁止
+		if (!$accessable) no_direct_access();
+		//エラー表示オン
+		ini_set('display_errors', 1);
+		//タイムアウト60秒
+		set_time_limit(60);
+		//Google Client 関連のライブラリの読み込み
+		require_once('vendor/autoload.php');
+		//PHP Query ライブラリの読み込み
+		//require_once('phpQuery-onefile.php');
+		//Maria DBへ接続
+		$maria = mysqli_connect('localhost', 'chibasys', 'P8IpIqW2Zb8CZNCC', 'chibasys');
+		//cURLの初期化
+		$curl = curl_init();
 	}
-}
 
-/**
- * URLの/の後から#の前までを返却
- *
- * @return string 現在のURLのクエリ ex) syllabus?2000-AA-BBBBBB-ja_JP
- */
-function getRequest(): string {
-	$index = strrpos($_SERVER['REQUEST_URI'], '/') + 1;
-	$pos = strpos($_SERVER['REQUEST_URI'], '#', $index);
-	if ($pos === false)
-		return substr($_SERVER['REQUEST_URI'], $index);
-	else
-		return substr($_SERVER['REQUEST_URI'], $index, $pos - $index + 1);
-}
+	/**
+	 * 終了処理
+	 *
+	 * @return void
+	 */
+	function finalize(): void {
+		global $maria, $curl;
+		//Maria DBから切断
+		mysqli_close($maria);
+		//cURLの終了
+		curl_close($curl);
+	}
 
-function maria_query(mysqli $link, string $query, $all = false) {
-	$r = mysqli_query($link, $query);
-	if (!$r || $all)
-		error_log("\nERROR: ".print_r($r, true)."\nQUERY: $query", "3", "/var/www/mysql-error.log");
-	return $r;
-}
-
-/**
- * ようこそ画面へ遷移、最後にexit()実行
- *
- * @param string $query 追加したいクエリ ex)'?error=...'
- * @return void
- */
-function locateWelcome(string $query = '') {
-  header('location: /welcome'.$query);
-  exit();
-}
-
-/**
- * ログイン画面へ遷移、最後にexit()実行
- *
- * @param $client Google Clientのインスタンス
- * @return void
- */
-function locateLogin($client) {
-	header('location: '.$client->createAuthUrl());
-  exit();
-}
-
-/**
- * Googleログインをしているか否かを判定
- *
- * @return Google Clientのインスタンス
- */
-function sessionCheck() {
-  $client = getGoogleClient();
-  session_start();
-  if (isset($_SESSION['accessToken'])) {
-		//一度はログイン済みの場合
-    $client->setAccessToken($_SESSION['accessToken']);
-    if (!$client->isAccessTokenExpired()) {
-			if (!isset($_SESSION['id'])) {
-				//GoogleのPeople APIでユーザーの情報を取得
-	      $people = new Google_Service_PeopleService($client);
-  	    $userinfo = $people->people->get('people/me', ['personFields'=>'names,photos']);
-				$_SESSION['id'] = explode("/", $userinfo['resourceName'])[1];
-				$_SESSION['google_photo_url'] = $userinfo['photos'][0]['url'];
-				$_SESSION['google_user_name'] = $userinfo['names'][0]['displayName'];
-			}
-			if (!isset($_SESSION['userdata'])) {
-				//MySQLからユーザー情報を取得して、登録済みの時はセッションに保管
-				$link = mysqli_connect('localhost', 'chibasys', 'P8IpIqW2Zb8CZNCC', 'chibasys');
-				$res = maria_query($link, "SELECT * FROM chibasys.user WHERE id = '$_SESSION[id]';");
-				if (mysqli_num_rows($res) === 1) {
-					$_SESSION['userdata'] = mysqli_fetch_assoc($res);
-					unset($_SESSION['google_user_name']);
-				}
-				mysqli_close($link);
-      }
-      session_write_close();
-			return $client;
-		}
-		else {
-			//期限切れ...
-		}
-  }
-  session_write_close();
-	return null;
-}
-
-/**
- * 一時データをMySQLから取得、セッションに保存
- *
- * @param mysqli $link
- * @param string $name
- * @param string $userID
- * @return bool データが既に存在したかどうか
- */
-function setTempToSession(mysqli $link, string $name, string $userID = 'general') {
-	$result = maria_query($link, "SELECT data FROM chibasys.temp WHERE name='$name' AND user='$userID';");
-	if ($result) {
-		if ($result = mysqli_fetch_assoc($result)) {
-			session_start();
-			$_SESSION[$userID === 'general' ? $name : "user_$name"] = $result['data'];
-			session_write_close();
+	/**
+	 * 直接アクセスを禁止、直接アクセスしたときは400 Bad Requestに
+	 *
+	 * @return void
+	 */
+	function no_direct_access(): void {
+		$files = get_included_files();
+		if (array_shift($files) === __FILE__) {
+			http_response_code(400);
+			exit();
 		}
 	}
-	return (bool)$result;
-}
 
-/**
- * 一時データをMySQLとセッションに保存
- *
- * @param mysqli $link MySQLのインスタンス
- * @param string $name 一時データの名前
- * @param string $data 一時データの内容
- * @param bool $user ユーザーデータとして保存するかどうか
- * @return void
- */
-function temp_save(mysqli $link, string $name, string $data, bool $user = false) {
-	//userIDにGoogleのIDまたは'general'を格納
-	session_start();
-	$userID = $user && isset($_SESSION['id']) ? $_SESSION['id'] : 'general';
-	session_write_close();
-
-	//既にデータがあるかどうかで場合分け
-	if (setTempToSession($link, $name, $userID))
-		maria_query($link, "UPDATE chibasys.temp SET data='$data' WHERE name='$name' AND user='$userID';");
-	else
-		maria_query($link, "INSERT INTO chibasys.temp (name, user, data) VALUES ('$name', '$userID', '$data');");
-	
-	//セッションに保管
-	session_start();
-  $_SESSION[$userID === 'general' ? $name : "user_$name"] = $data;
-	session_write_close();
-}
-
-/**
- * URLの?以降のflowExecutionKeyを抽出
- *
- * @param string $url 元のURL
- * @return string flowExecutionKey
- */
-function url_extract(string $url): string {
-	return substr($url, strpos($url, '?') + 1);
-}
-
-/**
- * 千葉大学シラバス検索のセッションを取得し、MySQLに保存
- *
- * @param mysqli $link MySQLのインスタンス
- * @param $curl cURLのインスタンス
- * @return void
- */
-function syllabus_cookie_url_get(mysqli $link, $curl) {
-	//cURLで千葉大学シラバスの入口にアクセスし、Cookieを取得
-	curl_setopt_array($curl, [
-		CURLOPT_URL => 'https://cup.chiba-u.jp/campusweb/campussquare.do?locale=ja_JP&_flowId=SYW3901100-flow',
-		CURLOPT_REFERER => '',
-		CURLOPT_COOKIE => '',
-		CURLOPT_POST => false,
-		CURLOPT_POSTFIELDS => '',
-		CURLOPT_HEADER => true,
-		CURLOPT_FOLLOWLOCATION => false,
-		CURLOPT_RETURNTRANSFER => true,
-		CURLOPT_COOKIESESSION => true,
-		CURLOPT_TIMEOUT => 5,
-    CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4]);
-	$res = curl_exec($curl);
-	$info = curl_getinfo($curl);
-	$header = substr($res, 0, $info['header_size']);
-	$c = [];
-	$cookieCount = substr_count($header, 'Set-Cookie:');
-	$start = 0;
-	for ($i = 0; $i < $cookieCount; $i++) {
-		$start = strpos($header, 'Set-Cookie:', $start + 1) + 12;
-		$end = strpos($header, ';', $start);
-		$c[] = substr($header, $start, $end - $start);
+	/**
+	 * HTMLの改行コードを普通の改行に変換
+	 * http://hi.seseragiseven.com/archives/559
+	 *
+	 * @param string $string <br>などを含む文字列
+	 * @return string \nに置換された文字列
+	 */
+	function br2n($string): string {
+		return preg_replace('/<br[[:space:]]*\/?[[:space:]]*>/i', "\n", $string);
 	}
-	$cookie = implode('; ', $c);
-	//入力画面へ遷移しておく
-	curl_setopt_array($curl, [
-		CURLOPT_URL => $info['redirect_url'],
-		CURLOPT_REFERER => '',
-		CURLOPT_COOKIE => $cookie,
-		CURLOPT_POST => false,
-		CURLOPT_POSTFIELDS => '',
-		CURLOPT_HEADER => true,
-		CURLOPT_FOLLOWLOCATION => false,
-		CURLOPT_RETURNTRANSFER => true,
-		CURLOPT_COOKIESESSION => true,
-		CURLOPT_TIMEOUT => 5,
-    CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4]);
-	curl_exec($curl);
-	//一時データとして保存
-	temp_save($link, 'syllabus_url', $info['redirect_url']);
-	temp_save($link, 'syllabus_cookie', $cookie);
-}
 
-/**
- * 千葉大学シラバスを検索し、教科一覧を返す→廃止予定
- *
- * @param mysqli $link MySQLのインスタンス
- * @param $curl cURLのインスタンス
- * @param array $query POSTデータ
- * @return array 成功したかどうか、教科一覧の連想配列
- */
-function search(mysqli $link, $curl, array $query): array {
-	//$data = ['s_no' => '0', '_eventId' => 'search', 'nendo' => 2019, 'kaikoKamokunmLike' => '英語'];
-	//'s_no=0&'.substr($baseUrl, strpos($baseUrl, "?") + 1).'&_eventId=search&nendo=2019&jikanwariShozokuCode=&gakkiKubunCode=&kaikoKubunCode=&kyokannmLike=&jikanwaricdLike=&kaikoKamokunmLike=%E8%8B%B1%E8%AA%9E&nenji=&yobi=&jigen=&freeWord=&nbrGakubucd=&nbrGakkacd=&nbrSuijuncd=&fukusenkocd=&syReferOrder=&_displayCount=100';
-	//セッションデータ利用を開始してURLやCookieが保管されているか確認、なければMySQLから取得
-  setTempToSession($link, 'syllabus_url');
-	setTempToSession($link, 'syllabus_cookie');
-	//cURLで千葉大学シラバスの検索結果を取得
-	session_start();
-	curl_setopt_array($curl, [
-		CURLOPT_URL => 'https://cup.chiba-u.jp/campusweb/campussquare.do',
-		CURLOPT_REFERER => $_SESSION['syllabus_url'],
-		CURLOPT_COOKIE => $_SESSION['syllabus_cookie'],
-		CURLOPT_POST => true,
-		CURLOPT_POSTFIELDS => 's_no=0&'.url_extract($_SESSION['syllabus_url']).'&_eventId=search&_displayCount=1928&'.$query['query'], //http_build_query
-		CURLOPT_HEADER => false,
-		CURLOPT_FOLLOWLOCATION => true,
-		CURLOPT_RETURNTRANSFER => true,
-		CURLOPT_COOKIESESSION => true,
-		CURLOPT_CONNECTTIMEOUT => 0,
-		CURLOPT_TIMEOUT => 60,
-		CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4]);
-	session_write_close();
-	//cURLを実行
-	$res = curl_exec($curl);
-	//各種情報を取得
-	$info = curl_getinfo($curl);
-	//セッション切れをチェック
-	if (!portal_session_check($res, $info)) {
-		syllabus_cookie_url_get($link, $curl);
-    return search($link, $curl, $query);
-  }
-	//PHPQueryのインスタンス生成
-	$tbody = phpQuery::newDocument($res)->find('table > tbody');
-	$subjects = [];
-	//trの数=教科数
-	$subjectCount = count($tbody->find('tr'));
-	for($i=0; $i<$subjectCount; $i++) {
-		$tr = $tbody->find('tr:eq('.$i.')');
-		$sub = [];
-		$dataCount = count($tr->find('td')); //0-10
-		//trタグ内の一つ一つの改行やスペースを除去
-		for($j=1; $j<$dataCount; $j++)
-			$sub[] = shape_line($tr->find("td:eq($j)")->text());
-		//最後のtdにある初めのボタンを取得
-		$button = $tr->find('td:eq('.($dataCount - 1).')')->find('input:eq(0)');
-		//disabledがあるかどうかで日本語か英語かを判別。日本語優先
-		if ($button->attr('disabled') == null) $sub[] = 'ja_JP';
-		else $sub[] = 'en_US';
-		//onclickを解析して「jikanwariShozokuCode」を入手
-		$refer = $button->attr('onclick');
-		$start = strpos($refer, ",") + 2;
-		$end = strpos($refer, "'", $start);
-		$sub[] = substr($refer, $start, $end - $start);
-		//教科一覧に追加
-		$subjects[] = $sub;
+	/**
+	 * 文字列を整形(スペースや改行削除、全角英字を半角英字へ、半角カナを全角カナへ、最初最後のトリム)
+	 *
+	 * @param string $string 汚い文字列
+	 * @return string 整形された文字列
+	 */
+	function shape_line($string): string {
+		return trim(shape_punc(shape_space(mb_convert_kana(preg_replace('/(?:\n|\r|\r\n)/', '', br2n($string)), 'asKV'))));
 	}
-  //セッションデータ利用を開始し、ログイン済みの時、検索履歴に追加
-  session_start();
-	if (isset($_SESSION['id']))
-		maria_query($link, 'INSERT INTO chibasys.history_search VALUES ("'.$_SESSION['id'].'", NOW(), "'.$query['query'].'", '.$subjectCount.');');
-	//セッションデータ利用終了
-	session_write_close();
-	
-	return [ 'status'=>'success', 'subjects'=>$subjects, 'url'=>$info['url'] ];
-}
 
-const eng = ["学科(専攻)・科目の種別等"=>'class_type', "授業科目"=>'name', "授業コード"=>false,
-"科目コード"=>'subject_code', "ナンバリングコード"=>'numbering_code', "授業の方法"=>'method',
-"使用言語"=>'language', "単位数"=>'credit', "時間数"=>'hour', "期別"=>'period', "履修年次/ターム"=>true,
-"曜日・時限"=>'time', "副専攻"=>'sub_major', "副題"=>'sub_title', "受入人数"=>'student_count',
-"担当教員"=>'teacher', "受講対象"=>'target_student', "教室"=>'room',
-"更新日"=>'update_date', "概要"=>'summary', "目的・目標"=>'purpose', "授業計画・授業内容"=>'content',
-"授業外学習"=>'homework', "キーワード"=>'keyword', "教科書・参考書"=>'textbook', "評価方法・基準"=>'evaluation_method',
-"関連科目"=>'related_subject', "履修要件"=>'requirement', "備考"=>'remark', "関連URL"=>'related_url'];
-/**
- * 千葉大学シラバスを検索し、教科一覧を返す→廃止予定
- *
- * @param mysqli $link MySQLのインスタンス
- * @param $curl cURLのインスタンス
- * @param array $query POSTデータ
- * @return array 成功したかどうか、教科一覧の連想配列
- */
-function search_and_save(mysqli $link, $curl, array $query) {
-	//$data = ['s_no' => '0', '_eventId' => 'search', 'nendo' => 2019, 'kaikoKamokunmLike' => '英語'];
-	//'s_no=0&'.substr($baseUrl, strpos($baseUrl, "?") + 1).'&_eventId=search&nendo=2019&jikanwariShozokuCode=&gakkiKubunCode=&kaikoKubunCode=&kyokannmLike=&jikanwaricdLike=&kaikoKamokunmLike=%E8%8B%B1%E8%AA%9E&nenji=&yobi=&jigen=&freeWord=&nbrGakubucd=&nbrGakkacd=&nbrSuijuncd=&fukusenkocd=&syReferOrder=&_displayCount=100';
-	//セッションデータ利用を開始してURLやCookieが保管されているか確認、なければMySQLから取得
-  setTempToSession($link, 'syllabus_url');
-	setTempToSession($link, 'syllabus_cookie');
-	//cURLで千葉大学シラバスの検索結果を取得
-	session_start();
-	curl_setopt_array($curl, [
-		CURLOPT_URL => 'https://cup.chiba-u.jp/campusweb/campussquare.do',
-		CURLOPT_REFERER => $_SESSION['syllabus_url'],
-		CURLOPT_COOKIE => $_SESSION['syllabus_cookie'],
-		CURLOPT_POST => true,
-		CURLOPT_POSTFIELDS => 's_no=0&'.url_extract($_SESSION['syllabus_url']).'&_eventId=search&_displayCount=1928&nendo='.$query['nendo'].'&jikanwariShozokuCode='.$query['jikanwariShozokuCode'], //http_build_query
-		CURLOPT_HEADER => false,
-		CURLOPT_FOLLOWLOCATION => true,
-		CURLOPT_RETURNTRANSFER => true,
-		CURLOPT_COOKIESESSION => true,
-		CURLOPT_CONNECTTIMEOUT => 0,
-		CURLOPT_TIMEOUT => 60,
-		CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4]);
-	session_write_close();
-	//cURLを実行
-	$res = curl_exec($curl);
-	//各種情報を取得
-	$info = curl_getinfo($curl);
-	//セッション切れをチェック
-	/*if (!portal_session_check($res, $info)) {
-		syllabus_cookie_url_get($link, $curl);
-    return search_and_save($link, $curl, $query);
-  }*/
-	//PHPQueryのインスタンス生成
-	$tbody = phpQuery::newDocument($res)->find('table > tbody');
-	//trの数=教科数
-	$subjectCount = count($tbody->find('tr'));
-	for($i=0; $i<$subjectCount; $i++) {
-		$tr = $tbody->find('tr:eq('.$i.')');
-		$sub = [];
-		$dataCount = count($tr->find('td')); //0-10
-		//$sub['nendo'] = shape_line($tr->find("td:eq(0)")->text());
-
-		//最後のtdにある初めのボタンを取得
-		$button = $tr->find('td:eq('.($dataCount - 1).')')->find('input:eq(0)');
-		//onclickを解析して「jikanwariShozokuCode」を入手
-		$refer = $button->attr('onclick');
-		$start = strpos($refer, ",") + 2;
-		$end = strpos($refer, "'", $start);
-		$sub['jikanwariShozokuCode'] = substr($refer, $start, $end - $start);
-
-		$sub['jikanwaricd'] = shape_line($tr->find("td:eq(5)")->text());
-
-		//disabledがあるかどうかで日本語か英語かを判別。日本語優先
-		$lang = [];
-		if ($button->attr('disabled') == null) $lang[] = 'ja_JP';
-		$button2 = $tr->find('td:eq('.($dataCount - 1).')')->find('input:eq(1)');
-		if ($button2->attr('disabled') == null) $lang[] = 'en_US';
-		$sub['slocale'] = implode(',', $lang);
-
-		if (isset($query['department']) && $query['department'] !== '') $sub['department'] = $query['department'];
-		if (isset($query['subject']) && $query['subject'] !== '') $sub['subject'] = $query['subject'];
-		if (isset($query['course']) && $query['course'] !== '') $sub['course'] = $query['course'];
-		
-		$result = maria_query($link, "SELECT * FROM chibasys.syllabus_2019 WHERE jikanwariShozokuCode='$sub[jikanwariShozokuCode]' AND jikanwaricd='$sub[jikanwaricd]'");
-		if (!$result || !mysqli_fetch_assoc($result))
-			maria_query($link, 'INSERT INTO chibasys.syllabus_2019 ('.implode(',', array_keys($sub)).') VALUES (\''.implode('\',\'', array_values($sub)).'\');');
+	/**
+	 * 文字列を整形(スペースや改行削除、全角英字を半角英字へ、半角カナを全角カナへ、最初最後のトリム)
+	 *
+	 * @param string $string 汚い文字列
+	 * @return string 整形された文字列
+	 */
+	function shape_content($string): string {
+		return trim(shape_space(mb_convert_kana(br2n($string), 'asKV')));
 	}
-	$query['count'] = $subjectCount;
 
-	return $query;
-}
+	/**
+	 * 日本語の文末のみ,.ゅを、。にする
+	 *
+	 * @param string $string 元の文字列
+	 * @return string 整形済みの文字列
+	 */
+	function shape_punc(string $string): string {
+		/*$byte = strlen($string);
+		$len = mb_strlen($string);
+		$jap = ($byte - $len) / 2;
+		$eng = $len - $jap;
+		if ($jap >= $eng) return str_replace('.', '。', str_replace(',', '、', str_replace('. ', '。', str_replace(', ', '、', $string))));
+		else return $string;*/
+		return preg_replace('/([!-~])。/', '$1. ', preg_replace('/([!-~])、/', '$1, ', str_replace([' . ',' .', '. ', '.'], '。', str_replace([' , ', ' ,', ', ', ','], '、', $string))));
+	}
 
-function syllabus_save(mysqli $link, $curl, $pos){
-	$result = mysqli_fetch_assoc(maria_query($link, 'SELECT * FROM chibasys.syllabus_2019 LIMIT 1 OFFSET '.$pos));
-	
-	$syllabus = real_syllabus($link, $curl, [ 'code'=>'2019-'.$result['jikanwariShozokuCode'].'-'.$result['jikanwaricd'].'-'.explode(',', $result['slocale'])[0] ]);
-	if ($syllabus['status'] !== 'success') return;
+	/**
+	 * 続くスペースや全角スペースを半角スペース一つにする
+	 *
+	 * @param string $string 元の文字列
+	 * @return string 整形済みの文字列
+	 */
+	function shape_space(string $string): string {
+		return preg_replace('/\s+/s', ' ', str_replace('　', ' ', $string));
+	}
 
-	/*$data = [ "department"=>null,"subject"=>null,"course"=>null,"class_type"=>null,
-		"name"=>null,"false"=>null,"subject_code"=>null,"numbering_code"=>null,"method"=>null,"language"=>null,
-		"credit"=>null,"hour"=>null,"period"=>null,"grade"=>null,"term"=>null,"time"=>null,"sub_major"=>null,
-		"sub_title"=>null,"student_count"=>null,"teacher"=>null,"target_student"=>null,"room"=>null,
-		"update_date"=>null,"summary"=>null,"purpose"=>null,"content"=>null,"homework"=>null,"keyword"=>null,
-		"textbook"=>null,"evaluation_method"=>null,"related_subject"=>null,"requirement"=>null,"remark"=>null,
-		"related_url"=>null,"detail"=>null ];*/
-	$data = [];
-	foreach ($result as $key => $value) $data[$key] = ($value && $value !== '' ? $value : null);
-
-	foreach ($syllabus['detail-1'] as $key => $value) {
-		$k = eng[$key];
-		if (!$k) continue;
-		if ($k === true){
-			$v = explode('/', $value);
-			$data['grade'] = $v[0];
-			$data['term'] = $v[1];
-		}
+	/**
+	 * URLの/の後から#の前までを返却
+	 *
+	 * @return string 現在のURLのクエリ ex) syllabus?2000-AA-BBBBBB-ja_JP
+	 */
+	function get_request(): string {
+		$index = strrpos($_SERVER['REQUEST_URI'], '/') + 1;
+		$pos = strpos($_SERVER['REQUEST_URI'], '#', $index);
+		if ($pos === false)
+			return substr($_SERVER['REQUEST_URI'], $index);
 		else
-			$data[$k] = $value;
-	}
-	foreach ($syllabus['detail-2'] as $key => $value) {
-		$k = eng[$key];
-		$data[$k] = $value;
-	}
-	if ($syllabus['detail-3']) $data['detail'] = json_encode($syllabus['detail-3']);
-
-	$d = [];
-	foreach ($data as $k => $v) $d[] = $k.'=\''.mysqli_real_escape_string($link, $v).'\'';
-
-	return [ 'status'=>maria_query($link, 'UPDATE chibasys.syllabus_2019 SET '.implode(',', $d).
-		" WHERE jikanwariShozokuCode='$result[jikanwariShozokuCode]' AND jikanwaricd='$result[jikanwaricd]';"), 'data'=>$d ];
-}
-
-
-/**
- * シラバスコードでMySQLから千葉大学シラバスの内容を取得
- *
- * @param mysqli $link MySQLのインスタンス
- * @param $curl cURL
- * @param array $query POSTデータ
- * @return array 成功したかどうか、シラバス内容、元のURL、リダイレクト先のURLの連想配列
- */
-function syllabus(mysqli $link, array $query): array {
-	//シラバスコードを分解
-	$code = explode('-', $query['code']);
-	if (count($code) === 4) $code[1] = $code[2];
-	$result = maria_query($link, "SELECT * FROM chibasys.syllabus_$code[0] WHERE jikanwaricd = '$code[1]';");
-	$data = mysqli_fetch_assoc($result);
-	if ($data['detail']) $data['detail'] = json_decode($data['detail']);
-	return [ 'status'=>($result ? 'success' : 'failed'), 'data'=>$data, 
-	'url_ja'=>(strpos('ja_JP', $data['slocale']) !== false ? "https://cup.chiba-u.jp/campusweb/campussquare.do?locale=ja_JP&_flowId=SYW3901100-flow&nendo=$code[0]&jikanwariShozokuCode=$data[jikanwariShozokuCode]&jikanwaricd=$code[1]&slocale=ja_JP" : null), 
-	'url_en'=>(strpos('en_US', $data['slocale']) !== false ? "https://cup.chiba-u.jp/campusweb/campussquare.do?locale=ja_JP&_flowId=SYW3901100-flow&nendo=$code[0]&jikanwariShozokuCode=$data[jikanwariShozokuCode]&jikanwaricd=$code[1]&slocale=en_US" : null) ];
-}
-
-/**
- * シラバスコードで千葉大学シラバスの内容を取得
- *
- * @param mysqli $link MySQLのインスタンス
- * @param $curl cURL
- * @param array $query POSTデータ
- * @return array 成功したかどうか、シラバス内容、元のURL、リダイレクト先のURLの連想配列
- */
-function real_syllabus(mysqli $link, $curl, array $query): array {
-	//シラバスコードを分解
-	$data = explode('-', $query['code']);
-	//セッションデータ利用を開始してURLやCookieが保管されているか確認、なければMySQLから取得
-	setTempToSession($link, 'syllabus_url');
-	setTempToSession($link, 'syllabus_cookie');
-	session_start();
-	
-	//千葉大学シラバスのURLを生成 (ポータル内:https://cup.chiba-u.jp/campusweb/campussquare.do?_flowId=SYW0001000-flow)
-	$url = "https://cup.chiba-u.jp/campusweb/campussquare.do?locale=ja_JP&_flowId=SYW3901100-flow&nendo=$data[0]&jikanwariShozokuCode=$data[1]&jikanwaricd=$data[2]&slocale=$data[3]";
-	//cURLで千葉大学シラバスの情報を取得
-	curl_setopt_array($curl, [
-		CURLOPT_URL => $url,
-		CURLOPT_REFERER => '',
-		CURLOPT_COOKIE => $_SESSION['syllabus_cookie'],
-		CURLOPT_POST => false,
-		CURLOPT_POSTFIELDS => '',
-		CURLOPT_HEADER => false,
-		CURLOPT_FOLLOWLOCATION => true,
-		CURLOPT_RETURNTRANSFER => true,
-		CURLOPT_COOKIESESSION => true,
-		CURLOPT_TIMEOUT => 15,
-		CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4]);
-	session_write_close();
-	//cURLを実行
-	$res = curl_exec($curl);
-	//各種情報を取得
-	$info = curl_getinfo($curl);
-	//セッション切れをチェック
-	if (!portal_session_check($res, $info)) {
-    syllabus_cookie_url_get($link, $curl);
-    return real_syllabus($link, $curl, $query);
-	}
-	
-	//PHPQueryのインスタンス生成
-	$doc = phpQuery::newDocument($res);
-	//タブごとにインスタンスを生成
-	$details1 = tableAnalysis($doc->find('#tabs-1'), "");
-	$details2 = tableAnalysis($doc->find('#tabs-2'), "\n");
-	$details3 = tableAnalysisThird($doc->find('#tabs-3'));
-
-	return [ 'status'=>((count($details1) > 0 && count($details2) > 0) ? 'success' : 'failed'), 'detail-1'=>$details1, 'detail-2'=>$details2, 'detail-3'=>$details3, 'redirect'=>$info['url'], 'original'=>$url ];
-}
-
-/**
- * 通常のCampusSquareのテーブルを解析
- *
- * @param phpQueryObject $tbody テーブル内のHTML
- * @param string $insert 行間に挟む文字列
- * @return array データを整形して連想配列にしたもの
- */
-function tableAnalysis(phpQueryObject $tbody, string $insert) : array {
-	$details = [];
-	//trの数=データの種類(変動)
-	$detailsCount = count($tbody->find('tr'));
-	for($i=0; $i<$detailsCount; $i++) {
-		//名前の列は半角に整形し、スペースをなくす
-		$name = shape_line($tbody->find("tr:eq($i)")->find('th')->text());
-		//詳細の列はHTMLを半角に整形し、<br>を\nにして、trimをかける
-		$detail = shape_content($tbody->find("tr:eq($i)")->find('td')->html());
-		//どちらかの列が無名だったり、15の力は無視
-		if ($name === '' || $detail === '' || mb_strpos($name, '15の力') !== false) continue;
-		//$detailに改行がある場合、何もない行を消去する
-		if (mb_strpos($detail, "\n") !== false) {
-			//改行で配列に分ける
-			$detailList = explode("\n", $detail);
-			//各要素にtrimをかける
-			$detailList = array_map('trim', $detailList);
-			//文字列が0の要素を取り除く
-			$detailList = array_filter($detailList, 'strlen');
-			//$insertを間に入れて文字列に戻す
-			$detail = implode($insert, $detailList);
-		}
-		//英語表記があるときの区切り文字「/」の位置
-		$posName = mb_strpos($name, "/");
-		$posDetail = mb_strpos($detail, "/");
-		if (mb_strpos($name, '履修年次') !== false) {
-			//履修年次/ターム/Students'Year… となるので、区切りの「/」の位置をずらす
-			$posName = mb_strpos($name, "/", 6);
-			$detail = str_replace('・', '･', $detail);
-		}
-		else if (mb_strpos($name, '曜日') !== false) {
-			//月 /Mon 　1… となるので、英語表記を消し、その間のスペースも除去
-			$detail = str_replace(['/Sun', '/Mon', '/Tue', '/Wed', '/Thu', '/Fri', '/Sat', '/Oth'], '', $detail);
-			$detail = str_replace(' ', '', $detail);
-		}
-		else if ($posDetail !== false && $insert === '')
-			//詳細に英語表示があり、detail-1の時に、日本語のみにする
-			$detail = trim(mb_substr($detail, 0, $posDetail));
-		//名前は英語表示があるので、日本語のみに
-		$name = mb_substr($name, 0, $posName);
-
-		$posLinkIndex = 0;
-		while ($posLinkStart = mb_strpos($detail, '<a ', $posLinkIndex) !== false) {
-			$posLinkEnd = mb_strpos($detail, '</a>', $posLinkIndex);
-			$tempBefore = mb_substr($detail, 0, $posLinkStart);
-			$tempAfter = mb_substr($detail, $posLinkEnd);
-			$tempReplaced = str_replace('。', '.', mb_substr($detail, $posLinkStart, $posLinkEnd - $posLinkStart));
-			$detail = $tempBefore.$tempReplaced.$tempAfter;
-			$posLinkIndex = $posLinkEnd + 4;
-		}
-
-		//連想配列に
-		$details[$name] = $detail;//str_replace("\n", '<br>', $detail);
-	}
-	return $details;
-}
-
-/**
- * 授業計画詳細情報のCampusSquareのテーブルを解析
- *
- * @param phpQueryObject $tbody テーブル内のHTML
- * @return array データを整形して連想配列にしたもの
- */
-function tableAnalysisThird(phpQueryObject $tbody) {
-	$details = [];
-	//trの数=行頭を含む行の数
-	$detailsCount = count($tbody->find('tr'));
-	for($i=0; $i<$detailsCount; $i++) {
-		$tr = $tbody->find("tr:eq($i)");
-		$td = [];
-		//tdの数=列の数
-		$tdCount = count($tr->find('td'));
-		//「該当するデータはありません」のときはfalseを返す
-		if ($detailsCount === 1 && $tdCount === 0) return false;
-		//1行目はただのインデックスなので無視
-		else if ($tdCount === 0) continue;
-		//1つずつ連想配列に
-		for ($j=0; $j<$tdCount; $j++)
-			$td[] = shape_content($tbody->find("tr:eq($i)")->find("td:eq($j)")->text());
-		//「1. 第1回 名前\n内容: 内容内容\n備考: 備考備考」の形に整形
-		$detail = trim(("$td[0]. $td[1] $td[2]".($td[3] === '' ? '' : "\n内容: $td[3]").($td[4] === '' ? '' : "\n備考: $td[4]")));
-		//連想配列に
-		$details[] = $detail;//str_replace("\n", '<br>', $detail);
-	}
-	return $details;
-}
-
-/**
- * 学生ポータルへログインしてセッション取得、MySQLに保存
- *
- * @param mysqli $link MySQLのインスタンス
- * @param $curl cURLのインスタンス
- * @return bool 成功したかどうか
- */
-function portal_cookie_create(mysqli $link, $curl, bool $user = false, bool $query = null) {
-	//ID、パスワードを設定
-	if (!$user) {
-		$id = '19T1688A';
-		$pass = 'moyrv%3Fd_!6t5';
-	}
-	else {
-		if ($query === null) {
-			session_start();
-			$result = maria_query($link, "SELECT studentID, studentPass FROM chibasys.user WHERE id='$_SESSION[id]';");
-			session_write_close();
-			while ($row = mysqli_fetch_assoc($result)) {
-				$id = urlencode($row['studentID']);
-				$pass = urlencode($row['studentPass']);
-			}
-		}
-		else {
-			$id = urlencode($query['studentID']);
-			$pass = urlencode($query['studentPass']);
-		}
-	}
-	//IDやパスワードがないとき、終了
-	if (!isset($id) || !isset($pass)) return false;
-	//cURLでログイン
-	curl_setopt_array($curl, [
-		CURLOPT_URL => 'https://cup.chiba-u.jp/campusweb/campusportal.do',
-		CURLOPT_REFERER => '',
-		CURLOPT_COOKIE => '',
-		CURLOPT_POST => true,
-		CURLOPT_POSTFIELDS => "wfId=nwf_PTW0000002_login&userName={$id}&password={$pass}&locale=ja_JP&undefined=&action=rwf&tabId=home&page=",//&rwfHash=86c8c93c52abb4ae783c237d364dd203',
-		CURLOPT_HEADER => true,
-		CURLOPT_FOLLOWLOCATION => true,
-		CURLOPT_RETURNTRANSFER => true,
-		CURLOPT_COOKIESESSION => true,
-		CURLOPT_TIMEOUT => 5,
-    CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4,
-		CURLOPT_USERAGENT => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/75.0.3770.100 Safari/537.36']);
-	$res = curl_exec($curl);
-	$info = curl_getinfo($curl);
-
-	//成功したとき <!DOCTYPE HTML><div><script type="text/javascript">reloadPortal('', 'main');</script>now loading...<br></div>
-	//失敗したとき <!DOCTYPE HTML><div><script type="text/javascript">$(document).ready(function(){setTimeout(function(){ $("input[name='loginerrok']").focus(); }, 500);});
-  //          <span class="error">ユーザ名またはパスワードの入力に誤りがあります</span><br><br><br><br><center><input type="button" id="loginerrok" name="loginerrok" value="&nbsp; O &nbsp;&nbsp; K &nbsp;" onClick="closeLoginDialog(this)"></center></div>
-	if (strpos($res, 'now loading') === false || strpos($res, 'reloadPortal') === false) {
-		return false;
+			return substr($_SERVER['REQUEST_URI'], $index, $pos - $index + 1);
 	}
 
-	//Headerを取得
-  $header = substr($res, 0, $info['header_size']);
-  //Cookieのみ抽出
-	$c = [];
-	$cookieCount = substr_count($header, 'Set-Cookie: ');//substr_count($header, 'Set-Cookie:');
-	$start = 0;
-	for ($i = 0; $i < $cookieCount; $i++) {
-		$start = strpos($header, 'Set-Cookie: ', $start + 1) + 12;
-		$end = strpos($header, ';', $start);
-		$c[] = substr($header, $start, $end - $start);
-	}
-	//Cookieの文字列に変換
-	$cookie = implode('; ', $c);
-	//一時データとして保存
-	temp_save($link, 'portal_cookie', $cookie, $user);
-	return true;
-}
-
-/**
- * 初期設定時に学生情報を取得
- *
- * @param mysqli $link MySQLのインスタンス
- * @param $curl cURLのインスタンス
- * @return array 成功したかどうか、学生情報の連想配列
- */
-function portal_student_info(mysqli $link, $curl) {
-	//UserIDを変数に
-	session_start();
-	if (isset($_SESSION['id']))
-		$userID = $_SESSION['id'];
-	session_write_close();
-	//未ログインならば終了
-	if (!isset($_SESSION['id']))
-		return [ 'status'=>'expired' ];
-
-  //セッションにCookieが保管されているか確認、なければMySQLから取得
-  if (!setTempToSession($link, 'portal_cookie', $userID))
-		portal_cookie_create($link, $curl, $userID);
-	
-	//cURLで学生情報にアクセス
-	session_start();
-	curl_setopt_array($curl, [
-		CURLOPT_URL => 'https://cup.chiba-u.jp/campusweb/campussquare.do?_flowId=CHW0001000-flow',
-		CURLOPT_REFERER => '',
-		CURLOPT_COOKIE => $_SESSION['user_portal_cookie'],
-		CURLOPT_POST => false,
-		CURLOPT_POSTFIELDS => '',
-		CURLOPT_HEADER => false,
-		CURLOPT_FOLLOWLOCATION => true,
-		CURLOPT_RETURNTRANSFER => true,
-		CURLOPT_COOKIESESSION => true,
-		CURLOPT_TIMEOUT => 5,
-		CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4
-	]);
-	session_write_close();
-	//cURLを実行
-	$res = curl_exec($curl);
-	//各種情報を取得
-	$info = curl_getinfo($curl);
-	//期限切れセッションチェック
-	if ($info['url'] === 'https://cup.chiba-u.jp/campusweb/campusportal.do' ||
-		$info['url'] === 'https://cup.chiba-u.jp/campusweb/campussquare.do' ||
-		mb_strpos($res, 'SYSTEM ERROR') !== false) {
-    portal_cookie_create($link, $curl, $userID);
-    return portal_student_info($link, $curl);
-	}
-	$data = [];
-	//PHPQueryのインスタンス生成
-	$doc = phpQuery::newDocument($res);
-	//いくつかのテーブルにデータが分かれている
-	$tableCount = count($doc->find('.normal'));
-	for ($i = 0; $i < $tableCount; $i++) {
-		$table = $doc->find(".normal:eq($i)");
-		//trの数=データ数+1 のため、初めの行は省く
-		$rowCount = count($table->find('tr'));
-		for ($j = 1; $j < $rowCount; $j++) {
-			$tr = $table->find("tr:eq($j)");
-			// 名前|データ となるため、二つセットで処理
-			$colCount = count($tr->find('td'));
-			for ($k = 0; $k < $colCount; $k += 2) {
-				$content = shape_line($tr->find("td:eq(".($k+1).")")->text());
-				//内容があるもののみデータとして格納
-				if (isset($content) && $content !== '')
-					$data[shape_line($tr->find("td:eq($k)")->text())] = $content;
-			}
-		}
+	/**
+	 * URLの?以降のflowExecutionKeyを抽出
+	 *
+	 * @param string $url 元のURL
+	 * @return string flowExecutionKey
+	 */
+	function url_extract(string $url): string {
+		return substr($url, strpos($url, '?') + 1);
 	}
 
-	return [ 'status'=>(count($data) > 0 ? 'success' : 'failed'), 'data'=>$data ];
-}
-
-const PORTAL_INIT_URL = [
-	'subject_change_url'=>'https://cup.chiba-u.jp/campusweb/campussquare.do?_flowId=KHW0001100-flow',
-	'portal_registration_url'=>'https://cup.chiba-u.jp/campusweb/campussquare.do?_flowId=RSW0001000-flow',
-	'portal_registration_list_url'=>'https://cup.chiba-u.jp/campusweb/campussquare.do?_flowId=JPW0001000-flow',
-	'portal_grade_url'=>'https://cup.chiba-u.jp/campusweb/campussquare.do?_flowId=SIW0001200-flow' ];
-										//'https://cup.chiba-u.jp/campusweb/campussquare.do?_flowId=SIW0001300-flow'
-
-function portal_url_get(mysqli $link, $curl, string $name, bool $user = false) {
-  //セッションデータ利用を開始してURLやCookieが保管されているか確認、なければMySQLから取得
-	setTempToSession($link, $user ? 'user_portal_cookie' : 'portal_cookie');
-  session_start();
-	//cURLでアクセス
-	curl_setopt_array($curl, [
-		CURLOPT_URL => PORTAL_INIT_URL[$name],
-		CURLOPT_REFERER => '',
-		CURLOPT_COOKIE => $_SESSION[$user ? 'user_portal_cookie' : 'portal_cookie'],
-		CURLOPT_POST => false,
-		CURLOPT_POSTFIELDS => '',
-		CURLOPT_HEADER => true,
-		CURLOPT_FOLLOWLOCATION => true,
-		CURLOPT_RETURNTRANSFER => true,
-		CURLOPT_COOKIESESSION => true,
-		CURLOPT_TIMEOUT => 5,
-		CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4
-	]);
-	session_write_close();
-	//cURLを実行
-	$res = curl_exec($curl);
-	//各種情報を取得
-	$info = curl_getinfo($curl);
-	//一時データとして保存
-	temp_save($link, $name, curl_getinfo($curl)['url'], $user);
-
-	if ($name = 'portal_registration_url') {
-		$event = phpQuery::newDocument($res)->find('input[name="_eventId"]');
-		if ($event->attr('value') === 'rsRefer') {
-			curl_setopt_array($curl, [
-				CURLOPT_URL => 'https://cup.chiba-u.jp/campusweb/campussquare.do',
-				CURLOPT_REFERER => $info['url'],
-				CURLOPT_COOKIE => $_SESSION['user_portal_cookie'],
-				CURLOPT_POST => true,
-				CURLOPT_POSTFIELDS => '_eventId=rsRefer&'.url_extract($info['url']),
-				CURLOPT_HEADER => false,
-				CURLOPT_FOLLOWLOCATION => true,
-				CURLOPT_RETURNTRANSFER => true,
-				CURLOPT_COOKIESESSION => true,
-				CURLOPT_CONNECTTIMEOUT => 0,
-				CURLOPT_TIMEOUT => 60,
-				CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4
-			]);
-			//cURLを実行
-			$res = curl_exec($curl);
-			//各種情報を取得
-			$info = curl_getinfo($curl);
-			
-			curl_setopt_array($curl, [
-				CURLOPT_URL => 'https://cup.chiba-u.jp/campusweb/campussquare.do',
-				CURLOPT_REFERER => $info['url'],
-				CURLOPT_COOKIE => $_SESSION['user_portal_cookie'],
-				CURLOPT_POST => true,
-				CURLOPT_POSTFIELDS => '_eventId=nochange&'.url_extract($info['url']),
-				CURLOPT_HEADER => false,
-				CURLOPT_FOLLOWLOCATION => true,
-				CURLOPT_RETURNTRANSFER => true,
-				CURLOPT_COOKIESESSION => true,
-				CURLOPT_CONNECTTIMEOUT => 0,
-				CURLOPT_TIMEOUT => 60,
-				CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4
-			]);
-			//cURLを実行
-			$res = curl_exec($curl);
-		}
+	/**
+	 * ようこそ画面へ遷移、最後にexit()実行
+	 *
+	 * @param string $query 追加したいクエリ ex)'?error=...'
+	 * @return void
+	 */
+	function locate_welcome(string $query = ''): void {
+		header('location: /welcome'.$query);
 	}
-}
 
-/**
- * ポータルのセッション切れ等のエラーをチェック
- * 有効な結果の時、trueを返却
- *
- * @param string $res cURLで取得したHTML
- * @param array $info cURLで取得した情報
- * @return bool セッションが有効かどうか
- */
-function portal_session_check(string $res, array $info) : bool {
-	return $info['url'] !== 'https://cup.chiba-u.jp/campusweb/campusportal.do' &&
-		$info['url'] !== 'https://cup.chiba-u.jp/campusweb/campussquare.do' &&
-		mb_strpos($res, 'SYSTEM ERROR') === false &&
-		mb_strpos($res, 'システムエラー') === false &&
-		mb_strpos($res, '認証エラー') === false &&
-		mb_strpos($res, '有効期限ぎれ') === false;
-}
+	/**
+	 * ログイン画面へ遷移、最後にexit()実行
+	 *
+	 * @return void
+	 */
+	function locate_login($client = null): void {
+		if (!$client) $client = google_client_create();
+		header('location: '.$client->createAuthUrl());
+	}
 
-/**
- * 履修登録を行う (yobi=1-6, jigen=1-7)(集中講義は9,0)
- *
- * @param mysqli $link MySQLのインスタンス
- * @param $curl cURLのインスタンス
- * @param array $query POSTデータ
- * @return array 成功したかどうか、教科一覧の連想配列
- */
-function portal_registration(mysqli $link, $curl, array $query) {
-	//UserIDを変数に
-	session_start();
-	if (isset($_SESSION['id']))
-		$userID = $_SESSION['id'];
-	session_write_close();
-	//未ログインならば終了
-	if (!isset($_SESSION['id']))
-		return [ 'status'=>'expired' ];
-	//ポータルパスワードが登録されていないときは終了
-	if (!$_SESSION['userdata'] || !$_SESSION['userdata']['studentID'] || !$_SESSION['userdata']['studentPass'])
-		return [ 'status'=>'portal_non_register' ];
-	
-	//セッションデータ利用を開始してURLやCookieが保管されているか確認、なければMySQLから取得
-	if (!setTempToSession($link, 'portal_cookie', $userID))
-		if (!portal_cookie_create($link, $curl, $userID))
-			return [ 'status'=>'portal_cannot_login' ];
-	if (!setTempToSession($link, 'portal_registration_url', $userID))
-		portal_url_get($link, $curl, 'portal_registration_url', true);
-	
-	//cURLで履修登録画面を取得
-	session_start();
-	curl_setopt_array($curl, [
-		CURLOPT_URL => 'https://cup.chiba-u.jp/campusweb/campussquare.do',
-		CURLOPT_REFERER => $_SESSION['user_portal_registration_url'],
-		CURLOPT_COOKIE => $_SESSION['user_portal_cookie'],
-		CURLOPT_POST => true,
-		CURLOPT_POSTFIELDS => '_eventId=input&'.url_extract($_SESSION['user_portal_registration_url']).
-			"&nendo=&jikanwariShozokuCode=&jikanwariCode=&yobi=1&jigen=1",
-		CURLOPT_HEADER => false,
-		CURLOPT_FOLLOWLOCATION => true,
-		CURLOPT_RETURNTRANSFER => true,
-		CURLOPT_COOKIESESSION => true,
-		CURLOPT_CONNECTTIMEOUT => 0,
-		CURLOPT_TIMEOUT => 60,
-		CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4
-	]);
-	session_write_close();
-	//cURLを実行
-	$res = curl_exec($curl);
-	//各種情報を取得
-	$info = curl_getinfo($curl);
-	//セッション切れをチェック
-	if (!portal_session_check($res, $info)) {
-		if (!portal_cookie_create($link, $curl, $userID))
-			return [ 'status'=>'portal_cannot_login' ];
-		portal_url_get($link, $curl, 'portal_registration_url', true);
-		return portal_registration($link, $curl, $query);
+	/**
+	 * Google_Clientのインスタンスを取得
+	 *
+	 * @return Google_Client Clientのインスタンス
+	 */
+	function google_client_create(): Google_Client {
+		$client = new Google_Client();
+		$client->setApplicationName('chibasys by reolink');
+		$client->setAuthConfig(__DIR__.'/client_secret.json');
+		//$client->setAccessType("offline");
+		$client->setIncludeGrantedScopes(true);
+		$client->addScope(Google_Service_Calendar::CALENDAR);
+		$client->addScope(Google_Service_Calendar::CALENDAR_EVENTS);
+		$client->addScope(Google_Service_People::USERINFO_PROFILE);
+		//$client->setApprovalPrompt('force');
+		$client->setRedirectUri('https://'.$_SERVER['HTTP_HOST'].'/auth?mode=success');
+		$client->setDeveloperKey('AIzaSyAY3LxdQdnM1s2P7ztXiCkK_95YDs-Tl-w');
+		session_start();
+		if (isset($_SESSION['accessToken'])) $client->setAccessToken($_SESSION['accessToken']);
+		session_write_close();
+		return $client;
 	}
-	
-	$code = explode('-', $query['code']);
-	$jikanwariShozokuCode = maria_query($link, "SELECT jikanwariShozokuCode FROM syllabus_$code[0] WHERE jikanwaricd = '$code[1]';");
-	//cURLで履修登録
-	session_start();
-	curl_setopt_array($curl, [
-		CURLOPT_URL => 'https://cup.chiba-u.jp/campusweb/campussquare.do',
-		CURLOPT_REFERER => $info['url'],
-		CURLOPT_COOKIE => $_SESSION['user_portal_cookie'],
-		CURLOPT_POST => true,
-		CURLOPT_POSTFIELDS => '_eventId=insert&'.url_extract($info['url']).
-			"&nendo=$code[0]&jikanwariShozokuCode=$jikanwariShozokuCode&jikanwariCode=$code[1]&dummy=",
-		CURLOPT_HEADER => false,
-		CURLOPT_FOLLOWLOCATION => true,
-		CURLOPT_RETURNTRANSFER => true,
-		CURLOPT_COOKIESESSION => true,
-		CURLOPT_CONNECTTIMEOUT => 0,
-		CURLOPT_TIMEOUT => 60,
-		CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4
-	]);
-	session_write_close();
-	//cURLを実行
-	$res = curl_exec($curl);
-	//各種情報を取得
-	$info = curl_getinfo($curl);
-	//セッション切れをチェック
-	if (!portal_session_check($res, $info)) {
-		portal_cookie_create($link, $curl, $userID);
-		portal_url_get($link, $curl, 'portal_registration_url', true);
-		return portal_registration_add($link, $curl, $query);
+
+	const ERROR_CURL_FAILED = -3;
+	const ERROR_DATA_NOT_FOUND = -2;
+	const ERROR_SQL_FAILED = -1;
+	const ERROR_NO_LOGIN = 1;
+	const ERROR_GOOGLE_EXPIRED = 2;
+	const ERROR_USER_NOT_FOUND = 3;
+	const ERROR_SYLLABUS_NOT_FOUND = 4;
+	const ERROR_MINCAM_DOWN = 5;
+	const ERROR_PORTAL_NO_LOGIN = 10;
+	const ERROR_PORTAL_WRONG_ID_PASS = 11;
+	const ERROR_PORTAL_DOWN = 12;
+	const ERROR_PORTAL_LOGIN_ADDITIONAL = 15;
+	const ERROR_PORTAL_REGISTER_SUBJECT_ADDITIONAL = 16;
+	const ERROR_MESSAGE = [ null, 'ログインされていません', 'Googleで再ログインしてください', 'ユーザーが見つかりません', 'シラバスが見つかりません', 'みんなのキャンパスに接続できません', '6', '7', '8', '9',
+		'学生ポータルに登録されていません', '学生ポータルのIDかパスワードが違います', '学生ポータルに接続できません', '13', '14', '', '' ];
+
+	function error_data(int $error_code, string $msg = '', array $data = []) {
+		$data['error_code'] = $error_code;
+		$data['error_message'] = ($error_code > 0 ? ERROR_MESSAGE[$error_code].$msg : '内部エラー')." (コード:$error_code)";
+		return $data;
 	}
-	$error = phpQuery::newDocument($res)->find('span.error')->text();
-	if ($error && $error !== '')
-		return [ 'status'=>'error', 'message'=>shape_line($error) ];
-	else {
-		$r = portal_registration_list($link, $curl);
-		$r['html'] = $res;
+
+	/**
+	 * Undocumented function
+	 *
+	 * @param string $query SQLクエリ
+	 * @param bool $all 常にログ出力する
+	 * @return mysqli_result|bool クエリ実行結果
+	 */
+	function maria_query(string $query, $all = false) {
+		global $maria;
+		$r = mysqli_query($maria, $query);
+		if (!$r || $all)
+			error_log("\nERROR: ".mysqli_error($maria)."\nQUERY: $query", "3", "/var/www/mysql-error.log");
 		return $r;
 	}
-}
 
-/**
- * 履修登録一覧を取得、短縮版授業コード一覧を返却
- *
- * @param mysqli $link MySQLのインスタンス
- * @param $curl cURLのインスタンス
- * @return array 成功したかどうか、教科一覧の連想配列
- */
-function portal_registration_list(mysqli $link, $curl) {
-	//UserIDを変数に
-	session_start();
-	if (isset($_SESSION['id']))
-		$userID = $_SESSION['id'];
-	session_write_close();
-	//未ログインならば終了
-	if (!isset($_SESSION['id']))
-		return [ 'status'=>'expired' ];
-	//ポータルパスワードが登録されていないときは終了
-	if (!isset($_SESSION['userdata']) || !isset($_SESSION['userdata']['studentID']) || !isset($_SESSION['userdata']['studentPass']))
-		return [ 'status'=>'portal_non_register' ];
-	
-	//セッションデータ利用を開始してURLやCookieが保管されているか確認、なければMySQLから取得
-	if (!setTempToSession($link, 'portal_cookie', $userID))
-		if (!portal_cookie_create($link, $curl, $userID))
-			return [ 'status'=>'portal_cannot_login' ];
-	if (!setTempToSession($link, 'portal_registration_list_url', $userID))
-		portal_url_get($link, $curl, 'portal_registration_list_url', true);
-	
-	//初めに履修登録済み一覧を消す
-	$subjects = [];
-	$subjectsData = [];
-	maria_query($link, "DELETE FROM chibasys.registration WHERE id='$userID' AND nendo='2019';");
+	/**
+	 * 一時データをMySQLから取得
+	 *
+	 * @param string $name 一時データの名前
+	 * @param ?string $userID (Googleの)ユーザーID
+	 * @return mixed 一時データ
+	 */
+	function temp_load(string $name, ?string $userID) {
+		$result = maria_query("SELECT data FROM chibasys.temp WHERE name='$name' AND user='$userID';");
+		if (!$result) return error_data(ERROR_SQL_FAILED);
+		if (mysqli_num_rows($result) !== 1) return '';//error_data(ERROR_DATA_NOT_FOUND);
+		return mysqli_fetch_assoc($result)['data'];
+	}
 
-	foreach ([1,2] as $kubun)	{
-		//cURLで履修登録画面を取得
-		session_start();
+	/**
+	 * 一時データをMySQLとセッションに保存
+	 *
+	 * @param string $name 一時データの名前
+	 * @param string $data 一時データの内容
+	 * @param ?string $userID GoogleのIDまたは'general'や'syllabus'
+	 * @return bool 保存が成功したかどうか
+	 */
+	function temp_save(string $name, string $data, ?string $userID): bool {
+		//userIDが空なら終了  
+		if (!$userID) return false;
+
+		//既にデータがあるかどうかで場合分け
+		$result = maria_query("SELECT data FROM chibasys.temp WHERE name='$name' AND user='$userID';");
+		if ($result) {
+			if (mysqli_num_rows($result) === 1)
+				return (bool)maria_query("UPDATE chibasys.temp SET data='$data' WHERE name='$name' AND user='$userID';");
+			else
+				return (bool)maria_query("INSERT INTO chibasys.temp (name, user, data) VALUES ('$name', '$userID', '$data');");
+		}
+		else
+			return false;
+
+		//セッションに保管
+		/*session_start();
+		$_SESSION[$userID === 'general' ? $name : "user_$name"] = $data;
+		session_write_close();*/
+	}
+
+	/**
+	 * ユーザーデータを保存
+	 *
+	 * @param ?string $userID (Googleの)ユーザーID
+	 * @param array $query POSTデータ
+	 * @return array|bool 通常はtrue
+	 */
+	function userdata_save(?string $userID, array $query) {
+		if (isset($query['studentPass']) && $query['studentPass'] === '') unset($query['studentPass']);
+		$result = maria_query("SELECT * FROM chibasys.user WHERE id='$userID';");
+		if (!$result) return error_data(ERROR_SQL_FAILED);
+		if (mysqli_num_rows($result) === 1)
+			$result2 = maria_query("UPDATE chibasys.user SET studentName='$query[studentName]', studentSex='$query[studentSex]', studentID='$query[studentID]'".(isset($query['studentPass']) ? ", studentPass='$query[studentPass]'" : '')." WHERE id='$userID';");
+		else
+			$result2 = maria_query("INSERT INTO chibasys.user (id, register, ".implode(',', array_keys($query)).", notification) VALUES ('$userID', NOW(), '".implode("','", array_values(query))."', 1);");
+		if (!$result2) return error_data(ERROR_SQL_FAILED);
+		return [ 'result'=>true ];
+	}
+
+	/**
+	 * 項目名の日本語→英語の配列 falseは含めない trueは/で分ける
+	 */
+	const syllabus_je = ["学科(専攻)・科目の種別等"=>'class_type', "授業科目"=>'name', "授業コード"=>false,
+		"科目コード"=>'subject_code', "ナンバリングコード"=>'numbering_code', "授業の方法"=>'method',
+		"使用言語"=>'language', "単位数"=>'credit', "時間数"=>'hour', "期別"=>'period', "履修年次/ターム"=>true,
+		"曜日・時限"=>'time', "副専攻"=>'sub_major', "副題"=>'sub_title', "受入人数"=>'student_count',
+		"担当教員"=>'teacher', "受講対象"=>'target_student', "教室"=>'room',
+		"更新日"=>'update_date', "概要"=>'summary', "目的・目標"=>'purpose', "授業計画・授業内容"=>'content',
+		"授業外学習"=>'homework', "キーワード"=>'keyword', "教科書・参考書"=>'textbook', "評価方法・基準"=>'evaluation_method',
+		"関連科目"=>'related_subject', "履修要件"=>'requirement', "備考"=>'remark', "関連URL"=>'related_url'];
+
+	const syllabus_ej = ["jikanwaricd"=>"授業コード", /*"department"=>"所属学部", "subject"=>"所属学科",
+		"course"=>"所属コース等", "class_type"=>"学科(専攻)・科目の種別等", "name"=>"授業科目", "subject_code"=>"科目コード",
+		"numbering_code"=>"ナンバリングコード", "method"=>"授業の方法", "language"=>"使用言語", */"credit"=>"単位数",
+		"hour"=>"時間数", "period"=>"期別", /*"grade"=>"履修年次", */"term"=>"ターム", "time"=>"曜日・時限",
+		/*"sub_major"=>"副専攻", "sub_title"=>"副題", "student_count"=>"受入人数", */"teacher"=>"担当教員",
+		"target_student"=>"受講対象", "room"=>"教室", /*"update_date"=>"更新日", */"summary"=>"概要", "purpose"=>"目的・目標",
+		"content"=>"授業計画・授業内容", "homework"=>"授業外学習", /*"keyword"=>"キーワード", */"textbook"=>"教科書・参考書",
+		"evaluation_method"=>"評価方法・基準", /*"related_subject"=>"関連科目", */"requirement"=>"履修要件", "remark"=>"備考",
+		"related_url"=>"関連URL", "detail"=>"授業計画詳細情報"];
+
+	/**
+	 * 千葉大学シラバス検索のセッションを取得し、MySQLに保存
+	 *
+	 * @return array クッキーとURLの配列
+	 */
+	function portal_real_search_cookie_url_create(): array {
+		//cURLで千葉大学シラバスの入口にアクセスし、Cookieを取得
+		$site = web('', '', '', 'https://cup.chiba-u.jp/campusweb/campussquare.do?locale=ja_JP&_flowId=SYW3901100-flow', ERROR_PORTAL_DOWN, false);
+		if (isset($site['error_code'])) return $site;
+		//クッキーを解析
+		$c = [];
+		$cookieCount = substr_count($site['header'], 'Set-Cookie: ');
+		$start = 0;
+		for ($i = 0; $i < $cookieCount; $i++) {
+			$start = strpos($site['header'], 'Set-Cookie: ', $start + 1) + 12;
+			$end = strpos($site['header'], ';', $start);
+			$c[] = substr($site['header'], $start, $end - $start);
+		}
+		$cookie = implode('; ', $c);
+		//入力画面へ遷移しておく
+		web($cookie, '', '', $site['redirect_url']);
+		//一時データとして保存
+		temp_save('portal_cookie', $cookie, 'syllabus');
+		temp_save('syllabus_url', $site['redirect_url'], 'syllabus');
+
+		return [ 'cookie'=>$cookie, 'referer'=>$site['redirect_url'] ];
+	}
+
+	const term_num = [
+		1=>['T1','T1-2','T1-3','T1集','T12集','T13集','前','前集'],
+		2=>['T2','T1-2','T1-3','T2集','T12集',        '前','前集'],
+		3=>['T3',       'T1-3','T3集',        'T13集','前','前集'],
+		4=>['T4','T4-5','T4-6','T4集','T45集','T46集','後','後集'],
+		5=>['T5','T4-5','T4-6','T5集','T45集',        '後','後集'],
+		6=>['T6',       'T4-6','T6集',        'T46集','後','後集']
+	];
+
+	/**
+	 * MySQLから千葉大学シラバスを検索
+	 *
+	 * @param array $query POSTデータ
+	 * @return array 検索結果の連想配列
+	 */
+	function portal_search(?string $userID, array $query): array {
+		parse_str($query['query'], $query);
+		$where = [];
+		if (isset($query['jikanwariShozokuCode']))
+			$where[] = "LEFT(jikanwariShozokuCode, ".strlen($query['jikanwariShozokuCode']).") = '$query[jikanwariShozokuCode]'";
+		if (isset($query['class_type'])) {
+			$w = [ "class_type = '".((strlen($query['class_type']) === 2) ? class_type[substr($query['class_type'], 0, 1)].' ' : '').class_type[$query['class_type']]."'" ];
+			if (strlen($query['class_type']) === 1)
+				for ($i = 1; ; $i++)
+					if (isset(class_type[$query['class_type'].$i])) {
+						if ($query['class_type'] === 'I') $w[] = "class_type '".class_type[$query['class_type'].$i]."'";
+						else $w[] = "class_type = '".class_type[$query['class_type']].' '.class_type[$query['class_type'].$i]."'";
+					}
+					else break;
+			$where[] = '('.implode(' OR ', $w).')';
+		}
+		if (isset($query['term'])) {
+			$terms = str_split($query['term']);
+			if (count($terms) === 1) $term = term_num[intval($terms[0])];
+			else if (count($terms) === 2) $term = array_intersect(term_num[intval($terms[0])], term_num[intval($terms[1])]);
+			else if (count($terms) === 3) $term = array_intersect(term_num[intval($terms[0])], term_num[intval($terms[1])], term_num[intval($terms[2])]);
+			else if (count($terms) === 4) $term = array_intersect(term_num[intval($terms[0])], term_num[intval($terms[1])], term_num[intval($terms[2])], term_num[intval($terms[3])]);
+			else if (count($terms) === 5) $term = array_intersect(term_num[intval($terms[0])], term_num[intval($terms[1])], term_num[intval($terms[2])], term_num[intval($terms[3])], term_num[intval($terms[4])]);
+			else $terms = null;
+
+			if ($term) $where[] = "(term = '".implode("' OR term = '", $term)."')";
+		}
+		if (isset($query['grade'])) {
+			$grade = str_split($query['grade']);
+			$where[] = "(FIND_IN_SET('".implode("', grade) OR FIND_IN_SET('", $grade)."', grade))";
+		}
+		if (isset($query['day']) || isset($query['hour'])) {
+			$time = [];
+			if (!isset($query['day'])) {
+				foreach (time_day as $k => $v) if ($k !== '') $time[] = $v.$query['hour'];
+			}
+			else if (!isset($query['hour']))
+				foreach ([1,2,3,4,5,6,7] as $v) $time[] = time_day[$query['day']].$v;
+			else
+				$time[] = time_day[$query['day']].$query['hour'];
+
+			$where[] = "(FIND_IN_SET('".implode("', time) OR FIND_IN_SET('", $time)."', time))";
+		}
+		global $maria;
+		if (isset($query['name'])) {
+			foreach (explode(' ', shape_line($query['name'])) as $n)
+				$where[] = "name LIKE '%".mysqli_real_escape_string($maria, $n)."%'";
+		}
+		if (isset($query['teacher']))
+			$where[] = "teacher LIKE '%".mysqli_real_escape_string($maria, shape_line($query['teacher']))."%'";
+		$msc = microtime(true);
+		$result = maria_query("SELECT jikanwaricd, term, time, name, teacher, summary FROM chibasys.syllabus_$query[nendo] WHERE ".implode(' AND ', $where).";");
+		$msc = microtime(true) - $msc;
+		if (!$result)	return error_data(ERROR_SQL_FAILED);
+		$classes = [];
+		while ($row = mysqli_fetch_assoc($result)) {
+			$row['code'] = "$query[nendo]-$row[jikanwaricd]";
+			unset($row['jikanwaricd']);
+			$classes[$row['code']] = $row;
+		}
+		return [ 'sql'=>"SELECT jikanwaricd, term, time, name, teacher, summary FROM chibasys.syllabus_$query[nendo] WHERE ".implode(' AND ', $where).";",
+			'classes'=>$classes, 'num'=>mysqli_num_rows($result), 'time'=>$msc ];
+	}
+
+	/**
+	 * シラバスコードでMySQLから千葉大学シラバスの内容を取得
+	 *
+	 * @param array $query POSTデータ
+	 * @return array シラバス内容と元のURLの連想配列
+	 */
+	function portal_syllabus_get(array $query): array {
+		//シラバスコードを分解
+		$code = explode('-', $query['code']);
+		if (count($code) === 4) $code[1] = $code[2];
+		if (count($code) < 2) return error_data(ERROR_SYLLABUS_NOT_FOUND);
+
+		$result = maria_query("SELECT * FROM chibasys.syllabus_$code[0] WHERE jikanwaricd = '$code[1]';");
+		if (!$result)	return error_data(ERROR_SQL_FAILED);
+		if (mysqli_num_rows($result) !== 1) return error_data(ERROR_SYLLABUS_NOT_FOUND);
+		$data = mysqli_fetch_assoc($result);
+		if ($data['detail']) $data['detail'] = json_decode($data['detail']);
+		return [ 'data'=>$data, 
+			'url_ja'=>(strpos('ja_JP', $data['slocale']) !== false ? "https://cup.chiba-u.jp/campusweb/campussquare.do?locale=ja_JP&_flowId=SYW3901100-flow&nendo=$code[0]&jikanwariShozokuCode=$data[jikanwariShozokuCode]&jikanwaricd=$code[1]&slocale=ja_JP" : null), 
+			'url_en'=>(strpos('en_US', $data['slocale']) !== false ? "https://cup.chiba-u.jp/campusweb/campussquare.do?locale=ja_JP&_flowId=SYW3901100-flow&nendo=$code[0]&jikanwariShozokuCode=$data[jikanwariShozokuCode]&jikanwaricd=$code[1]&slocale=en_US" : null) ];
+	}
+
+	/**
+	 * 千葉大学シラバスを検索し、教科一覧を返す→廃止予定
+	 *
+	 * @param array $query POSTデータ
+	 * @return array 教科一覧の連想配列
+	 */
+	function portal_real_search(?string $userID, array $query, $cookie = null, $referer = null): array {
+		//$data = ['s_no' => '0', '_eventId' => 'search', 'nendo' => 2019, 'kaikoKamokunmLike' => '英語'];
+		//'s_no=0&'.substr($baseUrl, strpos($baseUrl, "?") + 1).'&_eventId=search&nendo=2019&jikanwariShozokuCode=&gakkiKubunCode=&kaikoKubunCode=&kyokannmLike=&jikanwaricdLike=&kaikoKamokunmLike=%E8%8B%B1%E8%AA%9E&nenji=&yobi=&jigen=&freeWord=&nbrGakubucd=&nbrGakkacd=&nbrSuijuncd=&fukusenkocd=&syReferOrder=&_displayCount=100';
+		//URLやCookieをMySQLから取得
+		if (!$cookie) $cookie = temp_load('portal_cookie', 'syllabus');
+		if (isset($cookie['error_code'])) return $cookie;
+		if (!$referer) $referer = temp_load('portal_syllabus_url', 'syllabus');
+		if (isset($referer['error_code'])) return $referer;
+
+		//cURLで千葉大学シラバスの検索結果を取得
+		$site = web($cookie, $referer, 's_no=0&'.url_extract($referer).'&_eventId=search&_displayCount=1928&'.$query['query']);
+		if (isset($site['error_code'])) return $site;
+		//セッション切れをチェック
+		if (!portal_session_check($site)) {
+			$data = portal_real_search_cookie_url_create();
+			return portal_real_search($userID, $query, $data['cookie'], $data['referer']);
+		}
+		//PHPQueryのインスタンス生成
+		$tbody = phpQuery::newDocument($site['res'])->find('table > tbody');
+		$classes = [];
+		//trの数=教科数
+		$subjectCount = count($tbody->find('tr'));
+		for($i=0; $i<$subjectCount; $i++) {
+			$tr = $tbody->find('tr:eq('.$i.')');
+			$class = [];
+			$dataCount = count($tr->find('td')); //0-10
+			//trタグ内の一つ一つの改行やスペースを除去
+			for($j=1; $j<$dataCount; $j++)
+				$class[] = shape_line($tr->find("td:eq($j)")->text());
+			//最後のtdにある初めのボタンを取得
+			$button = $tr->find('td:eq('.($dataCount - 1).')')->find('input:eq(0)');
+			//disabledがあるかどうかで日本語か英語かを判別。日本語優先
+			if ($button->attr('disabled') == null) $class[] = 'ja_JP';
+			else $class[] = 'en_US';
+			//onclickを解析して「jikanwariShozokuCode」を入手
+			$refer = $button->attr('onclick');
+			$start = strpos($refer, ",") + 2;
+			$end = strpos($refer, "'", $start);
+			$class[] = substr($refer, $start, $end - $start);
+			//教科一覧に追加
+			$classes[] = $class;
+		}
+		//ログイン済みの時、検索履歴に追加
+		if (isset($userID))
+		maria_query("INSERT INTO chibasys.history_search VALUES ('$userID', NOW(), '$query[query]', '$subjectCount');");
+		
+		return [ 'query'=>$query['query'], 'classes'=>$classes ];
+	}
+
+	/**
+	 * 千葉大学シラバスを所属学部で検索し、教科一覧を保存する
+	 *
+	 * @param array $query POSTデータ
+	 * @return array POSTデータと追加情報の連想配列
+	 */
+	function portal_real_search_save(array $query, $cookie = null, $referer = null): array {
+		//$data = ['s_no' => '0', '_eventId' => 'search', 'nendo' => 2019, 'kaikoKamokunmLike' => '英語'];
+		//'s_no=0&'.substr($baseUrl, strpos($baseUrl, "?") + 1).'&_eventId=search&nendo=2019&jikanwariShozokuCode=&gakkiKubunCode=&kaikoKubunCode=&kyokannmLike=&jikanwaricdLike=&kaikoKamokunmLike=%E8%8B%B1%E8%AA%9E&nenji=&yobi=&jigen=&freeWord=&nbrGakubucd=&nbrGakkacd=&nbrSuijuncd=&fukusenkocd=&syReferOrder=&_displayCount=100';
+		//URLやCookieをMySQLから取得
+		if (!$cookie) $cookie = temp_load('portal_cookie', 'syllabus');
+		if (isset($cookie['error_code'])) return $cookie;
+		if (!$referer) $referer = temp_load('portal_syllabus_url', 'syllabus');
+		if (isset($referer['error_code'])) return $referer;
+
+		//cURLで千葉大学シラバスの検索結果を取得
+		$site = web($cookie, $referer, 's_no=0&'.url_extract($referer).'&_eventId=search&_displayCount=1928&nendo='.$query['nendo'].'&jikanwariShozokuCode='.$query['jikanwariShozokuCode']);
+		if (isset($site['error_code'])) return $site;
+		//セッション切れをチェック
+		if (!portal_session_check($site)) {
+			$data = portal_real_search_cookie_url_create();
+			return portal_search_and_save($query, $data['cookie'], $data['referer']);
+		}
+		
+		//PHPQueryのインスタンス生成
+		$tbody = phpQuery::newDocument($site['res'])->find('table > tbody');
+		//trの数=教科数
+		$subjectCount = count($tbody->find('tr'));
+		for($i=0; $i<$subjectCount; $i++) {
+			$tr = $tbody->find('tr:eq('.$i.')');
+			$class = [];
+			$dataCount = count($tr->find('td')); //0-10
+			//$class['nendo'] = shape_line($tr->find("td:eq(0)")->text());
+
+			//最後のtdにある言語選択のボタンを取得
+			$button = $tr->find('td:eq('.($dataCount - 1).')')->find('input:eq(0)');
+			$button2 = $tr->find('td:eq('.($dataCount - 1).')')->find('input:eq(1)');
+			//onclickを解析して「jikanwariShozokuCode」を入手
+			$refer = $button->attr('onclick');
+			$start = strpos($refer, ",") + 2;
+			$end = strpos($refer, "'", $start);
+			$class['jikanwariShozokuCode'] = substr($refer, $start, $end - $start);
+
+			$class['jikanwaricd'] = shape_line($tr->find("td:eq(5)")->text());
+
+			//disabledがあるかどうかで日本語か英語かを判別。日本語優先
+			$lang = [];
+			if ($button->attr('disabled') == null) $lang[] = 'ja_JP';
+			if ($button2->attr('disabled') == null) $lang[] = 'en_US';
+			$class['slocale'] = implode(',', $lang);
+
+			if (isset($query['department']) && $query['department'] !== '') $class['department'] = $query['department'];
+			if (isset($query['subject']) && $query['subject'] !== '') $class['subject'] = $query['subject'];
+			if (isset($query['course']) && $query['course'] !== '') $class['course'] = $query['course'];
+			
+			$result = maria_query("SELECT * FROM chibasys.syllabus_$query[nendo] WHERE jikanwaricd='$class[jikanwaricd]'");
+			if (!$result || !mysqli_fetch_assoc($result))
+			maria_query("INSERT INTO chibasys.syllabus_$query[nendo] (".implode(',', array_keys($class)).') VALUES (\''.implode('\',\'', array_values($class)).'\');');
+		}
+		$query['count'] = $subjectCount;
+
+		return $query;
+	}
+
+	/**
+	 * シラバスの最新データを取得し保存する
+	 *
+	 * @param int $nendo シラバスの年度
+	 * @param int $pos MySQLの上から数えた番号
+	 * @return array 取得したデータの連想配列
+	 */
+	function portal_real_syllabus_save(int $nendo, int $pos): array {
+		$result = maria_query("SELECT * FROM chibasys.syllabus_$nendo LIMIT 1 OFFSET $pos");
+		if (!$result) return error_data(ERROR_SQL_FAILED);
+		if (mysqli_num_rows($result) !== 1) return error_data(ERROR_DATA_NOT_FOUND);
+		$query = mysqli_fetch_assoc($result);
+		$syllabus = portal_real_syllabus(['nendo'=>$nendo,'jikanwariShozokuCode'=>$query['jikanwariShozokuCode'],
+			'jikanwaricd'=>$query['jikanwaricd'],'slocale'=>explode(',', $query['slocale'])[0]]);
+
+		$data = [];
+		foreach ($query as $key => $value) $data[$key] = ($value && $value !== '' ? $value : null);
+		foreach ($syllabus['detail-1'] as $key => $value) {
+			$k = syllabus_je[$key];
+			if (!$k) continue;
+			if ($k === true){
+				$v = explode('/', $value);
+				$data['grade'] = str_replace('･', ',', ereg_replace('/年|\s/', '', $v[0]));
+				$data['term'] = $v[1];
+			}
+			else
+				$data[$k] = $value;
+		}
+		foreach ($syllabus['detail-2'] as $key => $value) {
+			$k = syllabus_je[$key];
+			$data[$k] = $value;
+		}
+		if ($syllabus['detail-3']) $data['detail'] = ($syllabus['detail-3'] ? json_encode($syllabus['detail-3']) : null);
+
+		global $maria;
+		$d = [];
+		foreach ($data as $k => $v) if (in_array($k, ['time','teacher','keyword'], true)) $data[$k] = str_replace('、', ',', str_replace('。', '.', $v));
+		foreach ($data as $k => $v) $d[] = ($k === 'hour' || $k === 'credit' ? ($v ? "$k=$v" : "$k=null") : ($v ? "$k='".mysqli_real_escape_string($maria, $v)."'" : "$k=null"));
+		$result = maria_query("UPDATE chibasys.syllabus_$nendo SET ".implode(',', $d).
+			" WHERE jikanwariShozokuCode='$query[jikanwariShozokuCode]' AND jikanwaricd='$query[jikanwaricd]';");
+		if ($result)
+			return [ 'data'=>$d ];
+		else
+			return error_data(ERROR_SQL_FAILED);
+	}
+
+	/**
+	 * シラバスコードで千葉大学シラバスの内容を取得
+	 *
+	 * @param array $query POSTデータ
+	 * @return array シラバス内容の連想配列
+	 */
+	function portal_real_syllabus(array $query): array {
+		//千葉大学シラバスのURLを生成 (ポータル内:https://cup.chiba-u.jp/campusweb/campussquare.do?_flowId=SYW0001000-flow)
+		$url = "https://cup.chiba-u.jp/campusweb/campussquare.do?locale=ja_JP&_flowId=SYW3901100-flow&nendo=$query[nendo]&jikanwariShozokuCode=$query[jikanwariShozokuCode]&jikanwaricd=$query[jikanwaricd]&slocale=$query[slocale]";
+		//cURLで千葉大学シラバスの情報を取得
+		$site = web('', '', '', $url, ERROR_PORTAL_DOWN, false);
+		if (isset($site['error_code'])) return $site;
+
+		//Cookieのみ抽出
+		$c = [];
+		$cookieCount = substr_count($site['header'], 'Set-Cookie: ');
+		$start = 0;
+		for ($i = 0; $i < $cookieCount; $i++) {
+			$start = strpos($site['header'], 'Set-Cookie: ', $start + 1) + 12;
+			$end = strpos($site['header'], ';', $start);
+			$c[] = substr($site['header'], $start, $end - $start);
+		}
+		//Cookieの文字列に変換
+		$cookie = implode('; ', $c);
+		$site = web($cookie, $url, '', $site['redirect_url']);
+		if (isset($site['error_code'])) return $site;
+		
+		//PHPQueryのインスタンス生成
+		$doc = phpQuery::newDocument($site['res']);
+		//タブごとにインスタンスを生成
+		$details1 = table_analysis($doc->find('#tabs-1'), "");
+		$details2 = table_analysis($doc->find('#tabs-2'), "\n");
+		$details3 = table_analysis_third($doc->find('#tabs-3'));
+
+		return [ 'detail-1'=>$details1, 'detail-2'=>$details2, 'detail-3'=>$details3 ];//, 'redirect'=>$info['url'], 'original'=>$url ];
+	}
+
+	/**
+	 * 通常のCampusSquareのテーブルを解析
+	 *
+	 * @param phpQueryObject $tbody テーブル内のHTML
+	 * @param string $insert 行間に挟む文字列
+	 * @return array データを整形して連想配列にしたもの
+	 */
+	function table_analysis(phpQueryObject $tbody, string $insert) : array {
+		$details = [];
+		//trの数=データの種類(変動)
+		$detailsCount = count($tbody->find('tr'));
+		for ($i=0; $i<$detailsCount; $i++) {
+			//名前の列は半角に整形し、スペースをなくす
+			$name = shape_line($tbody->find("tr:eq($i)")->find('th')->text());
+			//詳細の列はHTMLを半角に整形し、<br>を\nにして、trimをかける
+			$detail = shape_content($tbody->find("tr:eq($i)")->find('td')->html());
+			//どちらかの列が無名だったり、15の力は無視
+			if ($name === '' || $detail === '' || mb_strpos($name, '15の力') !== false) continue;
+			//$detailに改行がある場合、何もない行を消去する
+			//if (mb_strpos($detail, "\n") !== false) {
+				//改行で配列に分ける
+				$detailList = explode("\n", $detail);
+				//各要素にshape_lineをかける
+				$detailList = array_map('shape_line', $detailList);
+				//文字列が0の要素を取り除く
+				$detailList = array_filter($detailList, 'strlen');
+				//$insertを間に入れて文字列に戻す
+				$detail = implode($insert, $detailList);
+			//}
+			//英語表記があるときの区切り文字「/」の位置
+			$posName = mb_strpos($name, "/");
+			$posDetail = mb_strpos($detail, "/");
+			if (mb_strpos($name, '履修年次') !== false) {
+				//履修年次/ターム/Students'Year… となるので、区切りの「/」の位置をずらす
+				$posName = mb_strpos($name, "/", 6);
+				$detail = str_replace('・', '･', $detail);
+			}
+			else if (mb_strpos($name, '曜日') !== false) {
+				//月 /Mon 　1… となるので、英語表記を消し、その間のスペースも除去
+				$detail = str_replace(['/Sun', '/Mon', '/Tue', '/Wed', '/Thu', '/Fri', '/Sat', '/Oth'], '', $detail);
+				$detail = str_replace(' ', '', $detail);
+			}
+			else if ($posDetail !== false && $insert === '')
+				//詳細に英語表示があり、detail-1の時に、日本語のみにする
+				$detail = trim(mb_substr($detail, 0, $posDetail));
+			//名前は英語表示があるので、日本語のみに
+			$name = mb_substr($name, 0, $posName);
+
+			$posLinkIndex = 0;
+			while ($posLinkStart = mb_strpos($detail, '<a ', $posLinkIndex) !== false) {
+				$posLinkEnd = mb_strpos($detail, '</a>', $posLinkIndex);
+				$tempBefore = mb_substr($detail, 0, $posLinkStart);
+				$tempAfter = mb_substr($detail, $posLinkEnd);
+				$tempReplaced = mb_substr($detail, $posLinkStart, $posLinkEnd - $posLinkStart);
+				$detail = $tempBefore.$tempReplaced.$tempAfter;
+				$posLinkIndex = $posLinkEnd + 4;
+			}
+
+			//連想配列に
+			$details[$name] = $detail;//str_replace("\n", '<br>', $detail);
+		}
+		return $details;
+	}
+
+	/**
+	 * 授業計画詳細情報のCampusSquareのテーブルを解析
+	 *
+	 * @param phpQueryObject $tbody テーブル内のHTML
+	 * @return array|bool データを整形して連想配列にしたもの
+	 */
+	function table_analysis_third(phpQueryObject $tbody) {
+		$details = [];
+		//trの数=行頭を含む行の数
+		$detailsCount = count($tbody->find('tr'));
+		for($i=0; $i<$detailsCount; $i++) {
+			$tr = $tbody->find("tr:eq($i)");
+			$td = [];
+			//tdの数=列の数
+			$tdCount = count($tr->find('td'));
+			//「該当するデータはありません」のときはfalseを返す
+			if ($detailsCount === 1 && $tdCount === 0) return false;
+			//1行目はただのインデックスなので無視
+			else if ($tdCount === 0) continue;
+			//1つずつ連想配列に
+			for ($j=0; $j<$tdCount; $j++)
+				$td[] = shape_line($tbody->find("tr:eq($i)")->find("td:eq($j)")->text());
+			//「1. 第1回 名前\n内容: 内容内容\n備考: 備考備考」の形に整形
+			$detail = trim(("$td[0]. $td[1] $td[2]".($td[3] === '' ? '' : "\n内容: $td[3]").($td[4] === '' ? '' : "\n備考: $td[4]")));
+			//連想配列に
+			$details[] = $detail;//str_replace("\n", '<br>', $detail);
+		}
+		return $details;
+	}
+
+	/**
+	 * cURLの簡易化メソッド
+	 * 既定値はリダイレクトオン、クッキー有効、タイムアウト30秒、IPv4のみ使用、ユーザーエージェントはWindows
+	 *
+	 * @param $cookie クッキー
+	 * @param $referer 参照元URL
+	 * @param string $post ポストする場合のデータ
+	 * @param string $url アクセス先URL
+	 * @param int $down_code ステータスコードがおかしいときのエラー番号
+	 * @param bool $follow リダイレクトを追跡するかどうか
+	 * @return array レスポンスや各種データの配列
+	 */
+	function web($cookie = '', $referer = '', string $post = '',
+		string $url = 'https://cup.chiba-u.jp/campusweb/campussquare.do', int $down_code = ERROR_PORTAL_DOWN, bool $follow = true) : array {
+		global $curl;
+		if (isset($cookie['error_code'])) return $cookie;
+
 		curl_setopt_array($curl, [
-			CURLOPT_URL => 'https://cup.chiba-u.jp/campusweb/campussquare.do',
-			CURLOPT_REFERER => $_SESSION['user_portal_registration_list_url'],
-			CURLOPT_COOKIE => $_SESSION['user_portal_cookie'],
-			CURLOPT_POST => true,
-			CURLOPT_POSTFIELDS => '_eventId=changeNendoGakkiGakusei&'.url_extract($_SESSION['user_portal_registration_list_url']).
-				"&nendo=2019&gakkiKbnCd=".$kubun,
-			CURLOPT_HEADER => false,
-			CURLOPT_FOLLOWLOCATION => true,
+			CURLOPT_URL => $url,
+			CURLOPT_REFERER => $referer,
+			CURLOPT_COOKIE => $cookie,
+			CURLOPT_POST => ($post !== ''),
+			CURLOPT_POSTFIELDS => $post,
+			CURLOPT_HEADER => true,
+			CURLOPT_FOLLOWLOCATION => $follow,
 			CURLOPT_RETURNTRANSFER => true,
 			CURLOPT_COOKIESESSION => true,
 			CURLOPT_CONNECTTIMEOUT => 0,
-			CURLOPT_TIMEOUT => 60,
-			CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4
-		]);
-		session_write_close();
-		//cURLを実行
+			CURLOPT_TIMEOUT => 30,
+			CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4,
+			CURLOPT_USERAGENT => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.120 Safari/537.36']);
 		$res = curl_exec($curl);
-		//各種情報を取得
 		$info = curl_getinfo($curl);
-		//セッション切れをチェック
-		if (!portal_session_check($res, $info)) {
-			if (!portal_cookie_create($link, $curl, $userID))
-				return [ 'status'=>'portal_cannot_login' ];
-			portal_url_get($link, $curl, 'portal_registration_list_url', true);
-			return portal_registration_list($link, $curl);
+		$info['header'] = substr($res, 0, $info['header_size']);
+		$info['res'] = substr($res, $info['header_size']);
+		
+		if (!$res)
+			return error_data(ERROR_CURL_FAILED);
+		else if ($info['http_code'] !== 200 && $info['http_code'] !== 302)
+			return error_data($down_code, " (HTTPコード: $info[http_code])");
+		else
+			return $info;
+	}
+
+	/**
+	 * 学生ポータルへログインしてセッション取得、MySQLに保存
+	 *
+	 * @param ?string $userID 
+	 * @return mixed 取得したクッキー
+	 */
+	function portal_cookie_create(?string $userID) {
+		$userdata = null;
+		$result = maria_query("SELECT studentID, studentPass FROM chibasys.user WHERE id = '$userID';");
+		if ($result) {
+			if (mysqli_num_rows($result) === 1)
+				$userdata = mysqli_fetch_assoc($result);
+			else
+				return error_data(ERROR_USER_NOT_FOUND);
+			if (!$userdata['studentID'] || !$userdata['studentPass'])
+				return error_data(ERROR_PORTAL_NO_LOGIN);
+		}
+		else
+			return error_data(ERROR_SQL_FAILED);
+		
+		//cURLで学生ポータルへログイン
+		$site = web('', '', "wfId=nwf_PTW0000002_login&userName=$userdata[studentID]&password=$userdata[studentPass]&locale=ja_JP&undefined=&action=rwf&tabId=home&page=",
+			'https://cup.chiba-u.jp/campusweb/campusportal.do');//&rwfHash=86c8c93c52abb4ae783c237d364dd203
+		if (isset($site['error_code'])) return $site;
+		//成功したとき <!DOCTYPE HTML><div><script type="text/javascript">reloadPortal('', 'main');</script>now loading...<br></div>
+		//失敗したとき <!DOCTYPE HTML><div><script type="text/javascript">$(document).ready(function(){setTimeout(function(){ $("input[name='loginerrok']").focus(); }, 500);});
+		//          <span class="error">ユーザ名またはパスワードの入力に誤りがあります</span><br><br><br><br><center><input type="button" id="loginerrok" name="loginerrok" value="&nbsp; O &nbsp;&nbsp; K &nbsp;" onClick="closeLoginDialog(this)"></center></div>
+		$error_text = phpQuery::newDocument($site['res'])->find('span.error')->text();
+		if ($error_text || strpos($site['res'], 'now loading') === false || strpos($site['res'], 'reloadPortal') === false) {
+			error_log("\nERROR: PORTAL_LOGIN_ERROR\nSITE: ".str_replace("\n", '', json_encode($site)), "3", "/var/www/chibasys-error.log");
+			return error_data(ERROR_PORTAL_LOGIN_ADDITIONAL, shape_line($error_text));
 		}
 
+		//Cookieのみ抽出
+		$c = [];
+		$cookieCount = substr_count($site['header'], 'Set-Cookie: ');
+		$start = 0;
+		for ($i = 0; $i < $cookieCount; $i++) {
+			$start = strpos($site['header'], 'Set-Cookie: ', $start + 1) + 12;
+			$end = strpos($site['header'], ';', $start);
+			$c[] = substr($site['header'], $start, $end - $start);
+		}
+		//Cookieの文字列に変換
+		$cookie = implode('; ', $c);
+		//一時データとして保存
+		temp_save('portal_cookie', $cookie, $userID);
+		return $cookie;
+	}
+	
+	/**
+	 * ポータルのセッション切れ等のエラーをチェック
+	 * 有効な結果の時、trueを返却
+	 *
+	 * @param array $site cURLで取得した情報
+	 * @return bool セッションが有効かどうか
+	 */
+	function portal_session_check(array $site): bool {
+		return $site['url'] !== 'https://cup.chiba-u.jp/campusweb/campusportal.do' &&
+			$site['url'] !== 'https://cup.chiba-u.jp/campusweb/campussquare.do' &&
+			mb_strpos($site['res'], 'SYSTEM ERROR') === false &&
+			mb_strpos($site['res'], 'システムエラー') === false &&
+			mb_strpos($site['res'], '認証エラー') === false &&
+			mb_strpos($site['res'], '有効期限ぎれ') === false;
+	}
+
+	const PORTAL_INIT_URL = [
+		'portal_subject_change_url'=>   'https://cup.chiba-u.jp/campusweb/campussquare.do?_flowId=KHW0001100-flow',
+		'portal_reg_url'=>     'https://cup.chiba-u.jp/campusweb/campussquare.do?_flowId=RSW0001000-flow',
+		'portal_reg_list_url'=>'https://cup.chiba-u.jp/campusweb/campussquare.do?_flowId=JPW0001000-flow',
+		'portal_grade_url'=>            'https://cup.chiba-u.jp/campusweb/campussquare.do?_flowId=SIW0001200-flow' ];
+																	//'https://cup.chiba-u.jp/campusweb/campussquare.do?_flowId=SIW0001300-flow'
+	
+	/**
+	 * URLにアクセスして一時的なURLを取得
+	 *
+	 * @param string $name URLの種類名
+	 * @param $cookie ポータルにログイン済みのクッキー
+	 * @param ?string $userID (Googleの)ユーザーID
+	 * @return mixed 取得したURL
+	 */
+	function portal_url_get(string $name, $cookie, ?string $userID) {
+		//cURLでアクセス
+		$site = web($cookie, '', '', PORTAL_INIT_URL[$name]);
+		if (isset($site['error_code'])) return $site;
+		//一時データとして保存
+		temp_save($name, $site['url'], $userID);
+	
+		if ($name === 'portal_reg_url') {
+			//各学期の住所確認がある場合、自動で済ます
+			$event = phpQuery::newDocument($site['res'])->find('input[name="_eventId"]');
+			if ($event->attr('value') === 'rsRefer') {
+				//学生住所変更画面へ
+				$site2 = web($cookie, $site['url'], '_eventId=rsRefer&'.url_extract($site['url']));
+				//変更なしをクリック
+				web($cookie, $site2['url'], '_eventId=nochange&'.url_extract($site2['url']));
+			}
+		}
+	
+		return $site['url'];
+	}
+
+	/**
+	 * 初期設定時に学生情報を取得
+	 *
+	 * @param ?string $userID (Googleの)ユーザーID
+	 * @param $cookie クッキー
+	 * @return array 学生情報の連想配列
+	 */
+	function portal_student_info_get(?string $userID, $cookie = null): array {
+		//未ログインならば終了
+		if (!$userID) return error_data(ERROR_NO_LOGIN);
+
+		//CookieやURLを取得
+		if (!$cookie) $cookie = temp_load('portal_cookie', $userID);
+		if (isset($cookie['error_code'])) return $cookie;
+		
+		//cURLで学生情報にアクセス
+		$site = web($cookie, '', '', 'https://cup.chiba-u.jp/campusweb/campussquare.do?_flowId=CHW0001000-flow');
+		if (isset($site['error_code'])) return $site;
+		//期限切れセッションチェック
+		if (!portal_session_check($site))
+			return portal_student_info_get($userID, portal_cookie_create($userID));
+		
+		$data = [];
 		//PHPQueryのインスタンス生成
-		$tbody = phpQuery::newDocument($res)->find('table.list_tbl tbody');
+		$doc = phpQuery::newDocument($site['res']);
+		//いくつかのテーブルにデータが分かれている
+		$tableCount = count($doc->find('.normal'));
+		for ($i = 0; $i < $tableCount; $i++) {
+			$table = $doc->find(".normal:eq($i)");
+			//trの数=データ数+1 のため、初めの行は省く
+			$rowCount = count($table->find('tr'));
+			for ($j = 1; $j < $rowCount; $j++) {
+				$tr = $table->find("tr:eq($j)");
+				// 名前|データ となるため、二つセットで処理
+				$colCount = count($tr->find('td'));
+				for ($k = 0; $k < $colCount; $k += 2) {
+					$content = shape_line($tr->find("td:eq(".($k+1).")")->text());
+					//内容があるもののみデータとして格納
+					if (isset($content) && $content !== '')
+						$data[shape_line($tr->find("td:eq($k)")->text())] = $content;
+				}
+			}
+		}
+
+		return [ 'student_info'=>$data ];
+	}
+
+	/**
+	 * 履修登録を行う (yobi=1-6, jigen=1-7)(集中講義は9,0)
+	 *
+	 * @param ?string $userID (Googleの)ユーザーID
+	 * @param array $query POSTデータ
+	 * @param $cookie クッキー
+	 * @param $referer 参照元URL
+	 * @return array 教科コードと教科名の連想配列
+	 */
+	function portal_reg(?string $userID, array $query, $cookie = null, $referer = null) {
+		//未ログインならば終了
+		if (!$userID) return error_data(ERROR_NO_LOGIN);
+		//CookieやURLを取得
+		if (!$cookie) $cookie = temp_load('portal_cookie', $userID);
+		if (isset($cookie['error_code'])) return $cookie;
+		if (!$referer) $referer = temp_load('portal_reg_url', $userID);
+		if (isset($referer['error_code'])) return $referer;
+		
+		
+		$code = explode('-', $query['code']);
+		if ($query['bool']) {
+			//cURLで履修登録画面を取得
+			$site = web($cookie, $referer, '_eventId=input&'.url_extract($referer).'&nendo=&jikanwariShozokuCode=&jikanwariCode=&yobi=1&jigen=1');
+			if (isset($site['error_code'])) return $site;
+			//セッション切れをチェック
+			if (!portal_session_check($site)) {
+				$cookie = portal_cookie_create($userID);
+				return portal_reg($userID, $query, $cookie,
+					portal_url_get('portal_reg_url', $cookie, $userID));
+				}
+			//時間割所属コードを取得→なくてもOK 間違うとアウト
+			//$jikanwariShozokuCode = maria_query($link, "SELECT jikanwariShozokuCode FROM syllabus_$code[0] WHERE jikanwaricd = '$code[1]';");
+			//cURLで履修登録ボタンをクリック
+			$site = web($cookie, $site['url'], '_eventId=insert&'.url_extract($site['url']).
+				"&nendo=$code[0]&jikanwariShozokuCode=&jikanwariCode=$code[1]&dummy=");
+			if (isset($site['error_code'])) return $site;
+			//セッション切れをチェック
+			if (!portal_session_check($site)) {
+				$cookie = portal_cookie_create($userID);
+				return portal_reg($userID, $query, $cookie,
+					portal_url_get('portal_reg_url', $cookie, $userID));
+			}
+			//<span class="error">にエラー内容が入っていることが多いので、それを参照
+			$error = phpQuery::newDocument($site['res'])->find('span.error')->text();
+		}
+		else {
+			//cURLで履修登録の削除確認画面を取得(jikanwariShozokuCode?yobi?jigen?)
+			$site = web($cookie, $referer, '_eventId=delete&'.url_extract($referer).'&nendo=$code[0]&jikanwariShozokuCode=&jikanwariCode=$code[1]&yobi=&jigen=');
+			if (isset($site['error_code'])) return $site;
+			//セッション切れをチェック
+			if (!portal_session_check($site)) {
+				$cookie = portal_cookie_create($userID);
+				return portal_reg($userID, $query, $cookie,
+					portal_url_get('portal_reg_url', $cookie, $userID));
+				}
+			//cURLで履修登録の削除ボタンをクリック
+			$site = web($cookie, $site['url'], '_eventId=delete&'.url_extract($site['url']));
+			if (isset($site['error_code'])) return $site;
+			//セッション切れをチェック
+			if (!portal_session_check($site)) {
+				$cookie = portal_cookie_create($userID);
+				return portal_reg($userID, $query, $cookie,
+					portal_url_get('portal_reg_url', $cookie, $userID));
+			}
+			//<span class="error">にエラー内容が入っていることが多いので、それを参照
+			$error = phpQuery::newDocument($site['res'])->find('span.error')->text();
+		}
+		if ($error && $error !== '')
+			return error_data(ERROR_PORTAL_REGISTER_SUBJECT_ADDITIONAL, shape_line($error));
+		else {
+			$data = [ 'code'=>$query['code'], 'bool'=>$query['bool'] ];
+			//通知用に教科名を取得
+			$result = maria_query("SELECT name FROM syllabus_$code[0] WHERE jikanwaricd = '$code[1]';");
+			//無駄にエラーは出さない
+			if ($result && mysqli_num_rows($result) === 1) $data['name'] = mysqli_fetch_assoc($result)['name'];
+			return $data;
+		}
+	}
+
+	/**
+	 * 履修登録一覧を取得
+	 *
+	 * @param ?string $userID (Googleの)ユーザーID
+	 * @param array $query POSTデータ
+	 * @param $cookie クッキー
+	 * @param $referer 参照元URL
+	 * @return array 教科一覧の連想配列
+	 */
+	function portal_reg_list_get(?string $userID, array $query): array {
+		if (isset($query['publicID']) && $query['publicID']) {
+			$result = maria_query("SELECT id FROM chibasys.user WHERE publicID = '$query[publicID]';");
+			if (!$result) return error_data(ERROR_SQL_FAILED);
+			if (mysqli_num_rows($result) !== 1) return error_data(ERROR_USER_NOT_FOUND);
+			$userID = mysqli_fetch_assoc($result)['id'];
+		}
+		else if (!isset($userID)) return error_data(ERROR_NO_LOGIN);
+
+		//更新フラグがある場合は取得しに行く、エラー番号だけ保存してMySQLから取得
+		$refresh_error = null;
+		if (isset($query['refresh']) && $query['refresh']) {
+			$data = portal_reg_list_refresh($userID, $query);
+			if (isset($data['error_code'])) {
+				$refresh_error = $data['error_code'];
+				if ($refresh_error === ERROR_PORTAL_DOWN) return error_data($refresh_error);
+			}
+		}
+
+		$result = maria_query("SELECT nendo, jikanwariCd FROM chibasys.registration WHERE id='$userID';");
+		if ($result) {
+			$reg_code = [];
+			$reg_data = [];
+			while ($row = mysqli_fetch_assoc($result)) {
+				$result2 = maria_query("SELECT term, time, credit, name, teacher, room FROM chibasys.syllabus_$row[nendo] WHERE jikanwariCd='$row[jikanwariCd]';");
+				if ($result2 && mysqli_num_rows($result2) === 1) {
+					$code = "$row[nendo]-$row[jikanwariCd]";
+					$reg_code[] = $code;
+					$reg_data[$code] = mysqli_fetch_assoc($result2);
+					$reg_data[$code]['code'] = $code;
+				}
+			}
+		}
+		else
+			return error_data(ERROR_SQL_FAILED);
+		
+		$data = [ 'reg_code'=>$reg_code, 'reg_data'=>$reg_data ];
+		return $refresh_error ? error_data($refresh_error, '', $data) : $data;
+	}
+
+	/**
+	 * 履修登録一覧を再取得
+	 *
+	 * @param ?string $userID (Googleの)ユーザーID
+	 * @param array $query POSTデータ
+	 * @param $cookie クッキー
+	 * @param $referer 参照元URL
+	 * @return array 教科コード一覧と教科一覧の連想配列
+	 */
+	function portal_reg_list_refresh(?string $userID, array $query, $cookie = null, $referer = null) {
+		//CookieやURLをMySQLから取得
+		if (!$cookie) $cookie = temp_load('portal_cookie', $userID);
+		if (isset($cookie['error_code'])) return $cookie;
+		if (!$referer) $referer = temp_load('portal_reg_list_url', $userID);
+		if (isset($referer['error_code'])) return $referer;
+		
+		$reg_code = [];
+		$subjectsZero = [ 1=>false, 2=>false ];
+		foreach ([1,2] as $kubun)	{
+			//cURLで履修一覧画面を取得
+			$site = web($cookie, $referer, '_eventId=changeNendoGakkiGakusei&'.
+				url_extract($referer)."&nendo=$query[nendo]&gakkiKbnCd=$kubun");
+			if (isset($site['error_code']))	return $site;
+			//セッション切れをチェック
+			if (!portal_session_check($site)) {
+				$cookie = portal_cookie_create($userID);
+				return portal_reg_list_refresh($userID, $query, $cookie,
+					portal_url_get('portal_reg_list_url', $cookie, $userID));
+			}
+
+			//PHPQueryのインスタンス生成
+			$tbody = phpQuery::newDocument($site['res'])->find('table.list_tbl tbody');
+			//trの数=教科数
+			$trCount = count($tbody->find('tr'));
+			for ($i = 0; $i < $trCount; $i++) {
+				$tr = $tbody->find("tr:eq($i)");
+				//「該当するデータはありません」の時はスルー
+				if (count($tr->find('td')) <= 1) {
+					$subjectsZero[$kubun] = true;
+					continue;
+				}
+				$q = [];
+				$url = $tr->find('td:eq(1)')->find('a')->attr('href');
+				parse_str(url_extract($url), $q);
+				$reg_code[] = "$q[nendo]-$q[jikanwariCd]";
+			}
+		}
+
+		//履修登録が1つでもある場合やゼロでもデータがないことを確認が取れた時のみデータ更新
+		if (count($reg_code) > 0 || (count($reg_code) === 0 && $subjectsZero[1] && $subjectsZero[2])) {
+			if (maria_query("DELETE FROM chibasys.registration WHERE id='$userID' AND nendo='$query[nendo]';"))
+				foreach ($reg_code as $c) {
+					$code = explode('-', $c);
+					maria_query("INSERT INTO chibasys.registration (id, nendo, jikanwariCd) VALUES ('$userID', '$code[0]', '$code[1]');");
+				}
+		}
+
+		return true;
+	}
+
+	
+	/**
+	 * 成績を取得
+	 *
+	 * @param ?string $userID (Googleの)ユーザーID
+	 * @param array $query POSTデータ
+	 * @param $cookie クッキー
+	 * @param $referer 参照元URL
+	 * @return array 教科一覧の連想配列
+	 */
+	function portal_grade_list_get(?string $userID, array $query): array {
+		if (!isset($userID)) return error_data(ERROR_NO_LOGIN);
+
+		//更新フラグがある場合は取得しに行く、エラー番号だけ保存してMySQLから取得
+		$refresh_error = null;
+		if (isset($query['refresh']) && $query['refresh']) {
+			$data = portal_grade_list_refresh($userID);
+			if (isset($data['error_code'])) {
+				$refresh_error = $data['error_code'];
+				if ($refresh_error === ERROR_PORTAL_DOWN) return error_data($refresh_error);
+			}
+		}
+
+		$result = maria_query("SELECT nendo, jikanwariCd, point, pass FROM chibasys.grade WHERE id='$userID';");
+		if ($result) {
+			$grade_data = [];
+			while ($row = mysqli_fetch_assoc($result)) {
+				$result2 = maria_query("SELECT term, time, credit, name, teacher, room FROM chibasys.syllabus_$row[nendo] WHERE jikanwariCd='$row[jikanwariCd]';");
+				if ($result2 && mysqli_num_rows($result2) === 1) {
+					$code = "$row[nendo]-$row[jikanwariCd]";
+					$grade_data[$code] = array_merge($row, mysqli_fetch_assoc($result2));
+					//$grade_data[$code]['code'] = $code;
+				}
+			}
+		}
+		else
+			return error_data(ERROR_SQL_FAILED);
+		
+		$data = [ 'grade_data'=>$grade_data ];
+		return $refresh_error ? error_data($refresh_error, '', $data) : $data;
+	}
+
+	const GRADE_NUM = [ '秀'=>4, '優'=>3, '良'=>2, '可'=>1, '不可'=>0, '合格'=>null, '不合格'=>null ];
+	/**
+	 * 成績を再取得
+	 *
+	 * @param ?string $userID (Googleの)ユーザーID
+	 * @param $cookie クッキー
+	 * @param $referer 参照元URL
+	 * @return array 教科一覧の連想配列
+	 */
+	function portal_grade_list_refresh(?string $userID, $cookie = null, $referer = null) {
+		//未ログインならば終了
+		if (!$userID) return error_data(ERROR_NO_LOGIN);
+		//CookieやURLをMySQLから取得
+		if (!$cookie) $cookie = temp_load('portal_cookie', $userID);
+		if (isset($cookie['error_code'])) return $cookie;
+		if (!$referer) $referer = temp_load('portal_grade_url', $userID);
+		if (isset($referer['error_code'])) return $referer;
+		
+		//cURLで成績画面を取得
+		$site = web($cookie, $referer, '_eventId=display&'.url_extract($referer).'&spanType=0&dummy=');//spanType=1&nendo=2019&gakkiKbnCd=2
+		if (isset($site['error_code'])) return $site;
+		//セッション切れをチェック
+		if (!portal_session_check($site)) {
+			$cookie = portal_cookie_create($userID);
+			return portal_grade_list_refresh($userID, $cookie,
+				portal_url_get('portal_grade_url', $cookie, $userID));
+		}
+		
+		$result = true;
+		//PHPQueryのインスタンス生成
+		$tbody = phpQuery::newDocument($site['res'])->find('table.normal tbody');
 		//trの数=教科数
 		$trCount = count($tbody->find('tr'));
 		for ($i = 0; $i < $trCount; $i++) {
+			$class = [ $userID ];
 			$tr = $tbody->find("tr:eq($i)");
-			//「該当するデータはありません」の時はスルー
+			//「履修成績データはありません」の時はスルー
 			if (count($tr->find('td')) <= 1) continue;
-			$q = [];
-			$url = $tr->find('td:eq(1)')->find('a')->attr('href');
-			parse_str(url_extract($url), $q);
-			$subjects[] = "$q[nendo]-$q[jikanwariCd]";
-			maria_query($link, "INSERT INTO chibasys.registration (id, nendo, jikanwariCd) VALUES ('$userID', '$q[nendo]', '$q[jikanwariCd]');");
+			foreach ([1,3,4,5] as $j)
+				$class[] = shape_line($tr->find("td:eq($j)")->text());
+			$class[] = GRADE_NUM[shape_line($tr->find('td:eq(6)')->text())]; //秀/優/良/可/不可/合格/不合格
+			$class[] = (shape_line($tr->find('td:eq(7)')->text()) === '合' ? 1 : 0); //合/否
+			//$grade_data["$class[1]-$class[2]"] = [ 'grade'=>$class[5], 'pass'=>($class[6] === 1) ];
+			
+			$row = maria_query("SELECT * FROM chibasys.grade WHERE id='$class[0]' AND nendo='$class[1]' AND jikanwaricd='$class[2]';");
+			$syllabus = portal_syllabus_get([ 'code'=>"$class[1]-$class[2]" ]);
+			if ($row && mysqli_fetch_assoc($row))
+				$r = maria_query("UPDATE chibasys.grade SET name='$class[3]', teacher='$class[4]', point=".($class[5] === null ? 'null' : $class[5]).", pass=$class[6], credit=".$syllabus['data']['credit']." WHERE id='$class[0]' AND nendo='$class[1]' AND jikanwaricd='$class[2]';");
+			else
+				$r = maria_query("INSERT INTO chibasys.grade (id, nendo, jikanwariCd, name, teacher, point, pass, credit) VALUES ('$class[0]','$class[1]','$class[2]','$class[3]','$class[4]',".($class[5] === null ? 'null' : $class[5]).",$class[6],".$syllabus['data']['credit'].");");
+			if (!$r) $result = error_data(ERROR_SQL_FAILED);
+		}
+		return $result;
+	}
 
-			$result = maria_query($link, "SELECT term, time, credit, name, teacher, room FROM chibasys.syllabus_2019 WHERE jikanwariCd='$q[jikanwariCd]';");
-			if ($result && mysqli_num_rows($result) === 1) $subjectsData[] = mysqli_fetch_assoc($result);
+	/**
+	 * 特定の授業日の休講/補講/教室変更を取得
+	 *
+	 * @param array $query POSTデータ
+	 * @param $cookie クッキー
+	 * @param $referer 参照元URL
+	 * @return array 日付と教科一覧の連想配列
+	 */
+	function portal_subject_change_refresh(array $query, $cookie = null, $referer = null): array {
+		$userID = '113700091446153817952';
+		//CookieやURLをMySQLから取得
+		if (!$cookie) $cookie = temp_load('portal_cookie', $userID);
+		if (isset($cookie['error_code'])) return $cookie;
+		if (!$referer) $referer = temp_load('portal_subject_change_url', $userID);
+		if (isset($referer['error_code'])) return $referer;
+
+		//日付を用意
+		$datetime = new DateTime($query['date']);
+		$date = urlencode($query['date']);
+		$year = date_format($datetime, 'Y');
+		$month = date_format($datetime, 'n');
+		$day = date_format($datetime, 'j');
+		//cURLで休講/補講/教室変更を取得
+		$site = web($cookie, $referer, url_extract($referer).
+			"&dispType=list&dispData=chg&_eventId_search=+%E8%A1%A8+%E7%A4%BA+%E3%81%99+%E3%82%8B&startDay=$date&startDay_year=$year&startDay_month=$month&startDay_day=$day&endDay=$date&endDay_year=$year&endDay_month=$month&endDay_day=$day&_rishuchuFlg=1&kyokanCode=&shozokuCode=");
+		if (isset($site['error_code'])) return $site;
+		//セッション切れをチェック
+		if (!portal_session_check($site)) {
+			portal_cookie_create($userID);
+			return portal_subject_change_refresh($query, $cookie, portal_url_get('portal_subject_change_url', $cookie, $userID));
+		}
+
+		//PHPQueryのインスタンス生成
+		$tbody = phpQuery::newDocument(site['res'])->find('.normal');
+		$classes = [];
+		//trの数=教科数+1
+		$subjectCount = count($tbody->find('tr'));
+		for ($i = 0; $i < $subjectCount; $i++) {
+			$tr = $tbody->find("tr:eq($i)");
+			$class = [];
+			$dataCount = count($tr->find('td'));
+			//初めの行は省く(全てthなので)
+			if ($dataCount === 0) continue;
+			//trタグ内の一つ一つの改行やスペースを除去
+			foreach ([0,1] as $j)
+				$class[] = shape_line($tr->find("td:eq($j)")->text());
+			//データなしの場合、配列は空で終了
+			if ($class[0] === '該当するデータはありません') break;
+			//onclickを解析して詳細URLを入手
+			//return jumpInfo('&_eventId_refer=_eventId_refer&taishoymd=20190711&jigen=2&nendo=2019&jikanwariShozokucd=E1&jikanwaricd=E1P543001');
+			$refer = $tr->find('a')->attr('onclick');
+			$start = strpos($refer, "('") + 2;
+			$end = strpos($refer, "')");
+			$detailUrl = $site['url'].substr($refer, $start, $end - $start);
+			portal_subject_change_detail($cookie, $detailUrl, $class);
+			//教科一覧に追加
+			$classes[] = $class;
+		}
+
+		return [ 'date'=>$query['date'], 'classes'=>$classes, 'url'=>$site['url'] ];
+	}
+
+	/**
+	 * 授業変更の詳細を取得、配列に追加
+	 *
+	 * @param $cookie クッキー
+	 * @param string $url 詳細URL
+	 * @param array $class 教科情報の連想配列
+	 * @return void
+	 */
+	function portal_subject_change_detail($cookie, string $url, array &$class) {
+		//cURLで千葉大学シラバスの検索結果を取得
+		$site = web($cookie, '', '', $url);
+		if (isset($site['error_code'])) return $site;
+		//PHPQueryのインスタンス生成
+		$tbody = phpQuery::newDocument($site['res'])->find('.normal');
+		//trの数=データ数
+		$subjectCount = count($tbody->find('tr'));
+		for ($i = 0; $i < $subjectCount; $i++) {
+			$tr = $tbody->find("tr:eq($i)");
+			$class[] = shape_line($tr->find('td:eq(1)')->text());
 		}
 	}
-	return [ 'status'=>'success', 'subjects'=>$subjects, 'subjectsData'=>$subjectsData ];
-}
 
-const GRADE_NUM = [ '秀'=>4, '優'=>3, '良'=>2, '可'=>1, '不可'=>0, '合格'=>null, '不合格'=>null ];
-/**
- * 成績を取得
- *
- * @param mysqli $link MySQLのインスタンス
- * @param $curl cURLのインスタンス
- * @return array 成功したかどうか、教科一覧の連想配列
- */
-function portal_grade(mysqli $link, $curl) {
-	//UserIDを変数に
-	session_start();
-	if (isset($_SESSION['id']))
-		$userID = $_SESSION['id'];
-	session_write_close();
-	//未ログインならば終了
-	if (!isset($_SESSION['id']))
-		return [ 'status'=>'expired' ];
-	//ポータルパスワードが登録されていないときは終了
-	if (!isset($_SESSION['userdata']) || !isset($_SESSION['userdata']['studentID']) || !isset($_SESSION['userdata']['studentPass']))
-		return [ 'status'=>'portal_non_register' ];
-	
-	//セッションデータ利用を開始してURLやCookieが保管されているか確認、なければMySQLから取得
-	if (!setTempToSession($link, 'portal_cookie', $userID))
-		if (!portal_cookie_create($link, $curl, $userID))
-			return [ 'status'=>'portal_cannot_login' ];
-	if (!setTempToSession($link, 'portal_grade_url', $userID))
-		portal_url_get($link, $curl, 'portal_grade_url', true);
-	
-	//cURLで成績画面を取得
-	session_start();
-	curl_setopt_array($curl, [
-		CURLOPT_URL => 'https://cup.chiba-u.jp/campusweb/campussquare.do',
-		CURLOPT_REFERER => $_SESSION['user_portal_grade_url'],
-		CURLOPT_COOKIE => $_SESSION['user_portal_cookie'],
-		CURLOPT_POST => true,
-		CURLOPT_POSTFIELDS => '_eventId=display&'.url_extract($_SESSION['user_portal_grade_url']).'&spanType=0&dummy=',
-		CURLOPT_HEADER => false,
-		CURLOPT_FOLLOWLOCATION => true,
-		CURLOPT_RETURNTRANSFER => true,
-		CURLOPT_COOKIESESSION => true,
-		CURLOPT_CONNECTTIMEOUT => 0,
-		CURLOPT_TIMEOUT => 60,
-		CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4
-	]);
-	session_write_close();
-	//cURLを実行
-	$res = curl_exec($curl);
-	//各種情報を取得
-	$info = curl_getinfo($curl);
-	//セッション切れをチェック
-	if (!portal_session_check($res, $info)) {
-		if (!portal_cookie_create($link, $curl, $userID))
-			return [ 'status'=>'portal_cannot_login' ];
-		portal_url_get($link, $curl, 'portal_grade_url', true);
-		return portal_grade($link, $curl);
+	/**
+	 * みんなのキャンパスへログインしてセッション取得、MySQLに保存
+	 *
+	 * @return void
+	 */
+	function mincam_cookie_create() {
+		//cURLでログイン
+		$site = web('', '', '__event=ID01_001_001&service_id=p06&return_url=index.phtml&return_url_nikki='.
+			'https%3A%2F%2Fcampus.nikki.ne.jp%2F&pp_version=20170213&u=xperd00&p=q0d9gd3y&submit='.
+			'%A5%ED%A5%B0%A5%A4%A5%F3', 'https://grp03.id.rakuten.co.jp/rms/nid/vc', ERROR_MINCAM_DOWN);
+		if (isset($site['error_code'])) return $site;
+		//Cookieのみ抽出、"pitto"のみでOK
+		$c = [];
+		$cookieCount = substr_count($site['header'], 'Set-Cookie: pitto');//substr_count($header, 'Set-Cookie:');
+		$start = 0;
+		for ($i = 0; $i < $cookieCount; $i++) {
+			$start = strpos($site['header'], 'Set-Cookie: pitto', $start + 1) + 12;
+			$end = strpos($site['header'], ';', $start);
+			$c[] = substr($site['header'], $start, $end - $start);
+		}
+		$cookie = implode('; ', $c);
+		//MySQLに一時的に保存
+		$result =	maria_query("UPDATE chibasys.temp SET data='$cookie' WHERE name='mincam_cookie';");
+		if ($result) return $cookie;
+		else return error_data(ERROR_SQL_FAILED);
 	}
-	$result = true;
-	//PHPQueryのインスタンス生成
-	$tbody = phpQuery::newDocument($res)->find('table.normal tbody');
-	$subjects = [];
-	//trの数=教科数
-	$trCount = count($tbody->find('tr'));
-	for ($i = 0; $i < $trCount; $i++) {
-		$sub = [ $userID ];
-		$tr = $tbody->find("tr:eq($i)");
-		//「履修成績データはありません」の時はスルー
-		if (count($tr->find('td')) <= 1) continue;
-		foreach ([1,3,4,5] as $j)
-			$sub[] = shape_line($tr->find("td:eq($j)")->text());
-		$sub[] = GRADE_NUM[shape_line($tr->find('td:eq(6)')->text())]; //秀/優/良/可/不可/合格/不合格
-		$sub[] = (shape_line($tr->find('td:eq(7)')->text()) === '合' ? 1 : 0); //合/否
-		$subjects[] = [ 'code'=>"$sub[1]-$sub[2]", 'grade'=>$sub[5], 'pass'=>($sub[6] === 1) ];
+
+	/**
+	 * みんなのキャンパスからcURLでデータを取得
+	 *
+	 * @param int $page ページ番号
+	 * @param $cookie クッキー
+	 * @return array 投稿別になった「みんなのキャンパス」データの配列
+	 */
+	function mincam_data_get(int $page, $cookie = null): array {
+		//クッキーがセッションにあるかチェック
+		if (!$cookie) $cookie = temp_load('mincam_cookie', 'general');
+		if (isset($cookie['error_code'])) return $cookie;
+
+		//cURLでpageの投稿を取得;
+		$site = web($cookie, '', '', "https://campus.nikki.ne.jp/?module=lesson&action=index&univ=".
+			"%C0%E9%CD%D5%C2%E7%B3%D8&lname=&fname=&lesson_name=&faculty1=&id=&order=1&page=$page",
+			ERROR_MINCAM_DOWN, false);
+		if (isset($site['error_code'])) return $site;
+		//文字コードをEUC-JPからUTF-8に
+		$res = str_replace('euc-jp', 'utf-8', mb_convert_encoding($site['res'], 'UTF-8', 'eucjp-win'));
+		//PHPQueryのインスタンス生成
+		$doc = phpQuery::newDocument($res);
+
+		//ログイン済みかどうかをチェック
+		if (count($doc->find('.login')) > 0)
+			return mincam_data_get($page, mincam_cookie_create());
+
+		$data = [];
+		//.listの数=投稿数
+		$count = count($doc->find('#apartValue .list'));
+		//投稿ごとにデータを整形、dataに追加
+		for($i = 0; $i < $count; $i++) {
+			$section = $doc->find('#apartValue .list:eq('.$i.')');
+			$title = $section->find('.lecture')->text();
+			$university = $section->find('.college span:eq(0)')->text();
+			$faculty = $section->find('.college span:eq(1)')->text();
+			$department = $section->find('.college span:eq(2)')->text();
+			/**/$teacherUrl = mb_convert_encoding(urldecode($section->find('.college span:eq(3) a')->attr('href')), 'UTF-8', 'EUC-JP');
+			/**/$teacherQuery = mb_substr($teacherUrl, mb_strpos($teacherUrl, '?') + 1);
+			/**/$teacherQueryData = explode('&', $teacherQuery);
+			foreach ($teacherQueryData as $d) {
+				if (mb_strpos($d, 'lname') !== false) $lastName = mb_substr($d, mb_strpos($d, '=') + 1);
+				else if (mb_strpos($d, 'fname') !== false) $firstName = mb_substr($d, mb_strpos($d, '=') + 1);
+			}
+			$id = intval(str_replace(['[', ']'], '', $section->find('.college span:eq(3) font')->text()));
+			$richPoint = intval(mb_substr($section->find('.value img:eq(0)')->attr('alt'), 0, 1));
+			$easyPoint = intval(mb_substr($section->find('.value img:eq(1)')->attr('alt'), 0, 1));
+			/**/$credit = explode(' ', $section->find('.subject span')->text());
+			/**/$creditPos = mb_strpos($credit[2], '(');
+			$creditUniversity = $credit[1];
+			$creditName = mb_substr($credit[2], 0, $creditPos);
+			$postDate = '20'.mb_substr($credit[2], $creditPos + 1, mb_strpos($credit[2], ')') - $creditPos - 1);
+			$attend = $section->find('.apartContents .attend dd')->text();
+			$textbook = $section->find('.apartContents .book dd')->text();
+			$middleExam = mb_substr($section->find('.apartContents .apartBox .test dd p:eq(0)')->text(), 6);
+			$finalExam = mb_substr($section->find('.apartContents .apartBox .test dd p:eq(1)')->text(), 6);
+			$bringIn = mb_substr($section->find('.apartContents .apartBox .test dd p:eq(2)')->text(), 5);
+			$message = $section->find('.apartContents .apartBox .message span')->html();
+			$data[] = [ 'title'=>$title, 'university'=>$university, 'faculty'=>$faculty, 'department'=>$department,
+				'lastName'=>$lastName, 'firstName'=>$firstName, 'id'=>$id, 'richPoint'=>$richPoint, 'easyPoint'=>$easyPoint,
+				'creditUniversity'=>$creditUniversity, 'creditName'=>$creditName, 'postDate'=>$postDate, 'attend'=>$attend,
+				'textbook'=>$textbook, 'middleExam'=>$middleExam, 'finalExam'=>$finalExam, 'bringIn'=>$bringIn, 'message'=>$message ];
+		}
+		return $data;
+	}
+
+	/**
+	 * 投稿ごとに配列になったデータを読み、MySQLに挿入
+	 *
+	 * @param array $data 投稿別になった「みんなのキャンパス」データの配列
+	 * @return bool SQLが成功したかどうか
+	 */
+	function mincam_data_save(array $data) {
+		global $maria;
+		$query = '';
+		foreach ($data as $d)
+			$query += "INSERT IGNORE INTO chibasys.mincam VALUES ('$d[title]', '$d[university]', '$d[faculty]', '$d[department]', ".
+				"'$d[lastName]', '$d[firstName]', $d[id], $d[richPoint], $d[easyPoint], '$d[creditUniversity]', '$d[creditName]', ".
+				"'$d[postDate]', '$d[attend]', '$d[textbook]', '$d[middleExam]', '$d[finalExam]', '$d[bringIn]', '".mysqli_real_escape_string($maria, $d['message'])."');";
+		//成功か失敗かの真偽値を返す
+		return maria_query($query);
+	}
+
+	/**
+	 * みんなのキャンパスのMySQL(mincam)を検索
+	 *
+	 * @param array $query POSTデータ
+	 * @return array みんなのキャンパスのデータ、配列化したクエリの連想配列
+	 */
+	function mincam_search(array $query): array {
+		//クエリをパースして連想配列に
+		parse_str(urldecode($query['query']), $q);
+		//WHEREの条件となる配列
+		$where = [];
+		//titleはスペース区切りでAND検索
+		if (isset($q['title']) && $q['title'] !== '') {
+			$title = explode(' ', $q['title']);
+			foreach ($title as $t)
+				$where[] = "title LIKE '%$t%'";
+		}
+		//teacherは教師名がカンマ区切り、姓名がスペース区切りを想定
+		if (isset($q['teacher']) && $q['teacher'] !== '') {
+			$teacher = explode(',', $q['teacher'])[0];
+			//teacher_only_lastがtrueの時は姓のみ使用し、マッチ率を上げる
+			if (isset($q['teacher_only_last']) && $q['teacher_only_last'] === 'true')
+				$teacher = explode(' ', $teacher)[0];
+			//スペースがあるとき、姓名と考えて完全一致で検索
+			if (mb_strpos($teacher, ' ') !== false) {
+				$n = explode(' ', $teacher);
+				$where[] = "lastName = '$n[0]'";
+				$where[] = "firstName = '$n[1]'";
+			}
+			//スペースがないときは姓か名のどちらかに完全一致で検索
+			else
+				$where[] = "(lastName = '$teacher' OR firstName = '$teacher')";
+		}
+		//messageはスペース区切りでAND検索
+		if (isset($q['message']) && $q['message'] !== '') {
+			$message = explode(' ', $q['message']);
+			foreach ($message as $m)
+				$where[] = "message LIKE '%$m%'";
+		}
+		//SQL実行
+		$msc = microtime(true);
+		$result = maria_query('SELECT * FROM chibasys.mincam WHERE '.implode(' AND ', $where).' ORDER BY id DESC;');
+		$msc = microtime(true) - $msc;
+		$classes = [];
+		//データベースをそのまま配列に格納
+		if ($result) while ($row = mysqli_fetch_assoc($result)) $classes[] = $row;
 		
-		$row = maria_query($link, "SELECT * FROM chibasys.grade WHERE id='$sub[0]' AND nendo='$sub[1]' AND jikanwaricd='$sub[2]';");
-		if ($row && mysqli_fetch_assoc($row))
-			$r = maria_query($link, "UPDATE chibasys.grade SET name='$sub[3]', teacher='$sub[4]', point=".($sub[5] === null ? 'null' : $sub[5]).", pass=$sub[6] WHERE id='$sub[0]' AND nendo='$sub[1]' AND jikanwaricd='$sub[2]';");
-		else
-			$r = maria_query($link, "INSERT INTO chibasys.grade (id, nendo, jikanwariCd, name, teacher, point, pass) VALUES ('$sub[0]','$sub[1]','$sub[2]','$sub[3]','$sub[4]',".($sub[5] === null ? 'null' : $sub[5]).",$sub[6]);");
-		if (!$r) $result = false;
-	}
-	return [ 'status'=>$result ? 'success' : 'failed', 'subjects'=>$subjects ];
-}
-
-/**
- * 特定の授業日の休講/補講/教室変更を取得
- *
- * @param mysqli $link MySQLのインスタンス
- * @param $curl cURLのインスタンス
- * @param array $query POSTデータ
- * @return array 成功したかどうか、教科一覧の連想配列
- */
-function getSubjectChange(mysqli $link, $curl, array $query): array {
-	//セッションデータ利用を開始してURLやCookieが保管されているか確認、なければMySQLから取得
-	setTempToSession($link, 'portal_cookie');
-	setTempToSession($link, 'subject_change_url');
-	//日付を用意
-	$datetime = new DateTime($query['date']);
-	$date = urlencode($query['date']);
-	$year = date_format($datetime, 'Y');
-	$month = date_format($datetime, 'n');
-	$day = date_format($datetime, 'j');
-	//cURLで千葉大学シラバスの検索結果を取得
-	session_start();
-	curl_setopt_array($curl, [
-		CURLOPT_URL => 'https://cup.chiba-u.jp/campusweb/campussquare.do',
-		CURLOPT_REFERER => $_SESSION['subject_change_url'],
-		CURLOPT_COOKIE => $_SESSION['portal_cookie'],
-		CURLOPT_POST => true,
-		CURLOPT_POSTFIELDS => url_extract($_SESSION['subject_change_url']).
-			"&dispType=list&dispData=chg&_eventId_search=+%E8%A1%A8+%E7%A4%BA+%E3%81%99+%E3%82%8B&startDay=$date&startDay_year=$year&startDay_month=$month&startDay_day=$day&endDay=$date&endDay_year=$year&endDay_month=$month&endDay_day=$day&_rishuchuFlg=1&kyokanCode=&shozokuCode=",
-		CURLOPT_HEADER => false,
-		CURLOPT_FOLLOWLOCATION => true,
-		CURLOPT_RETURNTRANSFER => true,
-		CURLOPT_COOKIESESSION => true,
-		CURLOPT_CONNECTTIMEOUT => 0,
-		CURLOPT_TIMEOUT => 60,
-		CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4
-	]);
-	session_write_close();
-	//cURLを実行
-	$res = curl_exec($curl);
-	//各種情報を取得
-	$info = curl_getinfo($curl);
-	//セッション切れをチェック
-	if (!portal_session_check($res, $info)) {
-		portal_cookie_create($link, $curl);
-		portal_url_get($link, $curl, 'subject_change_url');
-		return getSubjectChange($link, $curl, $query);
-	}
-	//PHPQueryのインスタンス生成
-	$tbody = phpQuery::newDocument($res)->find('.normal');
-	$subjects = [];
-	//trの数=教科数+1
-	$subjectCount = count($tbody->find('tr'));
-	for ($i = 0; $i < $subjectCount; $i++) {
-		$tr = $tbody->find("tr:eq($i)");
-		$sub = [];
-		$dataCount = count($tr->find('td'));
-		//初めの行は省く(全てthなので)
-		if ($dataCount === 0) continue;
-		//trタグ内の一つ一つの改行やスペースを除去
-		foreach ([0,1] as $j)
-			$sub[] = shape_line($tr->find("td:eq($j)")->text());
-		//データなしの場合、配列は空で終了
-		if ($sub[0] === '該当するデータはありません') break;
-		//onclickを解析して詳細URLを入手
-		//return jumpInfo('&_eventId_refer=_eventId_refer&taishoymd=20190711&jigen=2&nendo=2019&jikanwariShozokucd=E1&jikanwaricd=E1P543001');
-		$refer = $tr->find('a')->attr('onclick');
-		$start = strpos($refer, "('") + 2;
-		$end = strpos($refer, "')");
-		$detailUrl = $info['url'].substr($refer, $start, $end - $start);
-		getSubjectChangeDetail($curl, $detailUrl, $sub);
-		//教科一覧に追加
-		$subjects[] = $sub;
+		return [ 'classes'=>$classes, 'num'=>mysqli_num_rows($result), 'time'=>$msc ];
 	}
 
-	return [ 'status'=>'success', 'subjects'=>$subjects, 'url'=>$info['url'] ];
-}
+	/**
+	 * シラバスに付随するメモデータをMySQLから取得
+	 *
+	 * @param ?string $userID (Googleの)ユーザーID
+	 * @param array $query POSTデータ
+	 * @return array テキスト、最終更新日の連想配列
+	 */
+	function memo_get(?string $userID, array $query): array {
+		//未ログインならば終了
+		if (!$userID) return error_data(ERROR_NO_LOGIN);
+		//シラバスコードを分解
+		$code = explode('-', $query['code']);
+		if (count($code) === 4) $code[1] = $code[2];
+		//メモを取得
+		$result = maria_query("SELECT nendo, jikanwaricd, text, lastUpdated FROM chibasys.memo WHERE id='$userID' and nendo='$code[0]' and jikanwaricd='$code[1]';");
+		if (!$result) return error_data(ERROR_SQL_FAILED);
+		if (mysqli_num_rows($result) === 1) $data = mysqli_fetch_assoc($result);
+		else $data = [ 'nendo'=>$code[0], 'jikanwaricd'=>$code[1], 'text'=>'', 'lastUpdated'=>null ];
 
-function getSubjectChangeDetail($curl, string $url, array &$sub) {
-	//cURLで千葉大学シラバスの検索結果を取得
-	curl_setopt_array($curl, [
-		CURLOPT_URL => $url,
-		CURLOPT_REFERER => '',
-		CURLOPT_COOKIE => $_SESSION['portal_cookie'],
-		CURLOPT_POST => false,
-		CURLOPT_POSTFIELDS => '',
-		CURLOPT_HEADER => false,
-		CURLOPT_FOLLOWLOCATION => true,
-		CURLOPT_RETURNTRANSFER => true,
-		CURLOPT_COOKIESESSION => true,
-		CURLOPT_CONNECTTIMEOUT => 0,
-		CURLOPT_TIMEOUT => 60,
-		CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4
-	]);
-	//cURLを実行
-	$res = curl_exec($curl);
-	//PHPQueryのインスタンス生成
-	$tbody = phpQuery::newDocument($res)->find('.normal');
-	//trの数=データ数
-	$subjectCount = count($tbody->find('tr'));
-	for ($i = 0; $i < $subjectCount; $i++) {
-		$tr = $tbody->find("tr:eq($i)");
-		$sub[] = shape_line($tr->find('td:eq(1)')->text());
+		return $data;
 	}
-}
 
+	/**
+	 * シラバスに付随するメモデータをMySQLに保存
+	 *
+	 * @param ?string $userID (Googleの)ユーザーID
+	 * @param array $query POSTデータ
+	 * @return array memo_get()の結果
+	 */
+	function memo_save(?string $userID, array $query): array {
+		//未ログインならば終了
+		if (!$userID) return error_data(ERROR_NO_LOGIN);
+		//シラバスコードを分解
+		$code = explode('-', $query['code']);
+		if (count($code) === 4) $code[1] = $code[2];
 
-
-/**
- * みんなのキャンパスへログインしてセッション取得、MySQLに保存
- *
- * @param mysqli $link MySQLのインスタンス
- * @param $curl cURLのインスタンス
- * @return void
- */
-function createMincamSession(mysqli $link, $curl) {
-	//cURLでログイン
-	curl_setopt_array($curl, [
-		CURLOPT_URL => 'https://grp03.id.rakuten.co.jp/rms/nid/vc',
-		CURLOPT_REFERER => '',
-		CURLOPT_COOKIE => '',
-		CURLOPT_POST => true,
-		CURLOPT_POSTFIELDS => '__event=ID01_001_001&service_id=p06&return_url=index.phtml&return_url_nikki=https%3A%2F%2Fcampus.nikki.ne.jp%2F&pp_version=20170213&u=xperd00&p=q0d9gd3y&submit=%A5%ED%A5%B0%A5%A4%A5%F3',
-		CURLOPT_HEADER => true,
-		CURLOPT_FOLLOWLOCATION => true,
-		CURLOPT_RETURNTRANSFER => true,
-		CURLOPT_COOKIESESSION => true,
-		CURLOPT_TIMEOUT => 5,
-    CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4]);
-	$res = curl_exec($curl);
-	$info = curl_getinfo($curl);
-	//Headerを取得
-  $header = substr($res, 0, $info['header_size']);
-  //Cookieのみ抽出、"pitto"のみでOK
-	$c = [];
-	$cookieCount = substr_count($header, 'Set-Cookie: pitto');//substr_count($header, 'Set-Cookie:');
-	$start = 0;
-	for ($i = 0; $i < $cookieCount; $i++) {
-		$start = strpos($header, 'Set-Cookie: pitto', $start + 1) + 12;
-		$end = strpos($header, ';', $start);
-		$c[] = substr($header, $start, $end - $start);
-	}
-	$cookie = implode('; ', $c);
-	//MySQLに一時的に保存
-	maria_query($link, "UPDATE chibasys.temp SET data='$cookie' WHERE name='mincam_cookie';");
-	//セッションに保管
-	session_start();
-  $_SESSION['mincam_cookie'] = $cookie;
-  session_write_close();
-}
-
-/**
- * みんなのキャンパスからcURLでデータを取得
- *
- * @param mysqli $link MySQLのインスタンス
- * @param $curl cURLのインスタンス
- * @param int $page ページ番号
- * @return array 投稿別になった「みんなのキャンパス」データの配列
- */
-function getMincamData(mysqli $link, $curl, int $page): array {
-	//クッキーがセッションにあるかチェック
-  setTempToSession($link, 'mincam_cookie');
-	//セッションデータ利用開始
-	session_start();
-	//cURLでpageの投稿を取得
-	curl_setopt_array($curl, [
-		CURLOPT_URL => 'https://campus.nikki.ne.jp/?module=lesson&action=index&univ=%C0%E9%CD%D5%C2%E7%B3%D8&lname=&fname=&lesson_name=&faculty1=&id=&order=1&page='.$page,
-		CURLOPT_REFERER => '',
-		CURLOPT_COOKIE => $_SESSION['mincam_cookie'],
-		CURLOPT_POST => false,
-		CURLOPT_POSTFIELDS => '',
-		CURLOPT_HEADER => false,
-		CURLOPT_FOLLOWLOCATION => false,
-		CURLOPT_RETURNTRANSFER => true,
-		CURLOPT_COOKIESESSION => true,
-		CURLOPT_TIMEOUT => 5,
-		CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4]);
-	//セッションデータ利用終了
-	session_write_close();
-	//cURL実行
-	$rawRes = curl_exec($curl);
-	//文字コードをEUC-JPからUTF-8に
-  $res = str_replace('euc-jp', 'utf-8', mb_convert_encoding($rawRes, 'UTF-8', 'eucjp-win'));
-	//PHPQueryのインスタンス生成
-	$doc = phpQuery::newDocument($res);
-
-  //ログイン済みかどうかをチェック
-	if (count($doc->find('.login')) > 0) {
-    createMincamSession($link, $curl);
-    return getMincamData($link, $curl, $page);
-  }
-
-	$data = [];
-	//.listの数=投稿数
-	$count = count($doc->find('#apartValue .list'));
-	//投稿ごとにデータを整形、dataに追加
-  for($i = 0; $i < $count; $i++) {
-    $section = $doc->find('#apartValue .list:eq('.$i.')');
-    $title = $section->find('.lecture')->text();
-    $university = $section->find('.college span:eq(0)')->text();
-    $faculty = $section->find('.college span:eq(1)')->text();
-    $department = $section->find('.college span:eq(2)')->text();
-    /**/$teacherUrl = mb_convert_encoding(urldecode($section->find('.college span:eq(3) a')->attr('href')), 'UTF-8', 'EUC-JP');
-    /**/$teacherQuery = mb_substr($teacherUrl, mb_strpos($teacherUrl, '?') + 1);
-    /**/$teacherQueryData = explode('&', $teacherQuery);
-    foreach ($teacherQueryData as $d) {
-      if (mb_strpos($d, 'lname') !== false) $lastName = mb_substr($d, mb_strpos($d, '=') + 1);
-      else if (mb_strpos($d, 'fname') !== false) $firstName = mb_substr($d, mb_strpos($d, '=') + 1);
-    }
-    $id = intval(str_replace(['[', ']'], '', $section->find('.college span:eq(3) font')->text()));
-    $richPoint = intval(mb_substr($section->find('.value img:eq(0)')->attr('alt'), 0, 1));
-    $easyPoint = intval(mb_substr($section->find('.value img:eq(1)')->attr('alt'), 0, 1));
-    /**/$credit = explode(' ', $section->find('.subject span')->text());
-    /**/$creditPos = mb_strpos($credit[2], '(');
-    $creditUniversity = $credit[1];
-    $creditName = mb_substr($credit[2], 0, $creditPos);
-    $postDate = '20'.mb_substr($credit[2], $creditPos + 1, mb_strpos($credit[2], ')') - $creditPos - 1);
-    $attend = $section->find('.apartContents .attend dd')->text();
-    $textbook = $section->find('.apartContents .book dd')->text();
-    $middleExam = mb_substr($section->find('.apartContents .apartBox .test dd p:eq(0)')->text(), 6);
-    $finalExam = mb_substr($section->find('.apartContents .apartBox .test dd p:eq(1)')->text(), 6);
-    $bringIn = mb_substr($section->find('.apartContents .apartBox .test dd p:eq(2)')->text(), 5);
-    $message = $section->find('.apartContents .apartBox .message span')->html();
-    $data[] = [ 'title'=>$title, 'university'=>$university, 'faculty'=>$faculty, 'department'=>$department,
-      'lastName'=>$lastName, 'firstName'=>$firstName, 'id'=>$id, 'richPoint'=>$richPoint, 'easyPoint'=>$easyPoint,
-      'creditUniversity'=>$creditUniversity, 'creditName'=>$creditName, 'postDate'=>$postDate, 'attend'=>$attend,
-      'textbook'=>$textbook, 'middleExam'=>$middleExam, 'finalExam'=>$finalExam, 'bringIn'=>$bringIn, 'message'=>$message ];
-  }
-  return $data;
-}
-
-/**
- * 投稿ごとに配列になったデータを読み、MySQLに挿入
- *
- * @param mysqli $link MySQLのインスタンス
- * @param array $data 投稿別になった「みんなのキャンパス」データの配列
- * @return boolean SQLが成功したかどうか
- */
-function addMincamData(mysqli $link, array $data) {
-	$query = '';
-	foreach ($data as $d)
-    $query += "INSERT IGNORE INTO chibasys.mincam VALUES ('$d[title]', '$d[university]', '$d[faculty]', '$d[department]', ".
-      "'$d[lastName]', '$d[firstName]', $d[id], $d[richPoint], $d[easyPoint], '$d[creditUniversity]', '$d[creditName]', ".
-	    "'$d[postDate]', '$d[attend]', '$d[textbook]', '$d[middleExam]', '$d[finalExam]', '$d[bringIn]', '".mysqli_real_escape_string($link, $d['message'])."');";
-	//成功か失敗かの真偽値を返す
-	return maria_query($link, $query);
-}
-
-/**
- * みんなのキャンパスのMySQL(mincam)を検索
- *
- * @param mysqli $link MySQLのインスタンス
- * @param array $query POSTデータ
- * @return array 成功したかどうか、みんなのキャンパスのデータ、配列化したクエリの連想配列
- */
-function mincam(mysqli $link, array $query): array {
-	//クエリをパースして連想配列に
-	parse_str(urldecode($query['query']), $q);
-	//WHEREの条件となる配列
-	$where = [];
-	//titleはスペース区切りでAND検索
-  if (isset($q['title']) && $q['title'] !== '') {
-    $title = explode(' ', $q['title']);
-    foreach ($title as $t)
-      $where[] = "title LIKE '%$t%'";
-	}
-	//teacherは教師名がカンマ区切り、姓名がスペース区切りを想定
-  if (isset($q['teacher']) && $q['teacher'] !== '') {
-		$teacher = explode(',', $q['teacher'])[0];
-		//teacher_only_lastがtrueの時は姓のみ使用し、マッチ率を上げる
-		if (isset($q['teacher_only_last']) && $q['teacher_only_last'] === 'true')
-			$teacher = explode(' ', $teacher)[0];
-		//スペースがあるとき、姓名と考えて完全一致で検索
-		if (mb_strpos($teacher, ' ') !== false) {
-      $n = explode(' ', $teacher);
-      $where[] = "lastName = '$n[0]'";
-      $where[] = "firstName = '$n[1]'";
-		}
-		//スペースがないときは姓か名のどちらかに完全一致で検索
-    else
-      $where[] = "(lastName = '$teacher' OR firstName = '$teacher')";
-	}
-	//messageはスペース区切りでAND検索
-  if (isset($q['message']) && $q['message'] !== '') {
-		$message = explode(' ', $q['message']);
-		foreach ($message as $m)
-			$where[] = "message LIKE '%$m%'";
-	}
-	//SQL実行
-  $result = maria_query($link, 'SELECT * FROM chibasys.mincam WHERE '.implode(' AND ', $where).' ORDER BY id DESC;');
-	$subjects = [];
-	//データベースをそのまま配列に格納
-	if ($result) while ($row = mysqli_fetch_assoc($result)) $subjects[] = $row;
-	
-	return [ 'status'=> $result ? 'success' : 'failed', 'subjects'=>$subjects, 'query'=>$q ];
-}
-
-/**
- * シラバスに付随するメモデータをMySQLから取得
- *
- * @param mysqli $link MySQLのインスタンス
- * @param array $query POSTデータ
- * @return array 成功したかどうか、テキスト、最終更新日の連想配列
- */
-function memoGet(mysqli $link, array $query): array {
-	//シラバスコードを分解
-	$data = explode('-', $query['code']);
-	if (count($data) === 4) $data[1] = $data[2];
-	//あらかじめ素のデータを用意
-  $result = [ 'text'=>'', 'lastUpdated'=>null ];
-	//セッションデータ利用開始
-	session_start();
-	//ログイン済みの時はメモを取得
-	if (isset($_SESSION['id'])) {
-		$memo = mysqli_fetch_assoc(maria_query($link, "SELECT text, lastUpdated FROM chibasys.memo WHERE id='$_SESSION[id]' and nendo='$data[0]' and jikanwaricd='$data[1]';"));
-    if ($memo) $result = $memo;
-	}
-	//セッションデータ利用終了
-	session_write_close();
-	//失敗することがないため、常に成功を返す
-	$result['status'] = 'success';
-	return $result;
-}
-
-/**
- * シラバスに付随するメモデータをMySQLに保存
- *
- * @param mysqli $link MySQLのインスタンス
- * @param array $query POSTデータ
- * @return array 成功したかどうかの連想配列
- */
-function memoSave(mysqli $link, array $query): array {
-	//シラバスコードを分解
-	$data = explode('-', $query['code']);
-	if (count($data) === 4) $data[1] = $data[2];
-	//あらかじめ$resultはfalseで定義しておく
-	$result = false;
-	//セッションデータ利用開始
-	session_start();
-	//ログイン済みの時
-	if (isset($_SESSION['id'])) {
 		//テキストがない場合は、レコードを消去
-    if ($query['text'] === '')
-      $result = maria_query($link, "DELETE FROM chibasys.memo WHERE id='$_SESSION[id]' and nendo='$data[0]' and jikanwaricd='$data[1]';");
+		if ($query['text'] === '') {
+			$result = maria_query("DELETE FROM chibasys.memo WHERE id='$userID' AND nendo='$code[0]' AND jikanwaricd='$code[1]';");
+			if (!$result) return error_data(ERROR_SQL_FAILED);
+		}
 		//テキストがある場合はまずSELECTしてレコードの存在をチェックし、INSERTかUPDATEかを使い分ける
 		else {
-      $r = mysqli_fetch_assoc(maria_query($link, "SELECT text, lastUpdated FROM chibasys.memo WHERE id='$_SESSION[id]' and nendo='$data[0]' and jikanwaricd='$data[1]';"));
-      if ($r) $result = maria_query($link, "UPDATE chibasys.memo SET text='".mysqli_real_escape_string($link, $query['text'])."', lastUpdated=NOW() WHERE id='$_SESSION[id]' and nendo='$data[0]' and jikanwaricd='$data[1]';");
-      else $result = maria_query($link, "INSERT INTO chibasys.memo (id, nendo, jikanwaricd, text, lastUpdated) VALUES ('$_SESSION[id]', '$data[0]', '$data[1]', '".mysqli_real_escape_string($link, $query['text'])."', NOW());");
-    }
+			global $maria;
+			$result = maria_query("SELECT text, lastUpdated FROM chibasys.memo WHERE id='$userID' AND nendo='$code[0]' AND jikanwaricd='$code[1]';");
+			if (!$result) return error_data(ERROR_SQL_FAILED);
+			if (mysqli_num_rows($result) === 1)
+				$result2 = maria_query("UPDATE chibasys.memo SET text='".mysqli_real_escape_string($maria, $query['text'])."', lastUpdated=NOW() WHERE id='$userID' AND nendo='$code[0]' AND jikanwaricd='$code[1]';");
+			else
+				$result2 = maria_query("INSERT INTO chibasys.memo (id, nendo, jikanwaricd, text, lastUpdated) VALUES ('$userID', '$code[0]', '$code[1]', '".mysqli_real_escape_string($maria, $query['text'])."', NOW());");
+			if (!$result2) return error_data(ERROR_SQL_FAILED);
+		}
+		return [ 'result'=>true ];
 	}
-	//セッションデータ利用終了
-	session_write_close();
-	return [ 'status'=>$result ? 'success' : 'failed' ];
-}
 
-/**
- * シラバスに付随するコメントをMySQLから取得
- *
- * @param mysqli $link MySQLのインスタンス
- * @param array $query POSTデータ
- * @return array 成功したかどうか、コメントデータ、次のインデックスの連想配列
- */
-function commentGet(mysqli $link, array $query): array {
-	//シラバスコードを分解
-	$data = explode('-', $query['code']);
-	if (count($data) === 4) $data[1] = $data[2];
-	//標準の取得数は30
-	$amount = 30;
-	//reloadがtrueのときは再取得
-	if ($query['reload'] === 'true') {
-		//数は今まで読み込んだ数全て
-		$amount = $query['index'] + 1;
-		//始まりのインデックスは初めの0に
+	/**
+	 * シラバスに付随するコメントをMySQLから取得
+	 *
+	 * @param array $query POSTデータ
+	 * @return array コメントデータ、次のインデックスの連想配列
+	 */
+	function comment_get(array $query): array {
+		//シラバスコードを分解
+		$code = explode('-', $query['code']);
+		if (count($code) === 4) $code[1] = $code[2];
+		//標準の取得数は30
+		$amount = 30;
+		//うまく動かないので常に上から
 		$query['index'] = 0;
-	}
-	//前年度を取得するかどうかで挙動を変える(未実装)
-	if ($query['all_nendo'] === 'true')
-		$result = maria_query($link, "SELECT num, name, text, datetime, nendo FROM chibasys.comment WHERE jikanwaricd='$data[1]' ORDER BY datetime DESC LIMIT $amount OFFSET $query[index];");
-	else
-		$result = maria_query($link, "SELECT num, name, text, datetime FROM chibasys.comment WHERE nendo=$data[0] AND jikanwaricd='$data[1]' ORDER BY datetime DESC LIMIT $amount OFFSET $query[index];");
-	$comments = [];
-	//正しくクエリが実行されたとき
-	if ($result)
+		/*//reloadがtrueのときは再取得
+		if ($query['reload'] === 'true') {
+			//数は今まで読み込んだ数全て
+			$amount = $query['index'] + 1;
+			//始まりのインデックスは初めの0に
+			$query['index'] = 0;
+		}*/
+
+		//全年度を取得するかどうかで挙動を変える(未実装)
+		//if ($query['all_nendo'] === 'true')
+			//$result = maria_query("SELECT num, name, text, datetime, nendo FROM chibasys.comment WHERE jikanwaricd='$code[1]' ORDER BY datetime DESC LIMIT $amount OFFSET $query[index];");
+		//else
+			$result = maria_query("SELECT num, name, text, datetime FROM chibasys.comment WHERE nendo=$code[0] AND jikanwaricd='$code[1]' ORDER BY datetime DESC LIMIT $amount OFFSET $query[index];");
+		if (!$result) return error_data(ERROR_SQL_FAILED);
+		$comments = [];
 		while ($row = mysqli_fetch_assoc($result)) {
 			$date = strtotime($row['datetime']);
 			//日時は2000/05/20(土) 09:27:00の形式に
@@ -1537,450 +1604,604 @@ function commentGet(mysqli $link, array $query): array {
 			//連想配列として追加
 			$comments[] = $row;
 		}
-	return [ 'status'=>$result ? 'success' : 'failed', 'comment'=>$comments, 'index'=>($query['index'] + count($comments)) ];
-}
+		return [ 'comment'=>$comments, 'index'=>($query['index'] + count($comments)) ];
+	}
 
-/**
- * シラバスに付随するコメントを投稿、MySQLに保存
- *
- * @param mysqli $link MySQLのインスタンス
- * @param array $query POSTデータ
- * @return array commentGet()でコメント一覧を再読み込みしたデータ
- */
-function commentPost(mysqli $link, array $query) : array {
-	//シラバスコードを分解
-	$data = explode('-', $query['code']);
-	if (count($data) === 4) $data[1] = $data[2];
-	//コメントの最大番号を取得し、今回の番号を決める
-	$result = maria_query($link, "SELECT MAX(num) FROM chibasys.comment WHERE nendo=$data[0] AND jikanwaricd='$data[2]';");
-	//コメントが既にあったときはその最大値に+1
-	if ($result) $num = intval(mysqli_fetch_assoc($result)['MAX(num)']) + 1;
-	//コメントがまだないときは1
-	else $num = 1;
-	//セッションデータ利用開始
-	session_start();
-	//ログイン済みの時、コメントを投稿
-	if (isset($_SESSION['id']))
-    maria_query($link, "INSERT INTO chibasys.comment (id, num, name, text, datetime, ip, nendo, jikanwaricd) VALUES ('$_SESSION[id]', $num, '".(trim($query['name']) === '' ? '名無しの千葉大生' : trim($query['name']))."', '".
-			mysqli_real_escape_string($link, $query['text'])."', NOW(), '$_SERVER[REMOTE_ADDR]', $data[0], '$data[1]');");
-	//セッションデータ利用終了
-	session_write_close();
-	//commentGetを実行し、コメント一覧を再読み込み
-	return commentGet($link, $query);
-}
+	/**
+	 * シラバスに付随するコメントを投稿、MySQLに保存
+	 *
+	 * @param ?string $userID (Googleの)ユーザーID
+	 * @param array $query POSTデータ
+	 * @return array comment_get()の結果
+	 */
+	function comment_post(?string $userID, array $query): array {
+		//未ログインならば終了
+		if (!$userID) return error_data(ERROR_NO_LOGIN);
+		//シラバスコードを分解
+		$code = explode('-', $query['code']);
+		if (count($code) === 4) $code[1] = $code[2];
+		//コメントの最大番号を取得し、今回の番号を決める
+		$result = maria_query("SELECT MAX(num) FROM chibasys.comment WHERE nendo=$code[0] AND jikanwaricd='$code[1]';");
+		if (!$result) error_data(ERROR_SQL_FAILED);
+		if (mysqli_num_rows($result) === 1) $num = intval(mysqli_fetch_assoc($result)['MAX(num)']) + 1;
+		else $num = 1;
 
-/**
- * お気に入りのステータスを変更、MySQLに変更適用
- *
- * @param mysqli $link MySQLのインスタンス
- * @param array $query POSTデータ
- * @return array getFavoriteById()でお気に入り一覧を再読み込みしたデータ
- */
-function changeFavorite(mysqli $link, array $query) : array {
-	//シラバスコードを分解
-	$data = explode('-', $query['code']);
-	if (count($data) === 4) $data[1] = $data[2];
-	//あらかじめ$resultはfalseで定義しておく
-	$result = false;
-	//セッションデータ利用開始
-	session_start();
-	//ログイン済みの時
-	if (isset($_SESSION['id'])) {
-		//追加の時はINSERT文を実行
-		if ($query['bool'] === 'true')
-			$result = maria_query($link, "INSERT INTO chibasys.favorite (id, nendo, jikanwaricd) VALUES ('$_SESSION[id]', $data[0], '$data[1]');");
-		//削除の時はDELETE文を実行
+		global $maria;
+		$result2 = maria_query("INSERT INTO chibasys.comment (id, num, name, text, datetime, ip, nendo, jikanwaricd) ".
+			"VALUES ('$userID', $num, '".(trim($query['name']) === '' ? '名無しの千葉大生' : trim($query['name']))."', '".
+			mysqli_real_escape_string($maria, $query['text'])."', NOW(), '$_SERVER[REMOTE_ADDR]', $code[0], '$code[1]');");
+		if (!$result2) return error_data(ERROR_SQL_FAILED);
+		
+		return [ 'result'=>true ];
+	}
+
+	/**
+	 * お気に入りのステータスを変更、MySQLに変更適用
+	 *
+	 * @param ?string $userID (Googleの)ユーザーID
+	 * @param array $query POSTデータ
+	 * @return array { result: true }
+	 */
+	function fav_change(?string $userID, array $query): array {
+		//未ログインならば終了
+		if (!$userID) return error_data(ERROR_NO_LOGIN);
+		//シラバスコードを分解
+		$code = explode('-', $query['code']);
+		if (count($code) === 4) $code[1] = $code[2];
+
+		//trueは追加、falseは削除
+		if ($query['bool'])
+			$result = maria_query("INSERT INTO chibasys.favorite (id, nendo, jikanwaricd) VALUES ('$userID', $code[0], '$code[1]');");
 		else
-			$result = maria_query($link, "DELETE FROM chibasys.favorite WHERE id='$_SESSION[id]' AND nendo=$data[0] AND jikanwaricd='$data[1]';");
-	}
-	//セッションデータ利用終了
-	session_write_close();
-	//getFavoriteByIdを実行し、お気に入り一覧を再読み込み
-	return getFavoriteById($link, $result);
-}
+			$result = maria_query("DELETE FROM chibasys.favorite WHERE id='$userID' AND nendo=$code[0] AND jikanwaricd='$code[1]';");
+		if (!$result) return error_data(ERROR_SQL_FAILED);
 
-/**
- * IDに紐づくお気に入り一覧をMySQLから取得
- *
- * @param mysqli $link MySQLのインスタンス
- * @param boolean $changeFavorite お気に入りのステータスを変更した時の結果
- * @return array 成功したかどうか、お気に入りデータ、変更が適用できたかどうかの連想配列
- */
-function getFavoriteById(mysqli $link, bool $changeFavorite = null) : array {
-	//お気に入り登録したシラバスコードのみ入る配列
-	$list = [];
-	//お気に入り登録したシラバスの詳細も入る連想配列
-	$data = [];
-	//あらかじめ$resultはfalseで定義しておく
-	$result = false;
-	//セッションデータ利用開始
-	session_start();
-	//ログイン済みの時
-	if (isset($_SESSION['id'])) {
-		//IDに紐づくお気に入り一覧を取得
-		$result = maria_query($link, "SELECT * FROM chibasys.favorite WHERE id='$_SESSION[id]';");
-		//セッションデータ利用終了
-		session_write_close();
-		//正しくクエリが実行されたとき
-    if ($result)
-			while ($row = mysqli_fetch_assoc($result)) {
-				//シラバスコードを生成、配列に追加
-				$list[] = "$row[nendo]-$row[jikanwaricd]";
-				//キャッシュされたシラバスデータを取得し、連想配列に追加
-				$data[] = mysqli_fetch_assoc(maria_query($link, "SELECT term, time, credit, name, teacher, summary FROM chibasys.syllabus_$row[nendo] WHERE jikanwaricd='$row[jikanwaricd]';"));
-			}
-	}
-	//ログインしていないとき、すぐにセッションデータ利用終了
-  else session_write_close();
-	return [ 'status'=>$result ? 'success' : 'failed', 'list'=>$list, 'data'=>$data, 'changeFavorite'=>$changeFavorite ];
-}
-
-//1コマ 90分  XXXX-XX-XXTXX:XX:XX+09:00
-//曜日と数字の対応表  Day Of the Week
-define('DOW', [ '日'=>0, '月'=>1, '火'=>2, '水'=>3, '木'=>4, '金'=>5, '土'=>6 ]);
-//曜日と数字の対応表、英語版
-define('DOWEN', [ '日'=>'SU', '月'=>'MO', '火'=>'TU', '水'=>'WE', '木'=>'TH', '金'=>'FR', '土'=>'SA' ]);
-//授業の開始時間と時限の対応表
-define('StartTime', [ 1=>'08:50', 2=>'10:30', 3=>'12:50', 4=>'14:30', 5=>'16:10', 6=>'17:50', 7=>'19:30' ]);
-//授業の終了時間と時限の対応表
-define('EndTime', [ 1=>'10:20', 2=>'12:00', 3=>'14:20', 4=>'16:00', 5=>'17:40', 6=>'19:20', 7=>'21:00' ]);
-//各タームの始まる日付と年度、タームとの対応表
-define('StartTerm', [ '2019'=>[ 1=>'2019-04-08', 2=>'2019-06-11', 3=>'2019-08-07', 4=>'2019-10-01', 5=>'2019-12-03', 6=>'2020-02-06', 7=>'2020-04-01' ] ]);
-//各タームの終わる日付と年度、タームとの対応表
-define('EndTerm', [ '2019'=>[ 1=>'2019-06-10', 2=>'2019-08-06', 3=>'2019-09-30', 4=>'2019-12-02', 5=>'2020-02-05', 6=>'2019-03-31' ] ]);
-//ターム内で休日と示されている日一覧
-define('Holiday', [ '2019-04-29', '2019-04-30', '2019-05-01', '2019-05-02', '2019-05-03', '2019-05-06', '2019-07-15', '2019-08-12' ]);
-//月曜休日が続いたなどで振替が起きるときの曜日と日付の対応表
-define('RDATE', [ '月'=>[ '20190716' ] ]);
-
-//base32HexDecodeを使うため、use宣言
-use \ParagonIE\ConstantTime\Encoding;
-
-/**
- * 全ての登録済みのGoogleカレンダーのイベントを取得
- *
- * @param $client Google Clientのインスタンス
- * @return array 成功したかどうか、イベント一覧の連想配列
- */
-function getAllCalendarSubjects($client): array {
-	//ログインしていない時は、status:expiredと返す
-	if (!$client) return [ 'status'=>'expired', 'result'=>null ];
-	//カレンダーサービスのインスタンスを生成
-	$service = new Google_Service_Calendar($client);
-	//「Created By chibasys」が入ったイベント一覧を取得
-	$result = $service->events->listEvents('primary', [
-		'q' => 'Created By', 'maxResults' => 2500
-	]);
-	$data = [];
-  foreach ($result->getItems() as $event) {
-		//_が入った個々のイベントは無視する
-		if (strpos($event->getId(), '_') !== false) continue;
-		//idをbase32hexからデコードして&区切りで配列に戻す
-    //UNIX時間&シラバスコード&ターム&曜時&単位数&★ターム&★曜日
-		$id = explode('&', Encoding::base32HexDecode($event->getId()));
-		//$idの要素数が6以上の時は連想配列に追加
-    if (count($id) >= 6) {
-			$code = explode('-', $id[1]);
-			if (count($code) === 4)
-				$code = "$code[0]-$code[2]";
-			else
-				$code = $id[1];
-  		$data[] = [ 'id'=>$event->getId(), 'add'=>date(DateTime::ATOM, $id[0]), 'nendo'=>explode('-', $id[1])[0], 'code'=>$code, 'term'=>$id[2], 'time'=>$id[3], 'credit'=>intval($id[4]), 'index'=>[ 'term'=>$id[5], 'time'=>$id[6] ],
-				'name'=>$event['summary'], 'room'=>str_replace('千葉大学 ', '', $event['location']), 'start'=>$event['start']['dateTime'], 'end'=>$event['end']['dateTime'], 'notification'=>(count($event['reminders']['overrides']) > 0) ];
-		}
-		//そうでない場合はなかったものとして処理 !!!!!!!!!!
-		else
-      continue;
-  		//$data[] = [ 'id'=>$event->getId(), 'name'=>$event['summary'], 'room'=>$event['location'], 'start'=>$event['start']['dateTime'], 'end'=>$event['end']['dateTime'], 'notification'=>(count($event['reminders']['overrides']) > 0) ];
-	}
-	return [ 'status'=>'success', 'result'=>$data ];
-}
-
-/**
- * 今週のGoogleカレンダーのイベントを取得
- *
- * @param $client Google Clientのインスタンス
- * @return array 成功したかどうか、イベント一覧の連想配列
- */
-function getWeekCalendarSubjects($client): array {
-	//ログインしていない時は、status:expiredと返す
-	if (!$client) return [ 'status'=>'expired', 'result'=>null ];
-	//カレンダーサービスのインスタンスを生成
-	$service = new Google_Service_Calendar($client);
-	//月曜日始まり、日曜日終わりへの対応
-	if (date('w') === '0') {
-		//日曜日のときは1週ずらして考える
-		$min = date(DateTime::ATOM, strtotime('sunday this week'));
-		$max = date(DateTime::ATOM, strtotime('sunday next week'));
-	}
-	else{
-		//月曜から土曜日は通常通り考える
-		$min = date(DateTime::ATOM, strtotime('sunday previous week'));
-		$max = date(DateTime::ATOM, strtotime('sunday this week'));
-	}
-	//「Created By chibasys」が入ったイベント一覧をSingleEvent:trueとして今週のみ取得
-	$result = $service->events->listEvents('primary', [
-		'q'=>'Created By', 'maxResults'=>2500, 'singleEvents'=>true, 'timeMin'=>$min, 'timeMax'=>$max
-	]);
-	$data = [];
-  foreach ($result->getItems() as $event) {
-		//_があるときのみそれより前の文字列をidとしてbase32hexからデコードして&区切りで配列に戻す
-		$id = explode('&', Encoding::base32HexDecode((strpos($event['id'], '_') !== false ? explode('_', $event['id'])[0] : $event['id'])));
-		//$idの要素数が6以上の時は連想配列に追加
-		if (count($id) >= 6) {
-			$code = explode('-', $id[1]);
-			if (count($code) === 4)
-				$code = "$code[0]-$code[2]";
-			else
-				$code = $id[1];
-			$data[] = [ 'add'=>date(DateTime::ATOM, $id[0]), 'code'=>$code, 'term'=>$id[2], 'time'=>$id[3], 'credit'=>intval($id[4]), 'index'=>[ 'term'=>$id[5], 'time'=>$id[6] ],
-				'name'=>$event['summary'], 'room'=>str_replace('千葉大学 ', '', $event['location']), 'start'=>$event['start']['dateTime'], 'end'=>$event['end']['dateTime']  ];
-		}
-	}
-	return [ 'status'=>'success', 'result'=>$data ];
-}
-
-/**
- * Googleカレンダーにイベントを追加
- *
- * @param $client Google Clientのインスタンス
- * @param mysqli $link MySQLのインスタンス
- * @param array $data シラバスの詳細データ
- * @return array 成功したかどうか、各イベントの返り値の連想配列
- */
-function addCalendar($client, mysqli $link, array $data): array {
-	//data: term (startDate endDate) time (startTime endTime) code name room description
-
-	//ログインしていない時は、status:expiredと返す
-	if (!$client) return [ 'status'=>'expired', 'result'=>[] ];
-	//カレンダーサービスのインスタンスを生成
-	$service = new Google_Service_Calendar($client);
-	//シラバスコードを分解
-	$nendo = explode('-', $data['code'])[0];
-
-	//タームの演算
-	//$data['term'] ex)T1 T1-2 T1･3 T1集
-	//$terms = [ [ 'start'=>'2019-04-08', 'end'=>'2019-06-10' ] ];
-	$terms = [];
-	//集中→日程指定してもらった日付を流用(未実装)
-	if (mb_strpos($data['term'], '集') !== false)
-		$terms[] = [ 'start'=>$data['startDate'], 'end'=>$data['endDate'] ];
-	//通年→1~6ターム？として処理
-	else if (mb_strpos($data['term'], '通') !== false)
-		$terms[] = [ 'start'=>StartTerm[$nendo][1], 'end'=>EndTerm[$nendo][6] ];
-	//独立した複数タームにまたがる→イベントを分ける
-	else if (strpos($data['term'], '･') !== false) {
-		//Tを除いて「･」区切りでタームを抽出し数字を配列に
-		$termList = explode('･', substr($data['term'], 1)); //[1,3]
-		foreach ($termList as $term)
-			$terms[] = [ 'start'=>StartTerm[$nendo][intval($term)], 'end'=>EndTerm[$nendo][(intval($term))] ];
-	}
-	//連続した複数タームにまたがる→イベントをつなげる
-	else if (strpos($data['term'], '-') !== false) {
-		//Tを除いて「-」区切りでタームを抽出し数字を配列に
-		$termList = explode('-', substr($data['term'], 1)); //[1,3]
-		$terms[] = [ 'start'=>StartTerm[$nendo][intval($termList[0])], 'end'=>EndTerm[$nendo][(intval($termList[1]))] ];
-	}
-	//通常の単独ターム
-	else {
-		//Tを除いて数字に
-		$term = intval(substr($data['term'], 1));
-		$terms[] = [ 'start'=>StartTerm[$nendo][$term], 'end'=>EndTerm[$nendo][$term] ];
+		return [ 'result'=>true ];
 	}
 
-	//開始時刻の演算
-	//$data['time'] ex)月1 月1,月2
-	//$times = [ [  ] ];
-	$times = []; //[day:月,start:8:50,end:10:20]
-	//終日イベントに、毎日のみ(禁止or未実装)
-	if ($data['allDay'] === 'true' || $data['time'] === '通')
-		$times[] = [ 'day'=>'all', 'hour'=>null ];
-	//時間指定を利用、毎日のみ(禁止or未実装)
-	else if ($data['time'] === '他')
-		$times[] = [ 'day'=>'time', 'hour'=>null, 'start'=>$data['startTime'], 'end'=>$data['endTime'] ];
-	//カンマ区切りで複数時間の時
-	else if (mb_strpos($data['time'], ',') !== false) {
-		//「,」区切りで時間を配列に分ける
-		$timeList = explode(',', $data['time']);
-		$dayOfWeekList = [];
-		//時間を曜日とその中に時限の数字を入れ、連想配列化
-		foreach ($timeList as $t) {
-			//曜日を抽出
-			$dow = mb_substr($t, 0, 1);
-			//曜日の配列がなければ作成
-			if (!array_key_exists($dow, $dayOfWeekList)) $dayOfWeekList[$dow] = [];
-			//時限を追加
-			$dayOfWeekList[$dow][] = intval(mb_substr($t, 1, 1));
-		}
-		//曜日ごとに処理
-		foreach ($dayOfWeekList as $dow => $list) {
-			//ソートする
-			asort($list);
-			$startHour = -1;
-			$startIndex = -1;
-			for ($i = 0; $i < count($list); $i++) {
-				//初めは有無を言わさず時間の始まりとして代入
-				if ($startHour === -1 && $startIndex === -1) {
-					$startHour = $list[$i];
-					$startIndex = $i;
-				}
-				//配列の最後or次との時間が1時間以上空き→時間登録
-				if ($i + 1 === count($list) || $list[$i + 1] - $list[$i] > 1) {
-					$times[] = [ 'day'=>$dow, 'hour'=>$startHour, 'start'=>StartTime[$startHour], 'end'=>EndTime[$list[$i]] ];
-					$startHour = $startIndex = -1;
-				}
-			}
-		}
-	}
-	//時間が1つの時
-	else {
-		$hour = intval(mb_substr($data['time'], 1, 1));
-		$times[] = [ 'day'=>mb_substr($data['time'], 0, 1), 'hour'=>$hour, 'start'=>StartTime[$hour], 'end'=>EndTime[$hour] ];
-	}
-
-	//休みリストをDateTimeでインスタンス生成
-	$holidayList = [];
-  foreach (Holiday as $h) $holidayList[] = new DateTime($h);
-
-	//イベントの追加
-	$result = [];
-	for ($i = 0; $i < count($terms); $i++) {
-		for ($j = 0; $j < count($times); $j++) {
-			//元のIDの生成
-			//UNIX時間&シラバスコード&ターム&曜時&単位数&★ターム&★曜日
-			//0000000000&2000-XX-XXXXXX-ja_JP&T1&月1&2&0&0
-			$id = "$_SERVER[REQUEST_TIME]&$data[code]&$data[term]&$data[time]&$data[credit]&$i&$j";
-			//開始日時のDateTimeインスタンスを生成
-			$startDate = new DateTime($terms[$i]['start']);
-			$allDay = false;
-			$everyDay = false;
-			//dayがallのとき、終日かつ毎日に
-			if ($times[$j]['day'] === 'all') {
-				$allDay = true;
-				$everyDay = true;
-			}
-			//dayがtimeのとき、毎日に
-			else if ($times[$j]['day'] === 'time') {
-				$everyDay = true;
-			}
-			//dayに曜日が入るとき
-			else {
-				$diff = DOW[$times[$j]['day']] - intval($startDate->format('w'));
-				//開始日の曜日より後のとき、その分、日を進める
-				if ($diff > 0) $startDate->modify('+'.$diff.' days');
-				//開始日の曜日より前のとき、7日とプラスその分、日を進める
-				else if ($diff < 0) $startDate->modify('+'.(7 + $diff).' days');
-			}
-			//iCalendarの作法に基づいて、繰り返しルールを記述
-			$exdate = [ 'RRULE:FREQ='.($everyDay ? 'DAILY;' : 'WEEKLY;WKST=SU;BYDAY='.DOWEN[$times[$j]['day']].';').'UNTIL='.str_replace('-', '', $terms[$i]['end']).'T145959Z' ];
-			//振替を無視しない場合 !!!!!!!!!!
-			if ($data['ignoreExdate'] === 'false')
-				foreach ($holidayList as $h)
-					if ($everyDay || intval($h->format('w')) === DOW[$times[$j]['day']])
-						$exdate[] = 'EXDATE:'.$h->format('Ymd').'T'.str_replace(':', '', $times[$j]['start'].':00');
-			$overrides = [];
-			//通知が有効なとき
-      if ($data['notification'] === 'true') $overrides[] = [ 'method' => 'popup', 'minutes' => ($times[$j]['hour'] === 3 ? 50 : 10) ];
-			//セッションデータ利用開始
-			session_start();
-			//通知をオンにするかどうかの履歴を変更
-      $_SESSION['userdata']['notification'] = ($data['notification'] === 'true' ? '1' : '0');
-			//セッションデータ利用終了
-			session_write_close();
+	/**
+	 * お気に入り一覧をMySQLから取得
+	 *
+	 * @param ?string $userID (Googleの)ユーザーID
+	 * @return array お気に入り一覧の連想配列
+	 */
+	function fav_list_get(?string $userID): array {
+		//未ログインならば終了
+		if (!$userID) return error_data(ERROR_NO_LOGIN);
+		$data = [];
+		
+		//MySQLからお気に入り一覧を取得
+		$result = maria_query("SELECT nendo, jikanwaricd FROM chibasys.favorite WHERE id='$userID';");
+		if (!$result) return error_data(ERROR_SQL_FAILED);
+		while ($row = mysqli_fetch_assoc($result)) {
+			$result2 = maria_query("SELECT term, time, credit, name, teacher, summary FROM chibasys.syllabus_$row[nendo] WHERE jikanwaricd='$row[jikanwaricd]';");
+			if (!$result2) return error_data(ERROR_SQL_FAILED);
+			if (mysqli_num_rows($result2) !== 1) continue;
 			
-			$result[] = $service->events->insert('primary', new Google_Service_Calendar_Event([
-				'id' => str_replace('=', '', Encoding::base32HexEncode($id)), //base32hexエンコードをしたID
-				'colorId' => '2', //アカウントによって違う
-				'summary' => $data['name'], //予定のタイトル
-				'location' => ($data['room'] === '' ? '' : '千葉大学 '.$data['room']), //予定の位置
-				'description' => $data['description']."シラバスの詳細ページはこちら\nhttps://chibasys.xperd.net/syllabus?".$data['code']."\nCreated by chibasys",
-	  		'start' => [ //開始日時
-  	  		($allDay ? 'date' : 'dateTime') => $startDate->format('Y-m-d').($allDay ? '' : 'T'.$times[$j]['start'].':00+09:00'),
-    			'timeZone' => 'Asia/Tokyo',
-				],
-		  	'end' => [ //終了日時
-  	  		($allDay ? 'date' : 'dateTime') => $startDate->format('Y-m-d').($allDay ? '' : 'T'.$times[$j]['end'].':00+09:00'),
-    			'timeZone' => 'Asia/Tokyo',
-				],
-				'recurrence' => $exdate, //繰り返し設定
-				'source' => [ //ソース設定、楽にリンクへ飛べるようになる
-					'url' => 'https://chibasys.xperd.net/syllabus?'.$data['code'], 'title' => $data['name'].'の詳細 -チバシス-'
-				], //通知設定、デフォルトはいずれも使わない
-				'reminders' => [ 'useDefault' => false, 'overrides' => $overrides ]
-			]));
+			$code = "$row[nendo]-$row[jikanwaricd]";
+			$data[$code] = array_merge([ 'code'=>$code ], $row, mysqli_fetch_assoc($result2));
 		}
-  }
-  //以前の通知設定を変更
-  updateCalendarNotification($link, $data['notification'] === 'true');
-	return [ 'status'=>'success', 'result'=>$result ];
-}
+		return [ 'data'=>$data ];
+	}
 
-/**
- * Googleカレンダーのイベントを消去
- *
- * @param $client Google Clientのインスタンス
- * @param string $id イベントID
- * @return array 成功したかどうか、イベントの返り値の連想配列
- */
-function deleteCalendarSubjects($client, string $id): array {
-	//ログインしていない時は、status:expiredと返す
-	if (!$client) return [ 'status'=>'expired', 'result'=>[] ];
-	//カレンダーサービスのインスタンスを生成
-	$service = new Google_Service_Calendar($client);
-	//idを指定してイベントを消去
-  $result[] = $service->events->delete('primary', $id);
-	return [ 'status'=>'success', 'result'=>$result ];
-}
+	//1コマ 90分  XXXX-XX-XXTXX:XX:XX+09:00
+	//曜日と数字の対応表  Day Of the Week
+	define('DOW', [ '日'=>0, '月'=>1, '火'=>2, '水'=>3, '木'=>4, '金'=>5, '土'=>6 ]);
+	//曜日と数字の対応表、英語版
+	define('DOWEN', [ '日'=>'SU', '月'=>'MO', '火'=>'TU', '水'=>'WE', '木'=>'TH', '金'=>'FR', '土'=>'SA' ]);
+	//授業の開始時間と時限の対応表
+	define('StartTime', [ 1=>'08:50', 2=>'10:30', 3=>'12:50', 4=>'14:30', 5=>'16:10', 6=>'17:50', 7=>'19:30' ]);
+	//授業の終了時間と時限の対応表
+	define('EndTime', [ 1=>'10:20', 2=>'12:00', 3=>'14:20', 4=>'16:00', 5=>'17:40', 6=>'19:20', 7=>'21:00' ]);
+	//各タームの始まる日付と年度、タームとの対応表
+	define('StartTerm', [ '2019'=>[ 1=>'2019-04-08', 2=>'2019-06-11', 3=>'2019-08-07', 4=>'2019-10-01', 5=>'2019-12-03', 6=>'2020-02-06', 7=>'2020-04-01' ] ]);
+	//各タームの終わる日付と年度、タームとの対応表
+	define('EndTerm', [ '2019'=>[ 1=>'2019-06-10', 2=>'2019-08-06', 3=>'2019-09-30', 4=>'2019-12-02', 5=>'2020-02-05', 6=>'2019-03-31' ] ]);
+	//ターム内で休日と示されている日一覧
+	define('Holiday', [ '2019-04-29', '2019-04-30', '2019-05-01', '2019-05-02', '2019-05-03', '2019-05-06', '2019-07-15', '2019-08-12' ]);
+	//月曜休日が続いたなどで振替が起きるときの曜日と日付の対応表
+	define('RDATE', [ '月'=>[ '20190716' ] ]);
 
-/**
- * Googleカレンダーのイベントの通知設定変更
- *
- * @param $client Google Clientのインスタンス
- * @param mysqli $link MySQLのインスタンス
- * @param array $query POSTデータ
- * @return array 成功したかどうか、イベントの返り値の連想配列
- */
-function toggleCalendarNotification($client, mysqli $link, array $query): array {
-	//ログインしていない時は、status:expiredと返す
-	if (!$client) return [ 'status'=>'expired', 'result'=>[] ];
-	//カレンダーサービスのインスタンスを生成
-	$service = new Google_Service_Calendar($client);
-	$result = [];
-  foreach ($query['id'] as $id) {
-		//idごとにイベントを取得
-		$event = $service->events->get('primary', $id);
-		//通知を有効に変更するとき
-    if ($query['bool'] === 'true') {
-      $event['reminders'] =
-        [ 'useDefault' => false, 'overrides' => [ [ 'method' => 'popup', 'minutes' =>
-          (substr($event['start']['dateTime'], 11, 5) === '12:50' ? 50 : 10) ] ] ];
+	//base32HexDecodeを使うため、use宣言
+	use \ParagonIE\ConstantTime\Encoding;
+
+	/**
+	 * 全ての登録済みのGoogleカレンダーのイベントを取得
+	 *
+	 * @param Google_Client $client Google_Clientのインスタンス
+	 * @return array イベント一覧の連想配列
+	 */
+	function cal_list_get(?string $userID): array {
+		//未ログインならば終了
+		if (!$userID) return error_data(ERROR_NO_LOGIN);
+		$client = google_client_create();
+		//Googleアカウントの再ログインが必要ならば終了
+		if ($client->isAccessTokenExpired()) return error_data(ERROR_GOOGLE_EXPIRED);
+		//カレンダーサービスのインスタンスを生成
+		$service = new Google_Service_Calendar($client);
+		//「Created By chibasys」が入ったイベント一覧を取得
+		$result = $service->events->listEvents('primary', [
+			'q' => 'Created By', 'maxResults' => 2500
+		]);
+		$cal_code = [];
+		$cal_data = [];
+		foreach ($result->getItems() as $event) {
+			//_が入った個々のイベントは無視する
+			if (strpos($event->getId(), '_') !== false) continue;
+			//idをbase32hexからデコードして&区切りで配列に戻す
+			//UNIX時間&シラバスコード&ターム&曜時&単位数&★ターム&★曜日
+			$id = explode('&', Encoding::base32HexDecode($event->getId()));
+			//$idの要素数が6以上の時は連想配列に追加
+			if (count($id) >= 6) {
+				$code = explode('-', $id[1]);
+				if (count($code) === 4)
+					$code = "$code[0]-$code[2]";
+				else
+					$code = $id[1];
+				$cal_code[] = $code;
+				$cal_data[$code] = [ 'id'=>$event->getId(), 'add'=>date(DateTime::ATOM, $id[0]), 'nendo'=>explode('-', $id[1])[0], 'code'=>$code, 'term'=>$id[2], 'time'=>$id[3], 'credit'=>intval($id[4]), 'index'=>[ 'term'=>$id[5], 'time'=>$id[6] ],
+					'name'=>$event['summary'], 'room'=>str_replace('千葉大学 ', '', $event['location']), 'start'=>$event['start']['dateTime'], 'end'=>$event['end']['dateTime'], 'notification'=>(count($event['reminders']['overrides']) > 0) ];
+			}
+			//そうでない場合はなかったものとして処理 !!!!!!!!!!
+			//$cal_data[] = [ 'id'=>$event->getId(), 'name'=>$event['summary'], 'room'=>$event['location'], 'start'=>$event['start']['dateTime'], 'end'=>$event['end']['dateTime'], 'notification'=>(count($event['reminders']['overrides']) > 0) ];
 		}
-		//通知を無効に変更するとき
-    else if ($query['bool'] === 'false') {
-      $event['reminders'] = [ 'useDefault' => false, 'overrides' => [] ];
-		}
-		//一部を書き換えたやつをそのままアップデートとして突っ込む
-  	$result[] = $service->events->update('primary', $id, $event);  
-  }
-  //以前の通知設定を変更
-  updateCalendarNotification($link, $query['bool'] === 'true');
-	return [ 'status'=>'success', 'result'=>$result ];
-}
+		return [ 'cal_code'=>$cal_code, 'cal_data'=>$cal_data ];
+	}
 
-/**
- * 以前の変更通知をMySQLに保存
- *
- * @param mysqli $link MySQLのインスタンス
- * @param boolean $bool 有効かどうか
- * @return array 成功したかどうかの連想配列
- */
-function updateCalendarNotification(mysqli $link, bool $bool): array {
-	//セッションデータ利用開始
-	session_start();
-  //以前の通知設定をMySQLに保存
-  $result = maria_query($link, "UPDATE chibasys.user SET notification=".($bool ? 1 : 0)." WHERE id='$_SESSION[id]';");
-	//セッションデータ利用終了
-	session_write_close();
-	return [ 'status'=>($result ? 'success' : 'failed') ];
-}
+	/**
+	 * 今週のGoogleカレンダーのイベントを取得
+	 *
+	 * @param ?string $userID (Googleの)ユーザーID
+	 * @return array イベント一覧の連想配列
+	 */
+	function cal_week_get(?string $userID): array {
+		//未ログインならば終了
+		if (!$userID) return error_data(ERROR_NO_LOGIN);
+		$client = google_client_create();
+		//Googleアカウントの再ログインが必要ならば終了
+		if ($client->isAccessTokenExpired()) return error_data(ERROR_GOOGLE_EXPIRED);
+		//カレンダーサービスのインスタンスを生成
+		$service = new Google_Service_Calendar($client);
+		//月曜日始まり、日曜日終わりへの対応
+		if (date('w') === '0') {
+			//日曜日のときは1週ずらして考える
+			$min = date(DateTime::ATOM, strtotime('sunday this week'));
+			$max = date(DateTime::ATOM, strtotime('sunday next week'));
+		}
+		else{
+			//月曜から土曜日は通常通り考える
+			$min = date(DateTime::ATOM, strtotime('sunday previous week'));
+			$max = date(DateTime::ATOM, strtotime('sunday this week'));
+		}
+
+		//「Created By chibasys」が入ったイベント一覧をSingleEvent:trueとして今週のみ取得
+		$result = $service->events->listEvents('primary', [
+			'q'=>'Created By', 'maxResults'=>2500, 'singleEvents'=>true, 'timeMin'=>$min, 'timeMax'=>$max
+		]);
+		$cal_week_data = [];
+		foreach ($result->getItems() as $event) {
+			//_があるときのみそれより前の文字列をidとしてbase32hexからデコードして&区切りで配列に戻す
+			$id = explode('&', Encoding::base32HexDecode((strpos($event['id'], '_') !== false ? explode('_', $event['id'])[0] : $event['id'])));
+			//$idの要素数が6以上の時は連想配列に追加
+			if (count($id) >= 6) {
+				$code = explode('-', $id[1]);
+				if (count($code) === 4)
+					$code = "$code[0]-$code[2]";
+				else
+					$code = $id[1];
+				$cal_week_data[] = [ 'add'=>date(DateTime::ATOM, $id[0]), 'code'=>$code, 'term'=>$id[2], 'time'=>$id[3], 'credit'=>intval($id[4]), 'index'=>[ 'term'=>$id[5], 'time'=>$id[6] ],
+					'name'=>$event['summary'], 'room'=>str_replace('千葉大学 ', '', $event['location']), 'start'=>$event['start']['dateTime'], 'end'=>$event['end']['dateTime']  ];
+			}
+		}
+		return [ 'cal_week_data'=>$cal_week_data ];
+	}
+
+	/**
+	 * Googleカレンダーにイベントを追加
+	 *
+	 * @param ?string $userID (Googleの)ユーザーID
+	 * @param array $data シラバスの詳細データ
+	 * @return array 各イベントの返り値の連想配列
+	 */
+	function calender_add(?string $userID, array $data): array {
+		//data: term (startDate endDate) time (startTime endTime) code name room description
+		//未ログインならば終了
+		if (!$userID) return error_data(ERROR_NO_LOGIN);
+		$client = google_client_create();
+		//Googleアカウントの再ログインが必要ならば終了
+		if ($client->isAccessTokenExpired()) return error_data(ERROR_GOOGLE_EXPIRED);
+		//カレンダーサービスのインスタンスを生成
+		$service = new Google_Service_Calendar($client);
+		//シラバスコードを分解
+		$nendo = explode('-', $data['code'])[0];
+
+		//タームの演算
+		//$data['term'] ex)T1 T1-2 T1･3 T1集
+		//$terms = [ [ 'start'=>'2019-04-08', 'end'=>'2019-06-10' ] ];
+		$terms = [];
+		//集中→日程指定してもらった日付を流用(未実装)
+		if (mb_strpos($data['term'], '集') !== false)
+			$terms[] = [ 'start'=>$data['startDate'], 'end'=>$data['endDate'] ];
+		//通年→1~6ターム？として処理
+		else if (mb_strpos($data['term'], '通') !== false)
+			$terms[] = [ 'start'=>StartTerm[$nendo][1], 'end'=>EndTerm[$nendo][6] ];
+		//独立した複数タームにまたがる→イベントを分ける
+		else if (strpos($data['term'], '･') !== false) {
+			//Tを除いて「･」区切りでタームを抽出し数字を配列に
+			$termList = explode('･', substr($data['term'], 1)); //[1,3]
+			foreach ($termList as $term)
+				$terms[] = [ 'start'=>StartTerm[$nendo][intval($term)], 'end'=>EndTerm[$nendo][(intval($term))] ];
+		}
+		//連続した複数タームにまたがる→イベントをつなげる
+		else if (strpos($data['term'], '-') !== false) {
+			//Tを除いて「-」区切りでタームを抽出し数字を配列に
+			$termList = explode('-', substr($data['term'], 1)); //[1,3]
+			$terms[] = [ 'start'=>StartTerm[$nendo][intval($termList[0])], 'end'=>EndTerm[$nendo][(intval($termList[1]))] ];
+		}
+		//通常の単独ターム
+		else {
+			//Tを除いて数字に
+			$term = intval(substr($data['term'], 1));
+			$terms[] = [ 'start'=>StartTerm[$nendo][$term], 'end'=>EndTerm[$nendo][$term] ];
+		}
+
+		//開始時刻の演算
+		//$data['time'] ex)月1 月1,月2
+		//$times = [ [  ] ];
+		$times = []; //[day:月,start:8:50,end:10:20]
+		//終日イベントに、毎日のみ(禁止or未実装)
+		if ($data['allDay'] === 'true' || $data['time'] === '通')
+			$times[] = [ 'day'=>'all', 'hour'=>null ];
+		//時間指定を利用、毎日のみ(禁止or未実装)
+		else if ($data['time'] === '他')
+			$times[] = [ 'day'=>'time', 'hour'=>null, 'start'=>$data['startTime'], 'end'=>$data['endTime'] ];
+		//カンマ区切りで複数時間の時
+		else if (mb_strpos($data['time'], ',') !== false) {
+			//「,」区切りで時間を配列に分ける
+			$timeList = explode(',', $data['time']);
+			$dayOfWeekList = [];
+			//時間を曜日とその中に時限の数字を入れ、連想配列化
+			foreach ($timeList as $t) {
+				//曜日を抽出
+				$dow = mb_substr($t, 0, 1);
+				//曜日の配列がなければ作成
+				if (!array_key_exists($dow, $dayOfWeekList)) $dayOfWeekList[$dow] = [];
+				//時限を追加
+				$dayOfWeekList[$dow][] = intval(mb_substr($t, 1, 1));
+			}
+			//曜日ごとに処理
+			foreach ($dayOfWeekList as $dow => $list) {
+				//ソートする
+				asort($list);
+				$startHour = -1;
+				$startIndex = -1;
+				for ($i = 0; $i < count($list); $i++) {
+					//初めは有無を言わさず時間の始まりとして代入
+					if ($startHour === -1 && $startIndex === -1) {
+						$startHour = $list[$i];
+						$startIndex = $i;
+					}
+					//配列の最後or次との時間が1時間以上空き→時間登録
+					if ($i + 1 === count($list) || $list[$i + 1] - $list[$i] > 1) {
+						$times[] = [ 'day'=>$dow, 'hour'=>$startHour, 'start'=>StartTime[$startHour], 'end'=>EndTime[$list[$i]] ];
+						$startHour = $startIndex = -1;
+					}
+				}
+			}
+		}
+		//時間が1つの時
+		else {
+			$hour = intval(mb_substr($data['time'], 1, 1));
+			$times[] = [ 'day'=>mb_substr($data['time'], 0, 1), 'hour'=>$hour, 'start'=>StartTime[$hour], 'end'=>EndTime[$hour] ];
+		}
+
+		//休みリストをDateTimeでインスタンス生成
+		$holidayList = [];
+		foreach (Holiday as $h) $holidayList[] = new DateTime($h);
+
+		//イベントの追加
+		$result = [];
+		for ($i = 0; $i < count($terms); $i++) {
+			for ($j = 0; $j < count($times); $j++) {
+				//元のIDの生成
+				//UNIX時間&シラバスコード&ターム&曜時&単位数&★ターム&★曜日
+				//0000000000&2000-XX-XXXXXX-ja_JP&T1&月1&2&0&0
+				$id = "$_SERVER[REQUEST_TIME]&$data[code]&$data[term]&$data[time]&$data[credit]&$i&$j";
+				//開始日時のDateTimeインスタンスを生成
+				$startDate = new DateTime($terms[$i]['start']);
+				$allDay = false;
+				$everyDay = false;
+				//dayがallのとき、終日かつ毎日に
+				if ($times[$j]['day'] === 'all') {
+					$allDay = true;
+					$everyDay = true;
+				}
+				//dayがtimeのとき、毎日に
+				else if ($times[$j]['day'] === 'time') {
+					$everyDay = true;
+				}
+				//dayに曜日が入るとき
+				else {
+					$diff = DOW[$times[$j]['day']] - intval($startDate->format('w'));
+					//開始日の曜日より後のとき、その分、日を進める
+					if ($diff > 0) $startDate->modify('+'.$diff.' days');
+					//開始日の曜日より前のとき、7日とプラスその分、日を進める
+					else if ($diff < 0) $startDate->modify('+'.(7 + $diff).' days');
+				}
+				//iCalendarの作法に基づいて、繰り返しルールを記述
+				$exdate = [ 'RRULE:FREQ='.($everyDay ? 'DAILY;' : 'WEEKLY;WKST=SU;BYDAY='.DOWEN[$times[$j]['day']].';').'UNTIL='.str_replace('-', '', $terms[$i]['end']).'T145959Z' ];
+				//振替を無視しない場合 !!!!!!!!!!
+				if ($data['ignoreExdate'] === 'false')
+					foreach ($holidayList as $h)
+						if ($everyDay || intval($h->format('w')) === DOW[$times[$j]['day']])
+							$exdate[] = 'EXDATE:'.$h->format('Ymd').'T'.str_replace(':', '', $times[$j]['start'].':00');
+				$overrides = [];
+				//通知が有効なとき
+				if ($data['notification'] === 'true') $overrides[] = [ 'method' => 'popup', 'minutes' => ($times[$j]['hour'] === 3 ? 50 : 10) ];
+				//セッションデータ利用開始
+				session_start();
+				//通知をオンにするかどうかの履歴を変更
+				//$_SESSION['userdata']['notification'] = ($data['notification'] === 'true' ? '1' : '0');
+				//セッションデータ利用終了
+				session_write_close();
+				
+				$result[] = $service->events->insert('primary', new Google_Service_Calendar_Event([
+					'id' => str_replace('=', '', Encoding::base32HexEncode($id)), //base32hexエンコードをしたID
+					'colorId' => '2', //アカウントによって違う
+					'summary' => $data['name'], //予定のタイトル
+					'location' => ($data['room'] === '' ? '' : '千葉大学 '.$data['room']), //予定の位置
+					'description' => $data['description']."シラバスの詳細ページはこちら\nhttps://".$_SERVER['HTTP_HOST']."/syllabus?".$data['code']."\nCreated by chibasys",
+					'start' => [ //開始日時
+						($allDay ? 'date' : 'dateTime') => $startDate->format('Y-m-d').($allDay ? '' : 'T'.$times[$j]['start'].':00+09:00'),
+						'timeZone' => 'Asia/Tokyo',
+					],
+					'end' => [ //終了日時
+						($allDay ? 'date' : 'dateTime') => $startDate->format('Y-m-d').($allDay ? '' : 'T'.$times[$j]['end'].':00+09:00'),
+						'timeZone' => 'Asia/Tokyo',
+					],
+					'recurrence' => $exdate, //繰り返し設定
+					'source' => [ //ソース設定、楽にリンクへ飛べるようになる
+						'url' => 'https://'.$_SERVER['HTTP_HOST'].'/syllabus?'.$data['code'], 'title' => $data['name'].'の詳細 -チバシス-'
+					], //通知設定、デフォルトはいずれも使わない
+					'reminders' => [ 'useDefault' => false, 'overrides' => $overrides ]
+				]));
+			}
+		}
+		//以前の通知設定を変更
+		calender_notification_settings_change($userID, $data['notification'] === 'true');
+		return [ 'result'=>$result ];
+	}
+
+	/**
+	 * Googleカレンダーのイベントを追加や削除する
+	 *
+	 * @param ?string $userID (Googleの)ユーザーID
+	 * @param array $query POSTデータ
+	 * @return array イベントの返り値の連想配列
+	 */
+	function cal_change(?string $userID, array $query): array {
+		//未ログインならば終了
+		if (!$userID) return error_data(ERROR_NO_LOGIN);
+		$client = google_client_create();
+		//Googleアカウントの再ログインが必要ならば終了
+		if ($client->isAccessTokenExpired()) return error_data(ERROR_GOOGLE_EXPIRED);
+		//カレンダーサービスのインスタンスを生成
+		$service = new Google_Service_Calendar($client);
+		if ($query['bool']) {
+			//シラバスコードを分解
+			$code = explode('-', $query['code']);
+			$syllabus = portal_syllabus_get([ 'code'=>$query['code'] ])['data'];
+	
+			//タームの演算
+			//$syllabus.data.term ex)T1 T1-2 T1･3 T1集
+			//$terms = [ [ 'start'=>'2019-04-08', 'end'=>'2019-06-10' ] ];
+			$terms = [];
+			//集中→日程指定してもらった日付を流用(未実装)
+			if (mb_strpos($syllabus['term'], '集') !== false)
+				$terms[] = [ 'start'=>$query['startDate'], 'end'=>$query['endDate'] ];
+			//通年→1~6ターム？として処理
+			else if (mb_strpos($syllabus['term'], '通') !== false)
+				$terms[] = [ 'start'=>StartTerm[$code[0]][1], 'end'=>EndTerm[$code[0]][6] ];
+			//独立した複数タームにまたがる→イベントを分ける
+			else if (strpos($syllabus['term'], '･') !== false) {
+				//Tを除いて「･」区切りでタームを抽出し数字を配列に
+				$termList = explode('･', substr($syllabus['term'], 1)); //[1,3]
+				foreach ($termList as $term)
+					$terms[] = [ 'start'=>StartTerm[$code[0]][intval($term)], 'end'=>EndTerm[$code[0]][(intval($term))] ];
+			}
+			//連続した複数タームにまたがる→イベントをつなげる
+			else if (strpos($syllabus['term'], '-') !== false) {
+				//Tを除いて「-」区切りでタームを抽出し数字を配列に
+				$termList = explode('-', substr($syllabus['term'], 1)); //[1,3]
+				$terms[] = [ 'start'=>StartTerm[$code[0]][intval($termList[0])], 'end'=>EndTerm[$code[0]][(intval($termList[1]))] ];
+			}
+			//通常の単独ターム
+			else {
+				//Tを除いて数字に
+				$term = intval(substr($syllabus['term'], 1));
+				$terms[] = [ 'start'=>StartTerm[$code[0]][$term], 'end'=>EndTerm[$code[0]][$term] ];
+			}
+	
+			//開始時刻の演算
+			//$syllabus['time'] ex)月1 月1,月2
+			//$times = [ [  ] ];
+			$times = []; //[day:月,start:8:50,end:10:20]
+			//終日イベントに、毎日のみ(禁止or未実装)
+			if ($query['allDay'] === 'true' || $syllabus['time'] === '通')
+				$times[] = [ 'day'=>'all', 'hour'=>null ];
+			//時間指定を利用、毎日のみ(禁止or未実装)
+			else if ($syllabus['time'] === '他')
+				$times[] = [ 'day'=>'time', 'hour'=>null, 'start'=>$query['startTime'], 'end'=>$query['endTime'] ];
+			//カンマ区切りで複数時間の時
+			else if (mb_strpos($syllabus['time'], ',') !== false) {
+				//「,」区切りで時間を配列に分ける
+				$timeList = explode(',', $syllabus['time']);
+				$dayOfWeekList = [];
+				//時間を曜日とその中に時限の数字を入れ、連想配列化
+				foreach ($timeList as $t) {
+					//曜日を抽出
+					$dow = mb_substr($t, 0, 1);
+					//曜日の配列がなければ作成
+					if (!array_key_exists($dow, $dayOfWeekList)) $dayOfWeekList[$dow] = [];
+					//時限を追加
+					$dayOfWeekList[$dow][] = intval(mb_substr($t, 1, 1));
+				}
+				//曜日ごとに処理
+				foreach ($dayOfWeekList as $dow => $list) {
+					//ソートする
+					asort($list);
+					$startHour = -1;
+					$startIndex = -1;
+					for ($i = 0; $i < count($list); $i++) {
+						//初めは有無を言わさず時間の始まりとして代入
+						if ($startHour === -1 && $startIndex === -1) {
+							$startHour = $list[$i];
+							$startIndex = $i;
+						}
+						//配列の最後or次との時間が1時間以上空き→時間登録
+						if ($i + 1 === count($list) || $list[$i + 1] - $list[$i] > 1) {
+							$times[] = [ 'day'=>$dow, 'hour'=>$startHour, 'start'=>StartTime[$startHour], 'end'=>EndTime[$list[$i]] ];
+							$startHour = $startIndex = -1;
+						}
+					}
+				}
+			}
+			//時間が1つの時
+			else {
+				$hour = intval(mb_substr($syllabus['time'], 1, 1));
+				$times[] = [ 'day'=>mb_substr($syllabus['time'], 0, 1), 'hour'=>$hour, 'start'=>StartTime[$hour], 'end'=>EndTime[$hour] ];
+			}
+	
+			//休みリストをDateTimeでインスタンス生成
+			$holidayList = [];
+			foreach (Holiday as $h) $holidayList[] = new DateTime($h);
+	
+			//イベントの追加
+			$result = [];
+			for ($i = 0; $i < count($terms); $i++) {
+				for ($j = 0; $j < count($times); $j++) {
+					//元のIDの生成
+					//UNIX時間&シラバスコード&ターム&曜時&単位数&★ターム&★曜日
+					//0000000000&2000-XX-XXXXXX-ja_JP&T1&月1&2&0&0
+					$id = "$_SERVER[REQUEST_TIME]&$query[code]&$syllabus[term]&$syllabus[time]&$syllabus[credit]&$i&$j";
+					//開始日時のDateTimeインスタンスを生成
+					$startDate = new DateTime($terms[$i]['start']);
+					$allDay = false;
+					$everyDay = false;
+					//dayがallのとき、終日かつ毎日に
+					if ($times[$j]['day'] === 'all') {
+						$allDay = true;
+						$everyDay = true;
+					}
+					//dayがtimeのとき、毎日に
+					else if ($times[$j]['day'] === 'time') {
+						$everyDay = true;
+					}
+					//dayに曜日が入るとき
+					else {
+						$diff = DOW[$times[$j]['day']] - intval($startDate->format('w'));
+						//開始日の曜日より後のとき、その分、日を進める
+						if ($diff > 0) $startDate->modify('+'.$diff.' days');
+						//開始日の曜日より前のとき、7日とプラスその分、日を進める
+						else if ($diff < 0) $startDate->modify('+'.(7 + $diff).' days');
+					}
+					//iCalendarの作法に基づいて、繰り返しルールを記述
+					$exdate = [ 'RRULE:FREQ='.($everyDay ? 'DAILY;' : 'WEEKLY;WKST=SU;BYDAY='.DOWEN[$times[$j]['day']].';').'UNTIL='.str_replace('-', '', $terms[$i]['end']).'T145959Z' ];
+					//振替を無視しない場合 !!!!!!!!!!
+					if (isset($query['ignoreExdate']) && $query['ignoreExdate'] === 'false')
+						foreach ($holidayList as $h)
+							if ($everyDay || intval($h->format('w')) === DOW[$times[$j]['day']])
+								$exdate[] = 'EXDATE:'.$h->format('Ymd').'T'.str_replace(':', '', $times[$j]['start'].':00');
+					$overrides = [];
+					//通知が有効なとき
+					if ($query['notification'] === 'true') $overrides[] = [ 'method' => 'popup', 'minutes' => ($times[$j]['hour'] === 3 ? 50 : 10) ];
+					$description = '';
+					foreach ($syllabus as $key => $value)
+						if (in_array($key, array_keys(syllabus_ej), true) && $value !== '' && $value !== null)
+							$description .= ($key !== 'detail' ? syllabus_ej[$key].': '.$value."\n" : "★授業計画詳細情報\n".implode("\n", $value)."\n");
+					$description .= "\nシラバスの詳細ページはこちら\nhttps://".$_SERVER['HTTP_HOST']."/syllabus?".$query['code']."\nCreated by chibasys";
+					
+					$result[] = $service->events->insert('primary', new Google_Service_Calendar_Event([
+						'id' => str_replace('=', '', Encoding::base32HexEncode($id)), //base32hexエンコードをしたID
+						'colorId' => '2', //アカウントによって違う
+						'summary' => $syllabus['name'], //予定のタイトル
+						'location' => ($syllabus['room'] === '' ? '' : '千葉大学 '.$syllabus['room']), //予定の位置
+						'description' => $description,
+						'start' => [ //開始日時
+							($allDay ? 'date' : 'dateTime') => $startDate->format('Y-m-d').($allDay ? '' : 'T'.$times[$j]['start'].':00+09:00'),
+							'timeZone' => 'Asia/Tokyo',
+						],
+						'end' => [ //終了日時
+							($allDay ? 'date' : 'dateTime') => $startDate->format('Y-m-d').($allDay ? '' : 'T'.$times[$j]['end'].':00+09:00'),
+							'timeZone' => 'Asia/Tokyo',
+						],
+						'recurrence' => $exdate, //繰り返し設定
+						'source' => [ //ソース設定、楽にリンクへ飛べるようになる
+							'url' => 'https://'.$_SERVER['HTTP_HOST'].'/syllabus?'.$query['code'], 'title' => $syllabus['name'].'の詳細 -チバシス-'
+						], //通知設定、デフォルトはいずれも使わない
+						'reminders' => [ 'useDefault' => false, 'overrides' => $overrides ]
+					]));
+				}
+			}
+			//以前の通知設定を変更
+			calender_notification_settings_change($userID, $query['notification'] === 'true');
+			return [ 'result'=>$result ];
+		}
+		else {
+			//idを指定してイベントを消去
+			$result = $service->events->delete('primary', $query['id']);
+			return [ 'result'=>$result ];
+		}
+	}
+
+	/**
+	 * Googleカレンダーのイベントの通知設定変更
+	 *
+	 * @param ?string $userID (Googleの)ユーザーID
+	 * @param array $query POSTデータ
+	 * @return array イベントの返り値の連想配列
+	 */
+	function calender_notification_toggle(?string $userID, array $query): array {
+		//未ログインならば終了
+		if (!$userID) return error_data(ERROR_NO_LOGIN);
+		$client = google_client_create();
+		//Googleアカウントの再ログインが必要ならば終了
+		if ($client->isAccessTokenExpired()) return error_data(ERROR_GOOGLE_EXPIRED);
+		//カレンダーサービスのインスタンスを生成
+		$service = new Google_Service_Calendar($client);
+		$result = [];
+		foreach ($query['id'] as $id) {
+			//idごとにイベントを取得
+			$event = $service->events->get('primary', $id);
+			//通知を有効に変更するとき
+			if ($query['notification'] === 'true') {
+				$event['reminders'] =
+					[ 'useDefault' => false, 'overrides' => [ [ 'method' => 'popup', 'minutes' =>
+						(substr($event['start']['dateTime'], 11, 5) === '12:50' ? 50 : 10) ] ] ];
+			}
+			//通知を無効に変更するとき
+			else if ($query['notification'] === 'false') {
+				$event['reminders'] = [ 'useDefault' => false, 'overrides' => [] ];
+			}
+			//一部を書き換えたやつをそのままアップデートとして突っ込む
+			$result[] = $service->events->update('primary', $id, $event);  
+		}
+		//以前の通知設定を変更
+		calender_notification_settings_change($userID, $query['notification'] === 'true');
+		return [ 'result'=>$result ];
+	}
+
+	/**
+	 * 以前の変更通知をMySQLに保存
+	 *
+	 * @param ?string $userID (Googleの)ユーザーID
+	 * @param bool $bool 有効かどうか
+	 * @return array 成功したかどうかの連想配列
+	 */
+	function calender_notification_settings_change(?string $userID, bool $bool): array {
+		//以前の通知設定をMySQLに保存
+		$result = maria_query("UPDATE chibasys.user SET notification=".($bool ? 1 : 0)." WHERE id='$userID';");
+		if (!$result) return error_data(ERROR_SQL_FAILED);
+		return [ 'notification'=>$bool ];
+	}
 ?>

@@ -5,10 +5,12 @@
   border-color: #feac33;
 }
 .btn {
-  font-size: 1rem;
   padding: .5rem .8rem;
   -webkit-box-shadow: unset !important;
   box-shadow: unset !important;
+}
+.form-group .btn {
+  font-size: 1rem;
 }
 .btn.btn-sm {
   font-size: .8rem;
@@ -27,6 +29,7 @@
 .lime-green { background-color: #a3f5b1; }
 .text-white .md-form label { color: #e6e6e6; }
 .text-white .form-control { color: #e3e6e8; }
+*::-webkit-scrollbar { display: none; }
 
 /* フォントのグローバル設定 */
 @font-face {
@@ -43,14 +46,34 @@ p { margin-bottom: .2rem !important; }
 table { table-layout: fixed; }
 table th { line-height: 110%; }
 table td, table th {
-  padding: .2rem;
-  vertical-align: middle;
-  text-overflow: ellipsis;
-  overflow: hidden;
+  padding: .5rem .3rem !important;
+  vertical-align: middle !important;
+  text-overflow: ellipsis !important;
+  overflow: hidden !important;
 }
 table.table-sm td, table.table-sm th {
-  padding-top: .4rem;
-  padding-bottom: .3rem;
+  padding-top: .4rem !important;
+  padding-bottom: .3rem !important;
+}
+div.fixed-table-header {
+  height: 32px !important;
+}
+div.fixed-table-header tr {
+  height: 31.5px !important;
+}
+div.th-inner {
+  padding: 0 !important;
+}
+div.fixed-table-container.fixed-height {
+  padding-bottom: 32px !important;
+}
+div.fixed-table-border {
+  height: 0 !important;
+}
+.clearfix::after {
+  display: block;
+  clear: both;
+  content: "";
 }
 
 /* 右上の名前 */
@@ -85,26 +108,16 @@ table.table-sm td, table.table-sm th {
 .inline-parent input, .inline-parent select, .inline-parent button {
   display: inline-block;
   vertical-align: middle;
-  max-width: 400px;
+  /*max-width: 400px;*/
 }
 
 /* お気に入り関連 */
-#favorite-box {
-  max-height: 50vh;
-  overflow-y: scroll;
-  -webkit-overflow-scrolling: touch;
-  color: black !important;
-}
-#favorite-box::-webkit-scrollbar { display: none; }
-#favorite-table tr { background-color: transparent !important; }
-#favorite-table th, #favorite-table td { border-color: black; }
-#favorite-table th:nth-child(1) { width: 3.2rem; }
-#favorite-table th:nth-child(2), #favorite-table th:nth-child(3) { width: 2.4rem; }
-@media(min-width: 768px) {
-  #favorite-table th:nth-child(1), #favorite-table th:nth-child(2), #favorite-table th:nth-child(3) {
-    width: 4.8rem;
-  }
-}
+.star .table-bordered, .star .table-bordered th, .star .table-bordered td,
+.star .fixed-table-container, #favorite-table th, #favorite-table td
+{ border: 1px solid black !important; }
+
+.fixed-table-container { border: 1px solid #dee2e6; border-bottom-width: 0px; }
+.fixed-table-container div { margin: -1px; }
 
 /* 時間割 */
 #timetable-box {
@@ -118,7 +131,7 @@ table.table-sm td, table.table-sm th {
   margin-bottom: 0;
 }
 #timetable-box th, #timetable-box td {
-  padding: 0;
+  padding: 0 !important;
   /*width: calc((100% - 2rem) / 5);*/
   width: 20%;
   border: 0.5px solid white;
@@ -161,9 +174,6 @@ table.table-sm td, table.table-sm th {
   overflow: hidden;
   font-size: 1.8vmax;
   width: 20%;
-  /*width: calc((100% - 2rem) / 5);*/
-  /*top: 2rem;*/
-  /*height: calc(((100% - 2rem) / 5) * 1 + 2rem);*/
   min-height: 12vh;
   /*文字を中央寄せ*/
   display: -webkit-flex;
@@ -186,7 +196,7 @@ table.table-sm td, table.table-sm th {
   margin-top: .4rem;
 }
 @media (min-width: 992px) { .subject-box { font-size: 1.5vmax } }
-@media (min-width: 992px) and (min-height: 1250px), (min-width:1250px){ .subject-box { font-size: 20px; } }
+@media (min-width: 992px) and (min-height: 1250px), (min-width: 1250px){ .subject-box { font-size: 20px; } }
 
 /* モーダルの設定 */
 .modal-content {
@@ -198,8 +208,13 @@ table.table-sm td, table.table-sm th {
   white-space: nowrap;
   text-overflow: ellipsis;
 }
-.modal-body {
+.modal-dialog-scrollable .modal-body {
+  overflow-y: hidden;
   -webkit-overflow-scrolling: touch;
+}
+.modal-dialog-scrollable.can-scroll .modal-body { overflow-y: scroll !important; }
+.fullsize .modal-content {
+  height: 100% !important;
 }
 @media screen and (max-width: 768px), screen and (max-height: 768px) and (max-width: 1140px)  {
   .fullsize .modal-dialog {
@@ -210,7 +225,6 @@ table.table-sm td, table.table-sm th {
     margin: 0;
   }
   .fullsize .modal-content {
-    height: 100% !important;
     width: 100% !important;
     border: 0;
     border-radius: 0;
@@ -240,7 +254,7 @@ table.table-sm td, table.table-sm th {
   margin: .3rem .1rem;
   padding: .3rem;
 }
-#mincam-table tr td:nth-child(3), #mincam-table tr td:nth-child(4) {
+#mincam-table tr td:nth-child(4), #mincam-table tr td:nth-child(5) {
   letter-spacing: -.2rem;
 }
 
@@ -319,4 +333,61 @@ table.table-sm td, table.table-sm th {
   padding: 0;
   text-align: center;
   vertical-align: middle;
+}
+
+/* bootstrap-tableのチェックボックスのスタイル */
+.bs-checkbox { padding: 0 !important; }
+.bs-checkbox label {
+  display: block;
+  width: 100%;
+  min-height: 2.5rem;
+  padding-left: 2rem;
+}
+.fixed-table-header .bs-checkbox label { min-height: 2rem; }
+
+.bs-checkbox input {
+  position: absolute;
+  pointer-events: none;
+  z-index: -1;
+  opacity: 0;
+  margin: 0;
+}
+
+.bs-checkbox span {
+  position: relative;
+  display: inline-block;
+  margin-bottom: 0;
+  vertical-align: top;
+  top: .75rem;
+  left: -1.5rem;
+}
+.fixed-table-header .bs-checkbox span { top: .5rem; }
+
+.bs-checkbox span::before {
+  border-radius: .1rem;
+  position: absolute;
+  display: block;
+  width: 1rem;
+  height: 1rem;
+  pointer-events: none;
+  content: "";
+  background-color: #fff;
+  border: #adb5bd solid 1px;
+  transition: background-color .15s ease-in-out,border-color .15s ease-in-out,box-shadow .15s ease-in-out;
+}
+.bs-checkbox input:checked~span::before {
+  color: #fff;
+  border-color: #007bff;
+  background-color: #007bff;
+}
+.bs-checkbox span::after {
+  position: absolute;
+  display: block;
+  width: 1rem;
+  height: 1rem;
+  content: "";
+  background: no-repeat 50%/50% 50%;
+}
+.bs-checkbox input:checked~span::after {
+  background-image:url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'%3e%3cpath fill='%23fff' d='M6.564.75l-3.59 3.612-1.538-1.55L0 4.26 2.974 7.25 8 2.193z'/%3e%3c/svg%3e");
 }

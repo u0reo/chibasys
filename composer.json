@@ -2,6 +2,6 @@
     "require": {
         "google/apiclient": "^2.0",
         "paragonie/constant_time_encoding": "^2.2",
-        "hashids/hashids": "^2.0"
+        "electrolinux/phpquery": "^0.9.6"
     }
 }
