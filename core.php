@@ -1002,7 +1002,7 @@
 		
 		
 		$code = explode('-', $query['code']);
-		if ($query['bool']) {
+		if ($query['bool'] === 'true') {
 			//cURLで履修登録画面を取得
 			$site = web($cookie, $referer, '_eventId=input&'.url_extract($referer).'&nendo=&jikanwariShozokuCode=&jikanwariCode=&yobi=1&jigen=1');
 			if (isset($site['error_code'])) return $site;

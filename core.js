@@ -356,7 +356,7 @@ function syllabus(code, name = null) {
   $('#syllabus-modal .modal-footer').html(
     `<button class="btn btn-sm btn-star fav-${code}" onclick="fav_change('${code}')">${text_get(fav_text, bool_get(fav_code, code))}</button>` +
     `<button class="btn btn-sm btn-primary cal-${code}" onclick="cal_change('${code}');">${text_get(cal_text, bool_get(cal_code, code))}</button>` +
-    `<button class="btn btn-sm btn-secondary" onclick="changePortalReg(this, '${code}');">${text_get(reg_text, bool_get(reg_code, code))}</button>` +
+    `<button class="btn btn-sm btn-secondary reg-${code}" onclick="portal_reg_change('${code}');">${text_get(reg_text, bool_get(reg_code, code))}</button>` +
     `<button class="btn btn-sm btn-info" data-toggle="modal" data-target="#syllabus-link-modal">共有する</button>`);
   $('#syllabus-title').html((name !== null ? name : 'シラバス') + 'の詳細');
   $('#syllabus-modal').data('code', code).data('bool', bool_get(fav_code, code));
@@ -956,20 +956,16 @@ function portal_grade_list_get_result(data) {
   if (data.grade_data) grade_data = data.grade_data;
 }
 
-function changePortalReg(button, code, bool = true) {
-  if (portal_reg_bool_get(code) === false) {
-    $(button).prop('disabled', true).text('処理中...');
-    startLoading();
-    ajax({ portal_reg: { code: code }, portal_reg_list_get: { refresh: true } });
-  }
+function portal_reg_change(code) {
+  $(`.reg-${code}`).prop('disabled', true).text('処理中...');
+  ajax({ portal_reg: { code: code, bool: !bool_get(reg_code, code) } });
 }
 
 function portal_reg_result(data) {
-  if (data.code && data.bool && data.name) {
+  if (data.code && data.name) {
+    ajax({ portal_reg_list_get: { refresh: true,  nendo: new Date().getFullYear() + (new Date().getMonth() < 3 ? -1 : 0) } });
     alert(data.name + (data.bool ? 'の履修登録完了' : 'の履修登録の削除完了'));
-    let button = $('.portal-reg-button');
-    if (button.data(code) === data.code)
-      button.prop('disabled', false).text(text_get(reg_text, bool));
+    $(`.reg-${code}`).prop('disabled', false).text(text_get(reg_text, bool));
   }
 }
 

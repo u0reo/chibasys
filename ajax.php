@@ -3,7 +3,7 @@ const FUNC_QUERY = [ 'portal_syllabus_get', 'portal_real_syllabus', 'portal_subj
   'mincam_search', 'comment_get' ];
 const FUNC_ID = [ 'portal_student_info_get', 'fav_list_get', 'cal_list_get', 'cal_week_get' ];
 const FUNC_ID_QUERY = [ 'portal_search', 'portal_registration', 'portal_reg_list_get', 'portal_grade_list_get',
-  'memo_get', 'memo_save', 'comment_post', 'fav_change', 'cal_change',
+  'portal_reg', 'memo_get', 'memo_save', 'comment_post', 'fav_change', 'cal_change',
   'calender_notification_toggle', 'userdata_save' ];
 
 $request = isset($_SERVER['HTTP_X_REQUESTED_WITH']) ? strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) : '';
