@@ -2,7 +2,7 @@
 require_once($_SERVER['DOCUMENT_ROOT'] . '/core.php');
 $r = explode("?", getRequest());
 $type = ($r[0] === '' ? 'website' : 'article');
-$title = 'ようこそ、delisysへ';
+$title = 'ようこそ、chibasysへ';
 $summary = '';
 $image_url = 'icon.png';
 if (!sessionCheck(true)) {
@@ -11,8 +11,8 @@ if (!sessionCheck(true)) {
   $_SESSION['request'] = getRequest();
 
   if ($r[0] === 'syllabus') {
-    $link = mysqli_connect();
-    $data = getSyllabusTemp($link, $r[1]);
+    $link = mysqli_connect('localhost', 'chibasys', 'P8IpIqW2Zb8CZNCC', 'chibasys');
+    $data = syllabus($link, [ 'code'=>$r[1] ]);
     mysqli_close($link);
     if ($data['status'] === 'success') {
       $teacher = $data['data']['teacher'];
@@ -33,13 +33,13 @@ if (!sessionCheck(true)) {
 <head prefix="og: http://ogp.me/ns# fb: http://ogp.me/ns/fb# <?php echo ($type); ?>: http://ogp.me/ns/<?php echo ($type); ?>#">
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
-  <meta property="og:url" content="https://delisys.xperd.net/<?php echo (getRequest()); ?>" />
+  <meta property="og:url" content="https://chibasys.xperd.net/<?php echo (getRequest()); ?>" />
   <meta property="og:type" content="<?php echo ($type); ?>" />
   <meta property="og:title" content="<?php echo ($title) ?>" />
   <meta property="og:description" content="<?php echo ($summary) ?>" />
-  <meta property="og:site_name" content="delisys  by reolink" />
+  <meta property="og:site_name" content="chibasys  by reolink" />
   <meta property="og:image" content="<?php echo ($image_url); ?>" />
-  <title>delisys by reolink</title>
+  <title>chibasys by reolink</title>
   <link href="https://use.fontawesome.com/releases/v5.8.2/css/all.css" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.3.1/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/mdbootstrap/4.8.2/css/mdb.min.css" rel="stylesheet">
@@ -49,16 +49,17 @@ if (!sessionCheck(true)) {
 
 <body>
   <nav class="navbar navbar-dark bg-dark">
-    <a href="/" class="navbar-brand">delisys</a>
+    <a href="/" class="navbar-brand">chibasys</a>
     <div class="dropdown">
       <button type="button" id="dropdownMenuButton" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-        <div id="username"><?php echo (isset($_SESSION['userdata']) ? $_SESSION['userdata']['studentName'] : '未ログイン'); ?></div>
+        <div id="username"><?php echo(isset($_SESSION['userdata']) ? $_SESSION['userdata']['studentName'] : '未ログイン'); ?></div>
         <img class="rounded-circle" src="<?php if (isset($_SESSION['google_photo_url'])) echo ($_SESSION['google_photo_url']); ?>" style="height: 30px;" />
       </button>
       <div class="dropdown-menu dropdown-menu-right" aria-labelledby="dropdownMenuButton" style="z-index:9999">
         <a class="dropdown-item" href="https://calendar.google.com/" target="_blank">Googleカレンダーへ</a>
         <a class="dropdown-item" href="https://cup.chiba-u.jp/campusweb/" target="_blank">学生ポータルへ</a>
         <a class="dropdown-item" href="https://cup.chiba-u.jp/campusweb/campussquare.do?locale=ja_JP&_flowId=SYW3901100-flow" target="_blank">千葉大シラバス検索へ</a>
+        <a class="dropdown-item" data-toggle="modal" data-target="#register-modal"<?php if (!isset($_SESSION['userdata'])) echo(' style="display:none;"'); ?>>設定</a>
         <?php echo (isset($_SESSION['id']) ? '<a class="dropdown-item" href="/auth?mode=logout">ログアウト</a>' : '<a class="dropdown-item" href="/auth?mode=login">ログイン</a>'); ?>
       </div>
     </div>
@@ -420,6 +421,10 @@ if (!sessionCheck(true)) {
         <div class="form-group inline-parent">
           <button class="btn btn-primary btn-block" onclick="startSearch();">検索</button>
         </div>
+        <button class="btn btn-secondary btn-block" onclick="showSubjects();">
+          履修登録済みの教科を確認<br>
+          <!--<nav style="font-size:1.5rem;">成績確認もここから</nav>-->
+        </button>
       </div>
       <div id="mincam-form" class="bg-info p-3 p-md-5 mt-md-3 overflow-hidden text-white text-center">
         <h2 class="display-5">授業評価検索</h2>
@@ -449,79 +454,28 @@ if (!sessionCheck(true)) {
         <button class="btn btn-primary btn-block" onclick="showMultishare();" style="display:none;">複数の教科をまとめて共有する</button>
       </div>
       <div class="zakuro p-3 p-md-5 mt-md-3 overflow-hidden text-white">
-        <h2 class="display-5 text-center">今週の時間割</h2>
+        <div class="mx-md-0" style="margin: 0 -.75rem; position:relative;">
+          <button id="timetable-prev" class="btn" onclick="reloadTimetable(-1);">＜前週</button>
+          <h2 id="timetable-title" class="display-5 text-center">時間割</h2>
+          <button id="timetable-next" class="btn" onclick="reloadTimetable(1);">次週＞</button>
+        </div>
         <div id="timetable-box" class="my-3 mx-md-0" style="margin: 0 -.75rem;">
           <table class="table tt-5">
             <thead>
-              <tr>
-                <th></th>
-                <th>月</th>
-                <th>火</th>
-                <th>水</th>
-                <th>木</th>
-                <th>金</th>
-              </tr>
+              <tr id="timetable-date"><th></th><th></th><th></th><th></th><th></th><th></th></tr>
+              <tr id="timetable-dow"><th></th><th>月</th><th>火</th><th>水</th><th>木</th><th>金</th></tr>
             </thead>
             <tbody>
-              <tr>
-                <th>1</th>
-                <td></td>
-                <td></td>
-                <td></td>
-                <td></td>
-                <td></td>
-              </tr>
-              <tr>
-                <th>2</th>
-                <td></td>
-                <td></td>
-                <td></td>
-                <td></td>
-                <td></td>
-              </tr>
-              <tr>
-                <th>3</th>
-                <td></td>
-                <td></td>
-                <td></td>
-                <td></td>
-                <td></td>
-              </tr>
-              <tr>
-                <th>4</th>
-                <td></td>
-                <td></td>
-                <td></td>
-                <td></td>
-                <td></td>
-              </tr>
-              <tr>
-                <th>5</th>
-                <td></td>
-                <td></td>
-                <td></td>
-                <td></td>
-                <td></td>
-              </tr>
-              <tr id="timetable-6th">
-                <th>6</th>
-                <td></td>
-                <td></td>
-                <td></td>
-                <td></td>
-                <td></td>
-              </tr>
-              <tr id="timetable-7th">
-                <th>7</th>
-                <td></td>
-                <td></td>
-                <td></td>
-                <td></td>
-                <td></td>
-              </tr>
+              <tr><th>1</th><td></td><td></td><td></td><td></td><td></td></tr>
+              <tr><th>2</th><td></td><td></td><td></td><td></td><td></td></tr>
+              <tr><th>3</th><td></td><td></td><td></td><td></td><td></td></tr>
+              <tr><th>4</th><td></td><td></td><td></td><td></td><td></td></tr>
+              <tr><th>5</th><td></td><td></td><td></td><td></td><td></td></tr>
+              <tr id="timetable-6th"><th>6</th><td></td><td></td><td></td><td></td><td></td></tr>
+              <tr id="timetable-7th"><th>7</th><td></td><td></td><td></td><td></td><td></td></tr>
             </tbody>
           </table>
-          <div id="subjects-container" style="top:30px;left:30px;right:0;bottom:0;position:absolute;"></div>
+          <div id="subjects-container" style="top:60px;left:30px;right:0;bottom:0;position:absolute;"></div>
         </div>
         <h5>各教科をタップするとシラバスを確認でき、時間割からの削除もできます。</h5>
         <p>ここに教科を追加する場合はシラバスを検索して、詳細情報へ行き、「カレンダーに追加」を行ってください。単位数集計にも必要です。</p>
@@ -536,7 +490,7 @@ if (!sessionCheck(true)) {
   <footer class="container py-5">
     <div class="row">
       <div class="col-12 col-md">
-        <p>delisys -授業の予定を簡単にカレンダーへ挿入-</p>
+        <p>chibasys -授業の予定を簡単にカレンダーへ挿入-</p>
         <small class="d-block mb-3 text-muted">© 2019 xperd</small>
       </div>
     </div>
@@ -558,38 +512,43 @@ if (!sessionCheck(true)) {
     <div class="modal-dialog modal-dialog-centered modal-xl" role="document">
       <div class="modal-content">
         <div class="modal-header">
-          <h4 class="modal-title" id="register-title">ようこそ、delisysへ</h4>
+          <h4 class="modal-title" id="register-title">chibasys 設定</h4>
         </div>
         <div class="modal-body">
-          <h5>簡単な質問にご協力ください</h5>
           <div class="form-group">
-            <label for="studentName">名前:</label>
-            <input type="text" id="studentName" class="form-control" value="<?php if (isset($_SESSION['google_user_name'])) echo ($_SESSION['google_user_name']); ?>" required>
+            <label for="studentName">名前</label>
+            <input type="text" id="studentName" class="form-control" value="<?php
+              if (isset($_SESSION['userdata'])) echo($_SESSION['userdata']['studentName']); else if (isset($_SESSION['google_user_name'])) echo($_SESSION['google_user_name']); ?>" required>
             <span class="form-text text-muted">
-              コメント以外の名前に使用されます。後から変更できます。(現時点では不可)
+              コメント以外の名前に使用されます。後から変更できます。
             </span>
           </div>
           <div class="form-group">
-            <label for="studentID">学生証番号(左から5桁のみ):</label>
-            <input type="text" id="studentID" class="form-control" maxlength="5" pattern="^[0-9A-Z]+$" placeholder="00A00" required>
-            <span class="form-text text-muted">
-              この5桁からは入学年度、学部、学科やコースを把握します。個人は特定されません。
-            </span>
-          </div>
-          <div class="form-group">
-            <label>性別:</label>
+            <label>性別</label>
             <div class="custom-control custom-radio" style="display: inline-block;">
-              <input class="custom-control-input" type="radio" name="studentSex" id="studentSex-male" value="male" required>
+              <input class="custom-control-input" type="radio" name="studentSex" id="studentSex-male" value="male" required<?php if (isset($_SESSION['userdata']) && $_SESSION['userdata']['studentSex'] === 'male') echo(' checked'); ?>>
               <label class="custom-control-label" for="studentSex-male">男性</label>
             </div>
             <div class="custom-control custom-radio" style="display: inline-block;">
-              <input class="custom-control-input" type="radio" name="studentSex" id="studentSex-female" value="female" required>
+              <input class="custom-control-input" type="radio" name="studentSex" id="studentSex-female" value="female" required<?php if (isset($_SESSION['userdata']) && $_SESSION['userdata']['studentSex'] === 'female') echo(' checked'); ?>>
               <label class="custom-control-label" for="studentSex-female">女性</label>
             </div>
           </div>
+          <h4>学生ポータルのログイン情報</h4>
+          <h5>これらの項目を入力すると、履修登録や成績確認ができます。<br>匿名での履修/成績データの利用に同意したものとみなします。</h5>
+          <div class="form-group">
+            <label for="studentID">学生証番号</label>
+            <input type="text" id="studentID" class="form-control" maxlength="10" pattern="^[0-9A-Z]+$" placeholder="00A0000A" value="<?php if (isset($_SESSION['userdata']) && $_SESSION['userdata']['studentID']) echo($_SESSION['userdata']['studentID']); ?>" required>
+          </div>
+          <div class="form-group">
+            <label for="studentPass">パスワード</label>
+            <input type="password" id="studentPass" class="form-control" pattern="^[!-~]+$" placeholder="<?php if (isset($_SESSION['userdata']) && $_SESSION['userdata']['studentPass']) echo('空欄で変更しない'); ?>" required>
+          </div>
+          <div id="login-check-result"></div>
+          <button type="button" class="btn btn-secondary" onclick="loginCheck(this);" style="display:none;">ログインチェック</button>
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-primary" onclick="register(this);">登録</button>
+          <button type="button" class="btn btn-primary" onclick="register(this);">保存</button>
         </div>
       </div>
     </div>
@@ -763,6 +722,68 @@ if (!sessionCheck(true)) {
       </div>
     </div>
   </div>
+
+  <div class="modal modal-nomal fullsize" id="subjects-modal" tabindex="-1" role="dialog" aria-labelledby="subjects-title" aria-hidden="true" data-keyboard="false" data-backdrop="false" style="z-index: 1100;">
+    <div class="modal-dialog modal-dialog-centered modal-xl modal-dialog-scrollable" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h4 class="modal-title" id="subjects-title">履修登録済みの教科</h4>
+          <button type="button" class="close" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="alert alert-primary" role="alert">
+            単位数合計は年度合計になります。
+          </div>
+          <div id="subjects-year-box" class="form-group">
+
+          </div>
+          <h5 id="subjects-gpa" class="my-3" style="display:none;">XXXX年度の現時点でのGPA : 読み込み中...</h5>
+          <h5 id="subjects-credit" class="my-3">XXXX年度の単位数 : 読み込み中...</h5>
+          <h5 id="subjects-h5" class="my-2">XXXX年度の履修登録済み教科一覧</h5>
+          <div id="subjects-box"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!--<div class="modal modal-nomal fullsize" id="settings-modal" tabindex="-1" role="dialog" aria-labelledby="settings-title" aria-hidden="true" data-keyboard="false" data-backdrop="false" style="z-index: 1100;">
+    <div class="modal-dialog modal-dialog-centered modal-xl modal-dialog-scrollable" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h4 class="modal-title" id="settings-title">設定</h4>
+          <button type="button" class="close" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <h3>基本設定</h3>
+          <div class="form-group md-form inline-parent">
+            <label for="studentName" class="">名前</label>
+            <input type="text" id="studentName" class="form-control">
+          </div>
+          <div class="form-group inline-parent">
+            <label for="studentSex">性別</label>
+            <select id="studentSex" class="form-control">
+              <option value="male">男性</option>
+              <option value="female">女性</option>
+            </select>
+          </div>
+          <div class="alert alert-warning" role="alert">
+            単位数上限に関係のない教科、取得できなかった単位については考慮されません。
+          </div>
+          <button id="switch-settings-notification" class="mx-0 btn btn-dark" onclick="tooglesettingsNotification(this);">カレンダーの通知設定を変更(現在:オフ)</button>
+          <div id="year-box" class="form-group">
+
+          </div>
+          <h5 id="total-credit" class="my-3">XXXX年度の単位数合計 : 読み込み中...</h5>
+          <h5 id="settings-h5" class="my-2">XXXX年度の教科一覧</h5>
+          <div id="settings-box"></div>
+        </div>
+      </div>
+    </div>
+  </div>-->
 
   <div class="modal fade" id="timeout-modal" tabindex="-1" role="dialog" aria-labelledby="timeout-title" aria-hidden="true" data-keyboard="false" data-backdrop="false" style="z-index: 2100;">
     <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable" role="document">

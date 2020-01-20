@@ -8,19 +8,13 @@ if (!navigator.share) $('#shareButton').css('display', 'none');
 reloadFavorite(true);
 reloadAllCalendarSubjects(true);
 reloadWeekCalendarSubjects(true);
-reloadPortalRegistrationList(true);
-reloadPortalGrade(true);
-setTimeout(() => { if (loadedCount < 5) initPage(); }, 20000);
+setTimeout(() => { if (loadedCount < 3) initPage(); }, 20000);
 
 var loadedCount = 0;
 var poped = false; //ユーザーの手で主要ウィンドウを開いたかどうか
 var favorite = []; //お気に入りに登録済みのコードの配列
 var favoriteData = {}; //お気に入りに登録済みのシラバスの主要データ
 var allCalSub; //追加済みのカレンダーデータ
-var allRegSub; //履修登録済みの教科データ
-var allRegSubData; //履修登録済みの教科のシラバス主要データ
-var allGradeSub; //成績発表済みの教科データ
-
 
 //////////////////////////////////////////////////
 //////////ツール系メソッド////////////////////////////
@@ -32,29 +26,10 @@ var allGradeSub; //成績発表済みの教科データ
  * @param {boolean} commentSave 投稿時、コメントを一時セーブするフラグ
  * @param {boolean} alertBool アラート、画面遷移をするか否か
  */
-function checkResponse(data, loginCheck = true, commentSave = false, alertBool = true) {
+function checkResponse(data, loginCheck, commentSave = false, alertBool = true) {
   if (data['status'] === 'success') return true;
-  else if (data['status'] === 'error') {
-    alert(data['message']);
-    console.log(data);
-    return false;
-  }
   else if (data['status'] === 'failed') {
     alert('サーバーエラー');
-    return false;
-  }
-  else if (data['status'] === 'portal_non_register') {
-    if (loginCheck)
-      alert('ポータルに登録されていません、サイト一番右上のアイコンの設定からログインしてください');
-    allRegSub = false;
-    allGradeSub = false;
-    return false;
-  }
-  else if (data['status'] === 'portal_cannot_login') {
-    if (loginCheck)
-      alert('ポータルにログインできません、サイト一番右上のアイコンの設定からログインしなおしてください');
-    allRegSub = false;
-    allGradeSub = false;
     return false;
   }
   else if (data['status'] === 'expired') {
@@ -105,7 +80,7 @@ function getAjax(data, timeout = 20){
 }
 
 /**
- * URLのxperd.net/以降を取得
+ * URLの...net/以降を取得
  */
 function getRequest(){
   return document.location.href.substr(document.location.href.lastIndexOf('/') + 1);
@@ -150,24 +125,20 @@ function triggerSubjectNext(name) {
 function register(button) {
   if ($('#studentName').val() === '')
     alert('名前を入力してください');
-  /*else if (!(new RegExp(/[0-9][0-9][A-Z][0-9][0-9]/).test($('#studentID').val())))
-    alert('正しい学生証番号の一部を入力してください');*/
+  else if (!(new RegExp(/[0-9][0-9][A-Z][0-9][0-9]/).test($('#studentID').val())))
+    alert('正しい学生証番号の一部を入力してください');
   else if ($('input[name="studentSex"]:checked').val() === undefined)
     alert('性別を選択してください');
   else {
-    $(button).prop('disabled', true).text('保存中...');
-    getAjax({ method: 'register', studentName: $('#studentName').val(), studentSex: $('input[name="studentSex"]:checked').val(),
-      studentID: $('#studentID').val(), studentPass: $('#studentPass').val() })
+    $(button).prop('disabled', true).text('登録中...');
+    getAjax({ method: 'register', studentName: $('#studentName').val(), studentID: $('#studentID').val(), studentSex: $('input[name="studentSex"]:checked').val() })
       .done((result, textStatus, xhr) => {
         $('#register-modal').modal('hide');
-        $(button).prop('disabled', false).text('保存');
         $('#username').text($('#studentName').val());
-        reloadPortalRegistrationList();
-        reloadPortalGrade();
       })
       .fail((xhr, textStatus) => {
-        alert('保存できませんでした');
-        $(button).prop('disabled', false).text('保存');
+        alert('登録できませんでした');
+        $(button).prop('disabled', false).text('登録');
         console.debug(textStatus);
       });
   }
@@ -229,9 +200,6 @@ $(window).on('popstate', (e) => {
   else if (s[0] === 'calendar') {
     calendar();
   }
-  else if (s[0] === 'subjects') {
-    subjects();
-  }
   else if (s[0] === 'dialog') {
     $('#' + e.originalEvent.state['dialog'] + '-modal').modal('show');
   }
@@ -244,7 +212,6 @@ $('.fullsize .close').click(() => {
     history.back();
   else {
     history.pushState(null, null, '/');
-    gtag('config', 'UA-44630639-4', {'page_path': getRequest()});
     $('.modal.show').modal('hide');
   }
 });
@@ -288,8 +255,7 @@ function startSearch(query = null) {
     });
     query = params.toString();
   }
-  history.pushState({ method: 'search', query: query }, '検索 -chibasys-', 'search?' + query);
-  gtag('config', 'UA-44630639-4', {'page_path': getRequest()});
+  history.pushState({ method: 'search', query: query }, '検索 -delisys-', 'search?' + query);
   poped = true;
   search(query);
 }
@@ -330,8 +296,8 @@ function search(query) {
             '<thead><tr><th style="width:10%;">開講</th><th style="width:15%;">曜時</th><th style="width:50%;">科目名</th><th style="width:25%;">担当</th><th class="d-none d-md-table-cell" style="width:150%;">授業概要</th></tr></thead><tbody>';
           for (var i = 0; i < searchResult['subjects'].length; i++){
             var s = searchResult['subjects'][i];
-            var code = s[0] + '-' + s[4];//s[0] + '-' + s[11] + '-' + s[4] + '-' + s[10];
-            var fav = getFavoriteBool(code);
+            var code = s[0] + '-' + s[11] + '-' + s[4] + '-' + s[10];
+            var fav = (favorite.indexOf(code) >= 0);
             bodyText += '<tr class="subject-body tr-' + code + (fav ? ' star' : '') + '"><td>' + s[2].replace(/(.*?)ターム/g, 'T$1') + '</td><td>' + s[3] + '</td><td>' + s[5] + '</td><td style="width:50%;">' + s[6] + '</td><td class="d-none d-md-table-cell" style="width:150%;">' + s[8].replace(/・・・・/g, '・…').replace(/・・・/g, '…') + '</td></tr>' +
               '<tr class="subject-next next-horizontal tr-' + code + (fav ? ' star' : '') + '" data-code="' + code + '"><td colspan="5"><div class="collapse"><button class="btn btn-sm btn-star" onclick="changeFavorite(\'' + code + '\', this)">' + getFavoriteText(fav) + '</button>' +
               '<button class="btn btn-sm btn-primary" data-toggle="modal" data-target="#syllabus-link-modal">シラバスを共有</button><button class="btn btn-sm btn-info" onclick="showSyllabus(\'' + code + '\',\'' + s[5] + '\')">詳細情報へ</button></div></td></tr>';
@@ -372,8 +338,7 @@ function startMincam(query = null) {
     alert('条件を最低一つ入力してください。');
     return;
   }
-  history.pushState({ method: 'mincam', query: query }, '授業評価検索 -chibasys-', 'mincam?' + query);
-  gtag('config', 'UA-44630639-4', {'page_path': getRequest()});
+  history.pushState({ method: 'mincam', query: query }, '授業評価検索 -delisys-', 'mincam?' + query);
   poped = true;
   mincam(query);
 }
@@ -437,8 +402,7 @@ function mincam(query) {
  * @param {string} name 教科の名前
  */
 function showSyllabus(code, name) {
-  history.pushState({ method: 'syllabus', code: code, name: name }, name + '詳細 -chibasys-', 'syllabus?' + code);
-  gtag('config', 'UA-44630639-4', {'page_path': getRequest()});
+  history.pushState({ method: 'syllabus', code: code, name: name }, name + '詳細 -delisys-', 'syllabus?' + code);
   poped = true;
   syllabus(code, name);
 }
@@ -453,7 +417,7 @@ function syllabus(code, name = null) {
   var data = code.split('-');
   writeSyllabusFooter(code);
   $('#syllabus-title').text((name !== null ? name : 'シラバス') + 'の詳細');
-  $('#syllabus-modal').data('code', code).data('bool', getFavoriteBool(code));
+  $('#syllabus-modal').data('code', code).data('bool', favorite.indexOf(code) >= 0);
   $('#syllabus-body-detail, #syllabus-body-comment, #syllabus-body-mincam').html('<h4 class="my-3 mx-1" algin="center">読み込み中...</h4>');
   $('#syllabus-body-comment').data('index', 0);
   $('#comment-name, #comment-text').val('');
@@ -476,18 +440,16 @@ function syllabus(code, name = null) {
       $('#syllabus-memo').val('').prop('disabled', true).attr('placeholder', 'エラーが発生しました');
       console.debug(textStatus);
     });
-  syllabusAjax = getAjax({ method: 'syllabus', /*command: 'get',*/ code: code })
+  syllabusAjax = getAjax({ method: 'syllabus', command: 'get', code: code })
     .done((result, textStatus, xhr) => {
-      /*var bodyDetail = '';
+      var bodyDetail = '';
       syllabusResult = JSON.parse(result);
       if (checkResponse(syllabusResult, false)) {
-        var params = new URLSearchParams();
-        params.append('title', syllabusResult['detail-1']['授業科目'].replace(/  |[!-@]|[\[-`]|[{-~]|[Ⅰ-Ⅹ]|[A-Z]$|[a-z]$|[A-Z] |[a-z] /g, ' ').replace(/[A-Z]$|[a-z]$|  /g, ' ').trim());
-        params.append('teacher', ('担当教員' in syllabusResult['detail-1'] ? syllabusResult['detail-1']['担当教員'] : ''));
-        getAjax({ method: 'mincam', command: 'shape', query: params.toString() })
+        getAjax({ method: 'mincam', command: 'shape', title: syllabusResult['detail-1']['授業科目'].replace(/  |[!-@]|[\[-`]|[{-~]|[Ⅰ-Ⅹ]|[A-Z]$|[a-z]$|[A-Z] |[a-z] /g, ' ').replace(/  /g, ' ').trim(), teacher: ('担当教員' in syllabusResult['detail-1'] ? syllabusResult['detail-1']['担当教員'] : '') })
           .done((result, textStatus, xhr) => {
             var mincamResult = JSON.parse(result);
             if (checkResponse(mincamResult, false)){
+              console.log(mincamResult['query']);
               var bodyText = '';
               if (mincamResult['subjects'] && mincamResult['subjects'].length > 0) {
                 for (var i = 0; i < mincamResult['subjects'].length; i++) {
@@ -520,7 +482,7 @@ function syllabus(code, name = null) {
           .data('credit', ('単位数' in syllabusResult['detail-1'] ? syllabusResult['detail-1']['単位数'] : '0'))
           .data('name', syllabusResult['detail-1']['授業科目'])
           .data('teacher', ('担当教員' in syllabusResult['detail-1'] ? syllabusResult['detail-1']['担当教員'] : ''))
-          .data('room', ('教室' in syllabusResult['detail-1'] ? syllabusResult['detail-1']['教室'] : ''))
+          .data('location', ('教室' in syllabusResult['detail-1'] ? syllabusResult['detail-1']['教室'] : ''))
           .data('summary', syllabusResult['detail-2']['概要']);
         bodyDetail = '<table id="syllabus-table" class="table table-sm">' +
           '<thead><tr><th style="width:25%;">項目</th><th style="width:75%;">内容</th></tr></thead><tbody>';
@@ -539,71 +501,6 @@ function syllabus(code, name = null) {
         bodyDetail += '<h4 class="my-3 mx-1" algin="center">シラバス取得エラー、しばらくたってからお試しください</h4>';
       bodyDetail += '<a href="' + syllabusResult['original'] + '" target="_blank">元の千葉大学のシラバスはこちら</a>';
       $('#syllabus-body-detail').html(bodyDetail);
-      endLoading();*/
-      var bodyDetail = '';
-      syllabusResult = JSON.parse(result);
-      if (checkResponse(syllabusResult, false)) {
-        var params = new URLSearchParams();
-        params.append('title', syllabusResult['data']['name'].replace(/  |[!-@]|[\[-`]|[{-~]|[Ⅰ-Ⅹ]|[A-Z]$|[a-z]$|[A-Z] |[a-z] /g, ' ').replace(/[A-Z]$|[a-z]$|  /g, ' ').trim());
-        params.append('teacher', ('teacher' in syllabusResult['data'] ? syllabusResult['data']['teacher'] : ''));
-        getAjax({ method: 'mincam', command: 'shape', query: params.toString() })
-          .done((result, textStatus, xhr) => {
-            var mincamResult = JSON.parse(result);
-            if (checkResponse(mincamResult, false)){
-              var bodyText = '';
-              if (mincamResult['subjects'] && mincamResult['subjects'].length > 0) {
-                for (var i = 0; i < mincamResult['subjects'].length; i++) {
-                  var s = mincamResult['subjects'][i];
-                  bodyText += '<div class="mt-3 mb-2"><h5>' + s['title'] + '  ' + s['lastName'] + s['firstName'] + '</h5>' +
-                  '<p>充実度:' + '★'.repeat(s['richPoint']) + '</td><td>' + ' 楽単度:' + '★'.repeat(s['easyPoint']) + '</p>' +
-                  (s['attend'] !== '未登録' ? '<p>出席:' + s['attend'] + ' 教科書:' + s['textbook'] + '</p>' : '') +
-                  (s['attend'] !== '未登録' ? '<p>中間:' + s['middleExam'] + ' 期末:' + s['finalExam'] + '  ' + s['bringIn'].replace('テストなし', '') : '') +
-                  '<p>' + s['message'] + '</p>' +
-                  '<p class="text-right small">by ' + s['creditName'] + ' ' + (Math.floor((new Date().getTime() - new Date(s['postDate']).getTime()) / (1000 * 60 * 60 * 24)) + 1) + '日前</p></div>';
-                }
-              }
-              else
-                bodyText = '<h4 class="my-3 mx-1" algin="center">関連した授業評価はありません</h4>';
-            }
-            else
-              bodyText = '<h4 class="my-3 mx-1" algin="center">授業評価検索に失敗しました</h4>';
-            $('#syllabus-body-mincam').html(bodyText);
-          })
-          .fail((xhr, textStatus) => {
-            if (textStatus === 'abort') return;
-            $('#syllabus-body-mincam').html('<h4 class="my-3 mx-1" algin="center">授業評価検索に失敗しました</h4>');
-            console.debug(textStatus);
-          });
-        $('#calButton').prop('disabled', false);
-        if (name === null) $('#syllabus-title').text(syllabusResult['data']['name'] + 'の詳細');
-        $('#syllabus-modal')
-          .data('term', syllabusResult['data']['term'].replace(/(.*?)ターム/g, 'T$1'))
-          .data('time', syllabusResult['data']['time'])
-          .data('credit', ('credit' in syllabusResult['data'] ? syllabusResult['data']['credit'] : '0'))
-          .data('name', syllabusResult['data']['name'])
-          .data('teacher', ('teacher' in syllabusResult['data'] ? syllabusResult['data']['teacher'] : ''))
-          .data('room', ('room' in syllabusResult['data'] ? syllabusResult['data']['room'] : ''))
-          .data('summary', syllabusResult['data']['概要']);
-        bodyDetail = '<table id="syllabus-table" class="table table-sm">' +
-          '<thead><tr><th style="width:25%;">項目</th><th style="width:75%;">内容</th></tr></thead><tbody>';
-        for (key in syllabusResult['data'])
-          if (syllabusResult['data'][key] === null || syllabusResult['data'][key] === '') continue;
-          else if (key === 'detail') {
-            bodyDetail += '<tr><td>授業計画詳細情報</td><td>';
-            bodyDetail += syllabusResult['data']['detail'].join('<br>').replace(/\n/g, '<br>');
-            bodyDetail += '</td></tr>';
-          }
-          else if (eng[key])
-            bodyDetail += '<tr><td>' + eng[key] + '</td><td>' + syllabusResult['data'][key].replace(/\n/g, '<br>'); + '</td></tr>';
-        bodyDetail += '</tbody></table>';
-      }
-      else
-        bodyDetail += '<h4 class="my-3 mx-1" algin="center">シラバス取得エラー、しばらくたってからお試しください</h4>';
-      if (syllabusResult['url_ja'])
-        bodyDetail += '<a href="' + syllabusResult['url_ja'] + '" target="_blank">元の千葉大学のシラバス(日本語)はこちら</a>';
-      if (syllabusResult['url_en'])
-        bodyDetail += '<a href="' + syllabusResult['url_en'] + '" target="_blank">元の千葉大学のシラバス(英語)はこちら</a>';
-      $('#syllabus-body-detail').html(bodyDetail);
       endLoading();
     })
     .fail((xhr, textStatus) => {
@@ -616,16 +513,14 @@ function syllabus(code, name = null) {
 }
 
 function writeSyllabusFooter(code, bool = false){
-  var calSub = false;
+  var sub = false;
   if (allCalSub) allCalSub.forEach(e => {
-    if (e['code'] === code) calSub = e;
+    if (e['code'] === code) sub = e;
   });
-  var regSub = getPortalRegBool(code);
   $('#syllabus-modal .modal-footer').html(
-    '<button class="btn btn-sm btn-star" onclick="changeFavorite(\'' + code + '\', this)">' + getFavoriteText(getFavoriteBool(code)) + '</button>' +
-    (calSub ? '<button id="calButton" class="btn btn-sm btn-primary" onclick="deleteCalendar(this, \'' + calSub['id'] + '\', \'' + calSub['name'] + '\');">×カレンダーから削除</button>' :
-      '<button id="calButton" class="btn btn-sm btn-primary" data-toggle="modal" data-target="#syllabus-calendar-modal"' + (bool ? '' : ' disabled') + '>＋カレンダーに追加</button>') +
-    '<button class="btn btn-sm btn-secondary" onclick="changePortalReg(this, \'' + code + '\');"' + (regSub === false ? '' : ' disabled' ) + '>' + getPortalRegText(regSub) + '</button>' +
+    '<button class="btn btn-sm btn-star" onclick="changeFavorite(\'' + code + '\', this)">' + getFavoriteText(favorite.indexOf(code) >= 0) + '</button>' +
+    (sub ? '<button id="calButton" class="btn btn-sm btn-primary" onclick="deleteCalendar(this, \'' + sub['id'] + '\', \'' + sub['name'] + '\');">×カレンダーから削除</button>' :
+      '<button id="calButton" class="btn btn-sm btn-primary" data-toggle="modal" data-target="#syllabus-calendar-modal" ' + (bool ? '' : ' disabled') + '>＋カレンダーに追加</button>') +
     '<button class="btn btn-sm btn-info" data-toggle="modal" data-target="#syllabus-link-modal">共有する</button>');
 }
 
@@ -649,8 +544,7 @@ function editCalendar() {
     checkResponse({ status: 'expired' }, true);
   }
   else {
-    history.pushState({ method: 'calendar' }, 'カレンダー管理 -chibasys-', 'calendar');
-    gtag('config', 'UA-44630639-4', {'page_path': getRequest()});
+    history.pushState({ method: 'calendar' }, 'カレンダー管理 -delisys-', 'calendar');
     poped = true;
     calendar();
   }
@@ -669,7 +563,7 @@ function calendar(beforeYear = false) {
     for (i in allCalSub) {
       var sub = allCalSub[i];
       if (sub['nendo'] === year && sub['index']['term'] === '0' && sub['index']['time'] === '0'){
-        bodyText += createSubjectRow(sub['code'], sub['name'], '<td><button class="btn del-cal" onclick="deleteCalendar(this, \'' + sub['id'] + '\', \'' + sub['name'] + '\');">&times;</button></td><td>' + sub['term'] + '</td><td>' + sub['time'] + '</td><td>' + sub['credit'] + '</td><td>' + sub['name'] + '</td><td style="width:50%;">' + sub['room'] + '</td>', 6);
+        bodyText += createSubjectRow(sub['code'], sub['name'], '<td><button class="btn del-cal" onclick="deleteCalendar(this, \'' + sub['id'] + '\', \'' + sub['name'] + '\');">&times;</button></td><td>' + sub['term'] + '</td><td>' + sub['time'] + '</td><td>' + sub['credit'] + '</td><td>' + sub['name'] + '</td><td style="width:50%;">' + sub['location'] + '</td>', 6);
         credit += parseInt(sub['credit']);
       }
     }
@@ -693,186 +587,6 @@ function calendar(beforeYear = false) {
   $('#calendar-modal').modal('show');
 }
 
-/**
- * 手動で履修管理を表示、PushStateあり
- */
-function showSubjects() {
-  if (allRegSub === null || allRegSub === undefined) {
-    //未ログインははじく
-    checkResponse({ status: 'portal_non_register' }, true);
-  }
-  else {
-    history.pushState({ method: 'subjects' }, '履修管理 -chibasys-', 'subjects');
-    gtag('config', 'UA-44630639-4', {'page_path': getRequest()});
-    poped = true;
-    subjects();
-  }
-}
-/**
- * 追加済みのカレンダー管理をモーダルで表示
- */
-function subjects(beforeYear = false) {
-  var bodyText = '';
-  if (allRegSub && allRegSub.length > 0) {
-    //if (beforeYear) $('#year').val(beforeYear);
-    var year = 2019;//$('#year').val();
-    var credit = 0;
-    bodyText += '<table id="subjects-table" class="table table-sm">' +
-      '<thead><tr style="width:7.5%;"><th>削除</th><th style="width:10%;">開講</th><th style="width:15%;">曜時</th><th style="width:7.5%;">単位</th><th style="width:35%;">科目名</th><th style="width:25%;">教師</th></tr></thead><tbody>';
-    for (i in allRegSub) {
-      var sub = allRegSubData[i];
-      bodyText += createSubjectRow(allRegSub[i], sub['name'], '<td><button class="btn del-sub" onclick="changePortalReg(this, \'' + allRegSub[i] + '\', \'' + sub['name'] + '\');">&times;</button></td><td>' + sub['term'] + '</td><td>' + sub['time'] + '</td><td>' + sub['credit'] + '</td><td>' + sub['name'] + '</td><td style="width:50%;">' + sub['teacher'] + '</td>', 6);
-      credit += parseInt(sub['credit']);
-    }
-    bodyText += '</tbody></table>';
-    $('#subjects-credit').text(year + '年度の単位数 : ' + credit);
-    $('#subjects-h5').text(year + '年度の教科一覧');
-  }
-  else if (allRegSub === null || allRegSub === undefined) {
-    //未ログインははじく
-    checkResponse({ status: 'portal_non_register' }, true);
-    history.replaceState(null, null, localStorage['request']);
-    return;
-  }
-  else {
-    $('#subjects-credit').text('');
-    $('#subjects-h5').text('');
-    bodyText = '<h4 class="my-3 mx-1" algin="center"履修登録済みの教科はありません</h4>';
-  }
-  $('#subjects-box').html(bodyText);
-  triggerSubjectNext('subjects');
-  $('#subjects-modal').modal('show');
-}
-
-//各タームの始まる日付と年度、タームとの対応表
-var StartTerm = { '2019':{ 1:'2019-04-08', 2:'2019-06-11', 3:'2019-08-07', 4:'2019-10-01', 5:'2019-12-03', 6:'2020-02-06', 7:'2020-04-01' } };
-//各タームの終わる日付と年度、タームとの対応表
-var EndTerm = { '2019':{ 1:'2019-06-10', 2:'2019-08-06', 3:'2019-09-30', 4:'2019-12-02', 5:'2020-02-05', 6:'2019-03-31' } };
-//ターム内で休日と示されている日一覧
-var Holiday = [ '2019-04-29', '2019-04-30', '2019-05-01', '2019-05-02', '2019-05-03', '2019-05-06', '2019-07-15', '2019-08-12', '2019-09-16', '2019-09-23',
-  '2019-10-14', '2019-10-22', '2019-10-31', '2019-11-01', '2019-11-04', '2019-12-30', '2019-12-31', '2020-01-01', '2020-01-02', '2020-01-03', '2020-01-13', '2020-01-17', '2020-02-11', '2020-02-24', '2020-03-20' ];
-//月曜休日が続いたなどで振替が起きるときの曜日と日付の対応表
-var RDATE = { '2019-07-16':'月', '2019-10-16':'月', '2019-01-14':'月', '2019-01-15':'金' };
-var DOW = ['月', '火', '水', '木', '金', '土'];
-
-var week = 0;
-function reloadTimetable(addWeek = 0){
-  $('.subject-box').remove();
-  week += addWeek;
-  var addHTML= '';
-  if (allRegSub !== undefined && allRegSub.length > 0){
-    var endMax = 5;
-    for (i in allRegSubData) {
-      var sub = allRegSubData[i];
-      if (sub['term'].indexOf('T') < 0) continue;
-      else if (sub['time'].indexOf('他') >= 0) continue;
-      sub['time'] = sub['time'].replace(/,/g, '、');
-
-      //6限があるなら最大時限を6に
-      if (sub['time'].indexOf('6') >= 0) endMax = (endMax <= 5 ? 6 : endMax);
-      //7限があるなら最大時限を7に
-      else if (sub['time'].indexOf('7') >= 0) endMax = 7; //7限開始より後
-    }
-    $('#timetable-box table').removeClass('tt-5').removeClass('tt-6').removeClass('tt-7').removeClass('tt-' + endMax);
-    $('#timetable-6th').css('display', (endMax >= 6 ? 'table-row' : 'none'));
-    $('#timetable-7th').css('display', (endMax >= 7 ? 'table-row' : 'none'));
-
-    //月火水木金土の時間割上の曜日
-    var days = [];
-    //月火水木金土のターム
-    var terms = [];
-    //年度を計算
-    var date = new Date();
-    var year = (date.getMonth() < 3 ? date.getFullYear() - 1 : date.getFullYear());
-    //月曜日の日付を取得
-    date.setDate(date.getDate() - date.getDay() + 1 + week * 7);
-    for (var i = 0; i < 5; i++, date.setDate(date.getDate() + 1)) {
-      var dateString = date.getFullYear() + '-' + ('0' + (date.getMonth() + 1)).slice(-2) + '-' + ('0' + date.getDate()).slice(-2);
-      //休みかどうか判定
-      if (Holiday.indexOf(dateString) >= 0)
-        days[i] = false;
-      //振替曜日ならそれを優先
-      else if (Object.keys(RDATE).indexOf(dateString) >= 0)
-        days[i] = RDATE[dateString];
-      else
-        days[i] = DOW[i];
-      //日付が属するタームを決める
-      for (var j = 1; j <= 6; j++)
-        if (new Date(StartTerm[year][j]) <= date && date < new Date(StartTerm[year][j + 1])) {
-          terms[i] = j.toString();
-          break;
-        }
-      $('#timetable-date th:eq(' + (i + 1) + ')').text((date.getMonth() + 1) + '/' + date.getDate());
-      $('#timetable-dow th:eq(' + (i + 1) + ')').text((days[i] ? days[i] : '休') + '(T' + terms[i] + ')');
-    }
-    for (var i in allRegSubData) {
-      var sub = allRegSubData[i];
-      if (sub['term'].indexOf('T') < 0 || sub['term'].indexOf('集') >= 0) continue;
-      else if (sub['time'].indexOf('他') >= 0) continue;
-      sub['time'] = sub['time'].replace(/、/g, ',');
-      
-      //教科の属する曜時配列
-      var subTimes = sub['time'].split(',');
-      //教科の属するターム
-      var subTerms = sub['term'].replace('1-3', '123').replace('4-6', '456').replace(/[T\-]/g, '').split('');
-      for (var ii in subTimes) {
-        //曜日ごとにタームチェック
-        //if (terms.indexOf(subTerms[ii]) < 0) continue;
-
-        for (var iii in days) {
-          //曜日が一致しなければスルー
-          if (days[iii] !== subTimes[ii].substr(0, 1)) continue;
-          else if (subTerms.indexOf(terms[iii]) < 0) continue;
-
-          //重なる教科チェック
-          var count = 0, start = 0;
-          for (var iiii in allRegSubData) {
-            var sub2 = allRegSubData[iiii];
-            if (sub2['term'].indexOf('T') < 0 || sub['term'].indexOf('集') >= 0) continue;
-            else if (sub2['time'].indexOf('他') >= 0) continue;
-            sub2['time'] = sub2['time'].replace(/、/g, ',');
-
-            //教科の属する曜時配列
-            var subTimes2 = sub2['time'].split(',');
-            //教科の属するターム
-            var subTerms2 = sub2['term'].replace('1-3', '123').replace('4-6', '456').replace(/[T\-]/g, '').split('');
-            
-            //曜日ごとにタームチェック
-            if (subTerms2.indexOf(terms[iii]) < 0) continue;
-            //曜時ごとに重なりチェック
-            if (subTimes2.indexOf(subTimes[ii]) >= 0){
-              count++; //重なる教科数をカウント
-              if (iiii < i) start++; //インデックスが後なら右にずれていく
-            }
-          }
-          
-          var ts = parseInt(subTimes[ii].substr(1, 1)) - 1;//, te = getTop(getMinutes(sub['end']));
-          addHTML += '<div class="subject-box waves-effect waves-light" data-code="' + allRegSub[i] + '" style="' +
-            'left:' + (20 * iii + 20 / count * start) + '%;' +
-            'top:' + ((100 / endMax) * ts) + '%;' +
-            'height:' + ((100 / endMax) * (1 /*te - ts*/)) + '%;' +
-            'width:' + 20 / count + '%;' +
-            '">' + sub['name'] + '<small>' + sub['room'] + '</small>' + '</div>';
-        }
-      }
-    }
-    if (allRegSub.length === 0){
-      //時間割に教科がないとき
-      addHTML = '<div class="w-100 h-100 p-5 text-white" style="font-size: 1.8rem;">検索をしてシラバス詳細画面から「カレンダーに追加」をして時間割を作成しよう！</div>';
-    }
-  }
-  else {
-    //未ログインの時
-    addHTML = '<div class="w-100 h-100 p-5 text-white" style="font-size: 1.8rem;">ログインして時間割も便利かつ簡単に作成しよう！</div>';
-  }
-  $('#subjects-container').html(addHTML);
-  $('.subject-box').on('click', (e) => {
-    if ($(e.target).hasClass('subject-box'))
-      showSyllabus($(e.target).data('code'));
-    else
-      showSyllabus($(e.target).parent().data('code'));
-  });
-}
 //////////////////////////////////////////////////
 //////////コメント関連メソッド/////////////////////////
 //////////////////////////////////////////////////
@@ -1023,7 +737,7 @@ function reloadAllCalendarSubjects(init = false, beforeYear = false){
         
         if (init){
           loadedCount++;
-          if (loadedCount >= 5) initPage();
+          if (loadedCount >= 3) initPage();
         }
         else endLoading();
         if (beforeYear) calendar(beforeYear);
@@ -1037,7 +751,7 @@ function reloadAllCalendarSubjects(init = false, beforeYear = false){
       console.debug(textStatus);
       if (init) {
         loadedCount++;
-        if (loadedCount >= 5) initPage();
+        if (loadedCount >= 3) initPage();
       }
     });
 }
@@ -1051,7 +765,6 @@ function reloadWeekCalendarSubjects(init = false){
     .done((result, textStatus, xhr) => {
       var data = JSON.parse(result);
       if (checkResponse(data, false, true)) {
-        /*
         $('.subject-box').remove();
         var addHTML= '';
         if (data['result']){
@@ -1080,11 +793,14 @@ function reloadWeekCalendarSubjects(init = false){
             if (wod < 0 || wod >= 5) continue;
             var ts = getTop(getMinutes(sub['start'])), te = getTop(getMinutes(sub['end']));
             addHTML += '<div class="subject-box" data-code="' + sub['code'] + '" style="' +
+              //'left:calc(((100% - 2rem) / 5) * ' + wod + ' + 2rem);' +
+              //'top:calc(((100% - 2rem - .5px) / ' + endMax + ') * ' + ts + ' + 2rem);' +
+              //'height:calc(((100% - 2rem) / ' + endMax + ') * ' + (te - ts) + ');' +
               'left:' + (20 * wod + 20 / count * start) + '%;' +
               'top:' + ((100 / endMax) * ts) + '%;' +
               'height:' + ((100 / endMax) * (te - ts)) + '%;' +
               'width:' + 20 / count + '%;' +
-              '">' + sub['name'] + '<small>' + sub['room'] + '</small>' + '</div>';
+              '">' + sub['name'] + '<small>' + sub['location'].replace('千葉大学 ', '') + '</small>' + '</div>';
           }
           if (data['result'].length === 0){
             //時間割に教科がないとき
@@ -1101,11 +817,11 @@ function reloadWeekCalendarSubjects(init = false){
             showSyllabus($(e.target).data('code'));
           else
             showSyllabus($(e.target).parent().data('code'));
-        });*/
+        });
       }
       if (init){
         loadedCount++;
-        if (loadedCount >= 5) initPage();
+        if (loadedCount >= 3) initPage();
       }
     })
     .fail((xhr, textStatus) => {
@@ -1114,7 +830,7 @@ function reloadWeekCalendarSubjects(init = false){
       console.debug(textStatus);
       if (init) {
         loadedCount++;
-        if (loadedCount >= 5) initPage();
+        if (loadedCount >= 3) initPage();
       }
     });
 }
@@ -1222,7 +938,7 @@ function reloadFavorite(init = false) {
         reloadFavoriteBox();
         if (init){
           loadedCount++;
-          if (loadedCount >= 5) initPage();
+          if (loadedCount >= 3) initPage();
         }
       }
     })
@@ -1232,7 +948,7 @@ function reloadFavorite(init = false) {
       console.debug(textStatus);
       if (init) {
         loadedCount++;
-        if (loadedCount >= 5) initPage();
+        if (loadedCount >= 3) initPage();
       }
     });
 }
@@ -1247,7 +963,6 @@ function reloadFavoriteBox() {
       '<thead><tr><th class="d-none d-md-table-cell" style="width:7.5%;">年度</th><th style="width:10%;">開講</th><th style="width:15%;">曜時</th><th style="width:7.5%;">単位</th><th style="width:37.5%;">科目名</th><th style="width:30%;">担当</th></tr></thead><tbody>';
     for (var i = 0; i < favoriteData.length; i++){
       var sub = favoriteData[i];
-      sub['nendo'] = 2019;
       bodyText += createSubjectRow(favorite[i], sub['name'], '<td class="d-none d-md-table-cell">' + sub['nendo'] + '</td><td>' + sub['term'] + '</td><td>' + sub['time'] + '</td><td>' + sub['credit'] + '</td><td>' + sub['name'] + '</td><td style="width:50%;">' + sub['teacher'] + '</td>', 6);
     }
     bodyText += '</tbody></table>';
@@ -1267,6 +982,7 @@ function changeFavorite(code, button) {
   var tr = $('.tr-' + code);
   var bool = !getFavoriteBool(code);
   $(button).prop('disabled', true).text('処理中...');
+  getAjax({ method: 'syllabus', command: 'temp', code: code });
   getAjax({ method: 'favorite', command: 'change', code: code, bool: bool })
     .done((result, textStatus, xhr) => {
       var data = JSON.parse(result);
@@ -1306,110 +1022,6 @@ function getFavoriteBool(code) {
 
 
 //////////////////////////////////////////////////
-////////ポータル関連のデータを更新し取得するメソッド/////////
-//////////////////////////////////////////////////
-
-function reloadPortalRegistrationList(init = false){
-  getAjax({ method: 'portal', command: 'registration_list' }, 40)
-    .done((result, textStatus, xhr) => {
-      var data = JSON.parse(result);
-      if (checkResponse(data, false)) {
-        allRegSub = data['subjects'];
-        allRegSubData = data['subjectsData'];
-        reloadTimetable();
-      }
-        if (init){
-          loadedCount++;
-          if (loadedCount >= 5) initPage();
-        }
-    })
-    .fail((xhr, textStatus) => {
-      if (textStatus === 'abort') return;
-      alert('履修登録を取得できませんでした');
-      console.debug(textStatus);
-      if (init) {
-        loadedCount++;
-        if (loadedCount >= 5) initPage();
-      }
-    });
-}
-
-function reloadPortalGrade(init = false){
-  getAjax({ method: 'portal', command: 'grade' })
-    .done((result, textStatus, xhr) => {
-      var data = JSON.parse(result);
-      if (checkResponse(data, false)) {
-        allGradeSub = data['subjects'];
-      }
-        if (init){
-          loadedCount++;
-          if (loadedCount >= 5) initPage();
-        }
-    })
-    .fail((xhr, textStatus) => {
-      if (textStatus === 'abort') return;
-      alert('成績を取得できませんでした');
-      console.debug(textStatus);
-      if (init) {
-        loadedCount++;
-        if (loadedCount >= 5) initPage();
-      }
-    });
-}
-
-function changePortalReg(button, code) {
-  if (getPortalRegBool(code) === false) {
-    $(button).prop('disabled', true).text('処理中...');
-    startLoading();
-    getAjax({ method: 'portal', command: 'registration', code: code }, 50)
-    .done((result, textStatus, xhr) => {
-      var data = JSON.parse(result);
-      if (checkResponse(data, false)) {
-        allRegSub = data['subjects'];
-        allRegSubData = data['subjectsData'];
-        reloadTimetable();
-        if (allRegSub.indexOf(code) >= 0)
-          $(button).prop('disabled', false).text(getPortalRegText(true));
-        else {
-          $(button).prop('disabled', false).text(getPortalRegText(false));
-          alert(data['error']);
-        }
-      }
-      endLoading();
-    })
-    .fail((xhr, textStatus) => {
-      if (textStatus === 'abort') return;
-      alert('履修登録できませんでした');
-      console.debug(textStatus);
-      endLoading();
-    });
-  }
-}
-
-/**
- * 履修登録ボタンのテキスト
- * @param {boolean} bool お気に入りかどうか
- */
-function getPortalRegText(bool) {
-  if (bool === null || bool === undefined) return 'ポータル未登録';
-  else if (bool) return '●履修登録済み';
-  else if (!bool) return '◎履修登録';
-}
-
-/**
- * コードからお気に入りかどうかを判定
- * @param {string} code 教科コード
- */
-function getPortalRegBool(code) {
-  var bool;
-  if (allRegSub)
-    bool = (allRegSub.indexOf(code) >= 0);
-  else
-    bool = null;
-  return bool;
-}
-
-//////////////////////////////////////////////////
 //////////サブ画面の準備とそれに付随するメソッド////////////
 //////////////////////////////////////////////////
 
@@ -1419,7 +1031,7 @@ function getPortalRegBool(code) {
 $('#syllabus-link-modal').on('show.bs.modal', (e) => {
   if (e.relatedTarget){
     if (e.relatedTarget.id === 'share-button'){
-      var code = '', name = 'chibasys';
+      var code = '', name = 'delisys';
     }
     else {
       //ボタンから表示した場合
@@ -1428,22 +1040,23 @@ $('#syllabus-link-modal').on('show.bs.modal', (e) => {
       //シラバス画面からの時
       if (syllabusWindow)  p = p.parent();
       var code = p.data('code'), name = p.data('name');
+      //検索画面からの時、キャッシュを掛ける
+      if (!syllabusWindow) getAjax({ method: 'syllabus', command: 'temp', code: code });
     }
     //履歴に追加
     history.pushState({ method: 'dialog', dialog: 'syllabus-link', code: code, name: name },
-      name + 'を共有 -chibasys-', getRequest() + '#syllabus-link');
-    gtag('config', 'UA-44630639-4', {'page_path': getRequest()});
+      name + 'を共有 -delisys-', getRequest() + '#syllabus-link');
   }
   else if (history.state && history.state && history.state['method'] === 'dialog' && history.state['dialog'] === 'syllabus-link') {
     //進むボタンからの復元
     var code = history.state['code'], name = history.state['name'];
   }
 
-  var url = (code === '' ? 'https://chibasys.xperd.net/welcome' : 'https://chibasys.xperd.net/syllabus?' + code);
+  var url = (code === '' ? 'https://delisys.xperd.net/welcome' : 'https://delisys.xperd.net/syllabus?' + code);
   $(e.target).data('name', name);
   $(e.target).find('textarea').text(url);
   $('#qrcode').html('').qrcode(url);
-  $('#syllabus-link-title').text(((code === '') ? 'chibasysを共有' : name + 'を共有'));
+  $('#syllabus-link-title').text(((code === '') ? 'delisysを共有' : name + 'を共有'));
 });
 var copyTimeout = null;
 /**
@@ -1473,21 +1086,13 @@ function copyLink(button) {
  */
 function shareLink(button) {
   //リンクを共有
-  var text = (($('#syllabus-link-modal').data('name') === '') ? 'chibasysをはじめよう！' : $('#syllabus-link-modal').data('name') + 'をchibasysで見る');
+  var text = (($('#syllabus-link-modal').data('name') === '') ? 'delisysをはじめよう！' : $('#syllabus-link-modal').data('name') + 'をdelisysで見る');
   navigator.share({
     text: text,
     url: $('#syllabus-link-modal textarea').val()
   });
 }
 
-var eng = {"jikanwaricd":"授業コード","department":"所属学部","subject":"所属学科","course":"所属コース等","class_type":"学科(専攻)・科目の種別等","name":"授業科目","false":"授業コード",
-"subject_code":"科目コード","numbering_code":"ナンバリングコード","method":"授業の方法","language":"使用言語",
-"credit":"単位数","hour":"時間数","period":"期別","grade":"履修年次","term":"ターム","time":"曜日・時限",
-"sub_major":"副専攻","sub_title":"副題","student_count":"受入人数","teacher":"担当教員",
-"target_student":"受講対象","room":"教室","update_date":"更新日","summary":"概要","purpose":"目的・目標",
-"content":"授業計画・授業内容","homework":"授業外学習","keyword":"キーワード","textbook":"教科書・参考書",
-"evaluation_method":"評価方法・基準","related_subject":"関連科目","requirement":"履修要件","remark":"備考",
-"related_url":"関連URL","detail":"授業計画詳細情報"};
 /**
  * カレンダーに追加する際のモーダルの表示準備
  */
@@ -1501,26 +1106,21 @@ $('#syllabus-calendar-modal').on('show.bs.modal', (e) => {
   $('#syllabus-calendar-notification').bootstrapToggle($('#syllabus-calendar-notification').data('init'));
   if (e.relatedTarget){
     //ボタンから表示した場合、履歴に追加
-    history.pushState({ method: 'dialog', dialog: 'syllabus-calendar' }, 'カレンダーに追加 -chibasys-', getRequest() + '#syllabus-calendar');
-    gtag('config', 'UA-44630639-4', {'page_path': getRequest()});
+    history.pushState({ method: 'dialog', dialog: 'syllabus-calendar' },
+      'カレンダーに追加 -delisys-', getRequest() + '#syllabus-calendar');
   }
 
-  /*var list = ["学科(専攻)・科目の種別等", "授業コード", "授業の方法", "単位数", "時間数", "履修年次/ターム", "曜日・時限", "担当教員", "受講対象", "教室",
-    "概要", "目的・目標", "授業計画・授業内容", "授業外学習", "教科書・参考書", "評価方法・基準", "履修要件", "備考", "関連URL", "授業計画詳細情報"];*/
+  var list = ["学科(専攻)・科目の種別等", "授業コード", "授業の方法", "単位数", "時間数", "履修年次/ターム", "曜日・時限", "担当教員", "受講対象", "教室",
+    "概要", "目的・目標", "授業計画・授業内容", "授業外学習", "教科書・参考書", "評価方法・基準", "履修要件", "備考", "関連URL", "授業計画詳細情報"];
   var bodyDetail = '<thead><tr><th style="width:5%;">&#9745;</th><th style="width:25%;">項目</th><th style="width:70%;">内容</th></tr></thead><tbody>';
-  for (key in syllabusResult['data'])
-    if (syllabusResult['data'][key] !== null && Object.keys(eng).indexOf(key) >= 0)
-      bodyDetail += '<tr ' + (Object.keys(eng).indexOf(key) < 0 ? 'data-bool="false"' : 'class="lime-green" data-bool="true"') +
-        ' data-key="' + key + '"><td class="check">&#974' + (Object.keys(eng).indexOf(key) < 0 ? 4 : 5) + ';</td><td>' + eng[key] + '</td><td>' +
-        syllabusResult['data'][key] + '</td></tr>';
-  /*for (key in syllabusResult['detail-1'])
+  for (key in syllabusResult['detail-1'])
     bodyDetail += '<tr ' + (list.indexOf(key) < 0 ? 'data-bool="false"' : 'class="lime-green" data-bool="true"') + ' data-index="1"><td class="check">&#974' + (list.indexOf(key) < 0 ? 4 : 5) + ';</td><td>' + key + '</td><td>' + syllabusResult['detail-1'][key] + '</td></tr>';
   for (key in syllabusResult['detail-2'])
-    bodyDetail += '<tr ' + (list.indexOf(key) < 0 ? 'data-bool="false"' : 'class="lime-green" data-bool="true"') + ' data-index="2"><td class="check">&#974' + (list.indexOf(key) < 0 ? 4 : 5) + ';</td><td>' + key + '</td><td>' + syllabusResult['detail-2'][key].replace(/<br>/g, ' ') + '</td></tr>';*/
-  if (syllabusResult['data']['detail']) {
-    bodyDetail += '<tr ' + (Object.keys(eng).indexOf(key) < 0 ? 'data-bool="false"' : 'class="lime-green" data-bool="true"') + ' data-key="' + key + '"><td class="check">&#974' + (Object.keys(eng).indexOf(key) < 0 ? 4 : 5) + ';</td><td colspan="2">授業計画詳細情報<br>';
-    for (index in syllabusResult['data']['detail'])
-      bodyDetail += syllabusResult['data']['detail'][index] + '<br>';
+    bodyDetail += '<tr ' + (list.indexOf(key) < 0 ? 'data-bool="false"' : 'class="lime-green" data-bool="true"') + ' data-index="2"><td class="check">&#974' + (list.indexOf(key) < 0 ? 4 : 5) + ';</td><td>' + key + '</td><td>' + syllabusResult['detail-2'][key].replace(/<br>/g, ' ') + '</td></tr>';
+  if (syllabusResult['detail-3']) {
+    bodyDetail += '<tr ' + (list.indexOf(key) < 0 ? 'data-bool="false"' : 'class="lime-green" data-bool="true"') + ' data-index="3"><td class="check">&#974' + (list.indexOf(key) < 0 ? 4 : 5) + ';</td><td colspan="2"><b>[授業計画詳細情報]</b><br>';
+    for (index in syllabusResult['detail-3'])
+      bodyDetail += syllabusResult['detail-3'][index] + '<br>';
   }
   bodyDetail += '</tbody>';
 
@@ -1541,18 +1141,20 @@ $('#syllabus-calendar-modal').on('show.bs.modal', (e) => {
  */
 function addCalendar(button){
   var data = { method: 'calendar', command: 'add', allDay: false, ignoreExdate: false };
-  var list = ['code', 'term', 'time', 'name', 'room', 'credit'];
+  var list = ['code', 'term', 'time', 'name', 'location', 'credit'];
   $(button).text('処理中…').prop('disabled', true);
   for (i in list)
     data[list[i]] = $('#syllabus-modal').data(list[i]);
   var description = '';
   $('#syllabus-calendar-modal .lime-green').each((i, e) => {
-    var key = $(e).data('key');
-    if (!syllabusResult['data'][key] || syllabusResult['data'][key] === null) return;
-    else if (key === 'detail')
-      description += '[授業計画詳細情報]\n' + syllabusResult['data'][key].join("\n").replace(/<br>/g, "\n") + "\n";
-    else if (key !== 'detail')
-      description += eng[key] + ': ' + syllabusResult['data'][key] + "\n";
+    var text = $(e).find('td:eq(1)').text();
+    var index = parseInt($(e).data('index'));
+    if (index === 1)
+      description += text + ': ' + syllabusResult['detail-1'][text] + "\n";
+    else if (index === 2)
+      description += text + ': ' + syllabusResult['detail-2'][text].replace(/<br>/g, "\n") + "\n";
+    else if (index === 3)
+      description += syllabusResult['detail-3'].join("\n").replace(/<br>/g, "\n") + "\n";
   });
   data['description'] = description;
   data['notification'] = ($('#syllabus-calendar-notification').prop('checked') ? true : false);

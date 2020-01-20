@@ -3,7 +3,7 @@ $request = isset($_SERVER['HTTP_X_REQUESTED_WITH']) ? strtolower($_SERVER['HTTP_
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $request === 'xmlhttprequest') {
   require_once($_SERVER['DOCUMENT_ROOT'].'/core.php');
   $client = sessionCheck();
-  $link = mysqli_connect();
+  $link = mysqli_connect('localhost', 'chibasys', 'P8IpIqW2Zb8CZNCC', 'chibasys');
 
   if ($_POST['method'] === 'search') {
     $curl = curl_init();
@@ -16,12 +16,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $request === 'xmlhttprequest') {
   }
   
   else if ($_POST['method'] === 'syllabus') {
-    $curl = curl_init();
-    if ($_POST['command'] === 'get')
-      response($client, syllabus($link, $curl, $_POST));
-    else if ($_POST['command'] === 'temp')
-      syllabus($link, $curl, $_POST, true);
-    curl_close($curl);
+    response($client, syllabus($link, $_POST));
   }
   
   else if ($_POST['method'] === 'memo') {
@@ -50,6 +45,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $request === 'xmlhttprequest') {
     else if ($_POST['command'] === 'change')
       response($client, changeFavorite($link, $_POST));
   }
+
+  else if ($_POST['method'] === 'portal') {
+    $curl = curl_init();
+    if ($_POST['command'] === 'registration')
+      response($client, portal_registration($link, $curl, $_POST));
+    else if ($_POST['command'] === 'registration_list')
+      response($client, portal_registration_list($link, $curl));
+    else if ($_POST['command'] === 'grade')
+      response($client, portal_grade($link, $curl));
+    else if ($_POST['command'] === 'change')
+      response($client, portal_student_info($link, $_POST));
+    curl_close($curl);
+  }
   
   else if ($_POST['method'] === 'comment') {
     if ($_POST['command'] === 'get')
@@ -60,7 +68,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $request === 'xmlhttprequest') {
 
   else if ($_POST['method'] === 'register') {
     session_start();
-    maria_query($link, "INSERT INTO delisys.user (id, register, university, studentName, studentID, studentSex, notification) VALUES ('$_SESSION[id]', NOW(), 'chiba', '$_POST[studentName]', '$_POST[studentID]', '$_POST[studentSex]', 1);");
+    unset($_POST['method']);
+    if (isset($_POST['studentPass']) && $_POST['studentPass'] === '') unset($_POST['studentPass']);
+		$row = maria_query($link, "SELECT * FROM chibasys.user WHERE id='$_SESSION[id]';");
+		if ($row && mysqli_fetch_assoc($row))
+			$r = maria_query($link, "UPDATE chibasys.user SET studentName='$_POST[studentName]', studentSex='$_POST[studentSex]', studentID='$_POST[studentID]'".(isset($_POST['studentPass']) ? ", studentPass='$_POST[studentPass]'" : '')." WHERE id='$_SESSION[id]';");
+		else
+			$r = maria_query($link, "INSERT INTO chibasys.user (id, register, ".implode(',', array_keys($_POST)).", notification) VALUES ('$_SESSION[id]', NOW(), '".implode("','", array_values($_POST))."', 1);");
+    
+    $res = maria_query($link, "SELECT * FROM chibasys.user WHERE id = '$_SESSION[id]';");
+    if (mysqli_num_rows($res) === 1) $_SESSION['userdata'] = mysqli_fetch_assoc($res);
     session_write_close();
   }
 

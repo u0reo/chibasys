@@ -3,17 +3,17 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <title>プライバシーポリシー -delisys-</title>
+    <title>プライバシーポリシー -chibasys-</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
   </head>
   <body>
     <nav class="navbar navbar-dark bg-dark">
-      <a href="/" class="navbar-brand">delisys</a>
+      <a href="/" class="navbar-brand">chibasys</a>
     </nav>
     <div class="overflow-hidden p-3 p-md-5 m-md-3 bg-light">
         <h1 class="display-4 font-weight-normal">プライバシーポリシー</h1>
         <p>
-          本プライバシーポリシーは、delisys(https://delisys.xperd.net）（以下、「当サイト」とします。)の各種サービス
+          本プライバシーポリシーは、chibasys(https://chibasys.xperd.net）（以下、「当サイト」とします。)の各種サービス
           （当サイトによる情報提供、各種お問合せの受付等）において、当サイトの訪問者（以下、「訪問者」とします。）
           の個人情報もしくはそれに準ずる情報を取り扱う際に、当サイトが遵守する方針を示したものです。
         </p>
@@ -84,7 +84,7 @@
         <p>これ以外の際に利用されたり、ユーザーがログアウトしている間に利用されることは決してありません。</p>
         <p><strong>3-3-2．アクセス範囲について</strong></p>
         <p>当サイトにて追加するアクションを起こしたもの以外の別のサービスやGoogleカレンダー上で追加したイベントを勝手に読み取ることは決してありません。</p>
-        <p>当サイトで追加されたイベントについてはメモ欄の末尾に「Created by delisys」と必ず付加されます。このような文字列が付加された物のみを読み取り、消去いたします。</p>
+        <p>当サイトで追加されたイベントについてはメモ欄の末尾に「Created by chibasys」と必ず付加されます。このような文字列が付加された物のみを読み取り、消去いたします。</p>
         <p><strong>4．個人情報の管理</strong></p>
         <p>当サイトは、訪問者からご提供いただいた情報の管理について、以下を徹底します。</p>
         <p><strong>4-1. 情報の正確性の確保</strong></p>
@@ -122,7 +122,7 @@
     <footer class="container py-5">
       <div class="row">
         <div class="col-12 col-md">
-          <p>delisys -授業の予定を簡単にカレンダーへ挿入-</p>
+          <p>chibasys -授業の予定を簡単にカレンダーへ挿入-</p>
           <small class="d-block mb-3 text-muted">© 2019 xperd</small>
         </div>
       </div>

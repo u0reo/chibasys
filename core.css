@@ -48,6 +48,10 @@ table td, table th {
   text-overflow: ellipsis;
   overflow: hidden;
 }
+table.table-sm td, table.table-sm th {
+  padding-top: .4rem;
+  padding-bottom: .3rem;
+}
 
 /* 右上の名前 */
 #username {
@@ -124,6 +128,21 @@ table td, table th {
   text-align: center;
   vertical-align: middle;
 }
+#timetable-title {
+  display: inline-block;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+}
+#timetable-prev, #timetable-next {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 1.2rem;
+  margin: 0;
+  padding: .2rem;
+}
+#timetable-next { float: right; }
 .tt-5 th, .tt-5 td { height: calc((100% - 2rem) / 5); }
 .tt-6 th, .tt-6 td { height: calc((100% - 2rem) / 6); }
 .tt-7 th, .tt-7 td { height: calc((100% - 2rem) / 7); }
@@ -140,7 +159,7 @@ table td, table th {
   border: solid 1px white;
   background-color: hsla(357, 63%, 30%, 1);
   overflow: hidden;
-  font-size: 2vmax;
+  font-size: 1.8vmax;
   width: 20%;
   /*width: calc((100% - 2rem) / 5);*/
   /*top: 2rem;*/
@@ -285,8 +304,8 @@ table td, table th {
 }
 
 /* [calendar] */
-#calendar-table tr td:nth-child(1) { padding: 0; }
-#calendar-table .del-cal {
+#calendar-table tr td:nth-child(1), #subjects-table tr td:nth-child(1) { padding: 0; }
+#calendar-table .del-cal, #subjects-table .del-sub {
   padding: 0;
   width: calc(100% - .6rem);
   margin: 0 .3rem;

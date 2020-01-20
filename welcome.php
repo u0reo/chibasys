@@ -3,12 +3,12 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <title>delisys  by reolink</title>
+    <title>chibasys  by reolink</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
   </head>
   <body>
     <nav class="navbar navbar-dark bg-dark">
-      <a href="/" class="navbar-brand">welcome to delisys</a>
+      <a href="/" class="navbar-brand">welcome to chibasys</a>
     </nav>
     <div id="login_error" class="alert alert-danger text-center m-4" role="alert" style="display:none;">
       ログイン失敗
@@ -22,7 +22,7 @@
     <div class="position-relative overflow-hidden p-3 p-md-5 m-md-3 text-center bg-light">
       <div class="col-md-5 p-lg-5 mx-auto my-5">
         <h1 class="display-4 font-weight-normal">どの端末でも<br>時間割を</h1>
-        <p class="lead font-weight-normal">デリシスでは簡単なステップであなたのGoogleカレンダーに授業を予定として追加します。
+        <p class="lead font-weight-normal">chibasys(チバシス)では簡単なステップであなたのGoogleカレンダーに授業を予定として追加します。
           スマホ、タブレット、PC、スマートウォッチで次の授業の場所が簡単にわかります。
           登録の必要はありません、不要な時はGoogleカレンダーの予定を消すだけです。
         </p>
@@ -91,7 +91,7 @@
     <footer class="container py-5">
       <div class="row">
         <div class="col-12 col-md">
-          <p>delisys -授業の予定を簡単にカレンダーへ挿入-</p>
+          <p>chibasys -授業の予定を簡単にカレンダーへ挿入-</p>
           <small class="d-block mb-3 text-muted">© 2019 xperd</small>
         </div>
       </div>
