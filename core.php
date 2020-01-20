@@ -338,7 +338,7 @@
 		if (mysqli_num_rows($result) === 1)
 			$result2 = maria_query("UPDATE chibasys.user SET studentName='$query[studentName]', studentSex='$query[studentSex]', studentID='$query[studentID]'".(isset($query['studentPass']) ? ", studentPass='$query[studentPass]'" : '')." WHERE id='$userID';");
 		else
-			$result2 = maria_query("INSERT INTO chibasys.user (id, register, ".implode(',', array_keys($query)).", notification) VALUES ('$userID', NOW(), '".implode("','", array_values(query))."', 1);");
+			$result2 = maria_query("INSERT INTO chibasys.user (id, register, ".implode(',', array_keys($query)).", notification) VALUES ('$userID', NOW(), '".implode("','", array_values($query))."', 1);");
 		if (!$result2) return error_data(ERROR_SQL_FAILED);
 		return [ 'result'=>true ];
 	}
@@ -570,7 +570,7 @@
 		//セッション切れをチェック
 		if (!portal_session_check($site)) {
 			$data = portal_real_search_cookie_url_create();
-			return portal_search_and_save($query, $data['cookie'], $data['referer']);
+			return portal_real_search_save($query, $data['cookie'], $data['referer']);
 		}
 		
 		//PHPQueryのインスタンス生成
@@ -635,7 +635,7 @@
 			if (!$k) continue;
 			if ($k === true){
 				$v = explode('/', $value);
-				$data['grade'] = str_replace('･', ',', ereg_replace('/年|\s/', '', $v[0]));
+				$data['grade'] = str_replace('･', ',', preg_replace('/年|\s/', '', $v[0]));
 				$data['term'] = $v[1];
 			}
 			else
@@ -650,11 +650,11 @@
 		global $maria;
 		$d = [];
 		foreach ($data as $k => $v) if (in_array($k, ['time','teacher','keyword'], true)) $data[$k] = str_replace('、', ',', str_replace('。', '.', $v));
-		foreach ($data as $k => $v) $d[] = ($k === 'hour' || $k === 'credit' ? ($v ? "$k=$v" : "$k=null") : ($v ? "$k='".mysqli_real_escape_string($maria, $v)."'" : "$k=null"));
+		foreach ($data as $k => $v) $d[] = ($k === 'hour' || $k === 'credit' ? ($v ? str_replace(' ', '', "$k=$v") : "$k=null") : ($v ? "$k='".mysqli_real_escape_string($maria, $v)."'" : "$k=null"));
 		$result = maria_query("UPDATE chibasys.syllabus_$nendo SET ".implode(',', $d).
 			" WHERE jikanwariShozokuCode='$query[jikanwariShozokuCode]' AND jikanwaricd='$query[jikanwaricd]';");
 		if ($result)
-			return [ 'data'=>$d ];
+			return [ 'data'=>$data ];
 		else
 			return error_data(ERROR_SQL_FAILED);
 	}
@@ -1002,7 +1002,7 @@
 		
 		
 		$code = explode('-', $query['code']);
-		if ($query['bool'] === 'true') {
+		if ($query['bool'] == 'true') {
 			//cURLで履修登録画面を取得
 			$site = web($cookie, $referer, '_eventId=input&'.url_extract($referer).'&nendo=&jikanwariShozokuCode=&jikanwariCode=&yobi=1&jigen=1');
 			if (isset($site['error_code'])) return $site;
@@ -1300,7 +1300,7 @@
 		}
 
 		//PHPQueryのインスタンス生成
-		$tbody = phpQuery::newDocument(site['res'])->find('.normal');
+		$tbody = phpQuery::newDocument($site['res'])->find('.normal');
 		$classes = [];
 		//trの数=教科数+1
 		$subjectCount = count($tbody->find('tr'));
