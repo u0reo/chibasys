@@ -111,7 +111,7 @@ function userdata_save_result(data) {
     $('#settings-modal').modal('hide');
     $('#settings-button').prop('disabled', false).text('保存');
     $('#username').text($('#studentName').val());
-    ajax({ portal_reg_list_get: { refresh: true } });
+    ajax({ portal_reg_list_get: { refresh: true, nendo: new Date().getFullYear() + (new Date().getMonth() < 3 ? -1 : 0) } });
     ajax({ portal_grade_list_get: { refresh: true } });
   }
 }
@@ -760,10 +760,6 @@ function comment_get_result(data) {
  * カレンダーに追加済みの全ての教科一覧を取得
  * @param {boolean} init 初回フラグ
  */
-function reloadAllCalendarSubjects(init = false, beforeYear = false){
-  ajax({ cal_list_get: {} });
-}
-
 function cal_list_get_result(data) {
   //Google再ログイン必要
   require_google_login = (data.error_code === 1 || data.error_code === 2);
@@ -936,23 +932,19 @@ function fav_change_result(data) {
 
 
 //////////////////////////////////////////////////
-////////ポータル関連のデータを更新し取得するメソッド/////////
+/////ポータル関連のデータを更新し取得するメソッド/////
 //////////////////////////////////////////////////
 
-function reloadPortalRegistrationList(refresh = false, publicID = null){
-  ajax({ portal_reg_list_get: {} });
-}
-
 function portal_reg_list_get_result(data) {
-  if (!data.refresh) ajax({ portal_reg_list_get: { init: (data.init === true), refresh: true,
-    publicID: (data.publicID ? data.publicID : null), nendo: new Date().getFullYear() + (new Date().getMonth() < 3 ? -1 : 0) } });
+  if (!data.refresh) ajax({ portal_reg_list_get: { refresh: true, publicID: (data.publicID ? data.publicID : null),
+    nendo: new Date().getFullYear() + (new Date().getMonth() < 3 ? -1 : 0) } });
   if (data.reg_code) reg_code = data.reg_code;
   if (data.reg_data) reg_data = data.reg_data;
   timetable_reload();
 }
 
 function portal_grade_list_get_result(data) {
-  if (!data.refresh) ajax({ portal_grade_list_get: { init: (data.init === true), refresh: true } });
+  if (!data.refresh) ajax({ portal_grade_list_get: { refresh: true } });
   if (data.grade_data) grade_data = data.grade_data;
 }
 
@@ -971,7 +963,7 @@ function portal_reg_result(data) {
 
 
 //////////////////////////////////////////////////
-//////////サブ画面の準備とそれに付随するメソッド////////////
+///////サブ画面の準備とそれに付随するメソッド////////
 //////////////////////////////////////////////////
 
 /**
