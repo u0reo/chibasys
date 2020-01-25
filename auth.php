@@ -18,9 +18,12 @@ else if ($_GET['mode'] === 'success'){
     //GoogleのPeople APIでユーザーの情報を取得
     $people = new Google_Service_PeopleService($client);
     $userinfo = $people->people->get('people/me', ['personFields'=>'names,photos']);
-    $_SESSION['id'] = explode("/", $userinfo['resourceName'])[1];
+    $_SESSION['google_id'] = explode("/", $userinfo['resourceName'])[1];
     $_SESSION['google_photo_url'] = $userinfo['photos'][0]['url'];
     $_SESSION['google_user_name'] = $userinfo['names'][0]['displayName'];
+
+    $result = maria_query("SELECT user_id FROM user WHERE google_id='$_SESSION[google_id]'");
+    $_SESSION['user_id'] = mysqli_num_rows($result) >= 1 ? mysqli_fetch_assoc($result)['user_id'] : 'new';
     session_write_close();
     header('location: /');
   }

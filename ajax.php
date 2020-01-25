@@ -12,16 +12,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $request === 'xmlhttprequest') {
   init();
 
   session_start();
-  $userID = (isset($_SESSION['id']) && $_SESSION['id'] ? $_SESSION['id'] : null);
+  $user_id = (isset($_SESSION['user_id']) && $_SESSION['user_id'] ? $_SESSION['user_id'] : null);
   session_write_close();
   $result = [];
   foreach (json_decode(file_get_contents('php://input'), true) as $func => $data) {
     if (in_array($func, FUNC_QUERY))
       $result[$func] = $func($data);
     else if (in_array($func, FUNC_ID))
-      $result[$func] = $func($userID);
+      $result[$func] = $func($user_id);
     else if (in_array($func, FUNC_ID_QUERY))
-      $result[$func] = $func($userID, $data);
+      $result[$func] = $func($user_id, $data);
   }
   //header('Content-Type: application/json; charset=utf-8');
   echo(json_encode($result));

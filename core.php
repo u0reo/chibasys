@@ -69,6 +69,8 @@
 	];
 
 	const time_day = [ ''=>'全て', '1'=>'月', '2'=>'火', '3'=>'水', '4'=>'木', '5'=>'金', '6'=>'土' ];
+	
+	use Hashids\Hashids;
 
 	/**
 	 * 各種設定と初期化
@@ -285,11 +287,11 @@
 	 * 一時データをMySQLから取得
 	 *
 	 * @param string $name 一時データの名前
-	 * @param ?string $userID (Googleの)ユーザーID
+	 * @param ?string $user_id (Googleの)ユーザーID
 	 * @return mixed 一時データ
 	 */
-	function temp_load(string $name, ?string $userID) {
-		$result = maria_query("SELECT data FROM chibasys.temp WHERE name='$name' AND user='$userID';");
+	function temp_load(string $name, ?string $user_id) {
+		$result = maria_query("SELECT data FROM chibasys.temp WHERE name='$name' AND user='$user_id';");
 		if (!$result) return error_data(ERROR_SQL_FAILED);
 		if (mysqli_num_rows($result) !== 1) return '';//error_data(ERROR_DATA_NOT_FOUND);
 		return mysqli_fetch_assoc($result)['data'];
@@ -300,47 +302,57 @@
 	 *
 	 * @param string $name 一時データの名前
 	 * @param string $data 一時データの内容
-	 * @param ?string $userID GoogleのIDまたは'general'や'syllabus'
+	 * @param ?string $user_id GoogleのIDまたは'general'や'syllabus'
 	 * @return bool 保存が成功したかどうか
 	 */
-	function temp_save(string $name, string $data, ?string $userID): bool {
+	function temp_save(string $name, string $data, ?string $user_id): bool {
 		//userIDが空なら終了  
-		if (!$userID) return false;
+		if (!$user_id) return false;
 
 		//既にデータがあるかどうかで場合分け
-		$result = maria_query("SELECT data FROM chibasys.temp WHERE name='$name' AND user='$userID';");
+		$result = maria_query("SELECT data FROM chibasys.temp WHERE name='$name' AND user='$user_id';");
 		if ($result) {
 			if (mysqli_num_rows($result) === 1)
-				return (bool)maria_query("UPDATE chibasys.temp SET data='$data' WHERE name='$name' AND user='$userID';");
+				return (bool)maria_query("UPDATE chibasys.temp SET data='$data' WHERE name='$name' AND user='$user_id';");
 			else
-				return (bool)maria_query("INSERT INTO chibasys.temp (name, user, data) VALUES ('$name', '$userID', '$data');");
+				return (bool)maria_query("INSERT INTO chibasys.temp (name, user, data) VALUES ('$name', '$user_id', '$data');");
 		}
 		else
 			return false;
 
 		//セッションに保管
 		/*session_start();
-		$_SESSION[$userID === 'general' ? $name : "user_$name"] = $data;
+		$_SESSION[$user_id === 'general' ? $name : "user_$name"] = $data;
 		session_write_close();*/
 	}
 
 	/**
 	 * ユーザーデータを保存
 	 *
-	 * @param ?string $userID (Googleの)ユーザーID
+	 * @param ?string $user_id (Googleの)ユーザーID
 	 * @param array $query POSTデータ
 	 * @return array|bool 通常はtrue
 	 */
-	function userdata_save(?string $userID, array $query) {
+	function userdata_save(?string $user_id, array $query) {
 		if (isset($query['studentPass']) && $query['studentPass'] === '') unset($query['studentPass']);
-		$result = maria_query("SELECT * FROM chibasys.user WHERE id='$userID';");
+		//$queryにgoogle_idを追加
+		session_start();
+		if (isset($_SESSION['google_id'])) $query['google_id'] = $_SESSION['google_id'];
+		session_write_close();
+
+		$result = maria_query("SELECT * FROM chibasys.user WHERE user_id='$user_id';");
 		if (!$result) return error_data(ERROR_SQL_FAILED);
-		if (mysqli_num_rows($result) === 1)
-			$result2 = maria_query("UPDATE chibasys.user SET studentName='$query[studentName]', studentSex='$query[studentSex]', studentID='$query[studentID]'".(isset($query['studentPass']) ? ", studentPass='$query[studentPass]'" : '')." WHERE id='$userID';");
+		if ($user_id === 'new') {
+			$user_id = (new Hashids('e4KrxdB2', 8))->encode(time());
+			$result2 = maria_query("INSERT INTO chibasys.user (user_id, register, ".implode(',', array_keys($query)).", notification) VALUES ('$user_id', NOW(), '".implode("','", array_values($query))."', 1);");
+		}
+		else if (mysqli_num_rows($result) === 1)
+			$result2 = maria_query("UPDATE chibasys.user SET studentName='$query[studentName]', studentSex='$query[studentSex]', studentID='$query[studentID]'".(isset($query['studentPass']) ? ", studentPass='$query[studentPass]'" : '').(isset($query['google_id']) ? ", google_id='$query[google_id]'" : '')." WHERE user_id='$user_id';");
 		else
-			$result2 = maria_query("INSERT INTO chibasys.user (id, register, ".implode(',', array_keys($query)).", notification) VALUES ('$userID', NOW(), '".implode("','", array_values($query))."', 1);");
+			return error_data(ERROR_USER_NOT_FOUND);
+		
 		if (!$result2) return error_data(ERROR_SQL_FAILED);
-		return [ 'result'=>true ];
+		else return [ 'result'=>true ];
 	}
 
 	/**
@@ -408,7 +420,7 @@
 	 * @param array $query POSTデータ
 	 * @return array 検索結果の連想配列
 	 */
-	function portal_search(?string $userID, array $query): array {
+	function portal_search(?string $user_id, array $query): array {
 		parse_str($query['query'], $query);
 		$where = [];
 		if (isset($query['jikanwariShozokuCode']))
@@ -484,7 +496,7 @@
 		if (count($code) === 4) $code[1] = $code[2];
 		if (count($code) < 2) return error_data(ERROR_SYLLABUS_NOT_FOUND);
 
-		$result = maria_query("SELECT * FROM chibasys.syllabus_$code[0] WHERE jikanwaricd = '$code[1]';");
+		$result = maria_query("SELECT * FROM chibasys.syllabus_$code[0] WHERE jikanwaricd='$code[1]';");
 		if (!$result)	return error_data(ERROR_SQL_FAILED);
 		if (mysqli_num_rows($result) !== 1) return error_data(ERROR_SYLLABUS_NOT_FOUND);
 		$data = mysqli_fetch_assoc($result);
@@ -500,7 +512,7 @@
 	 * @param array $query POSTデータ
 	 * @return array 教科一覧の連想配列
 	 */
-	function portal_real_search(?string $userID, array $query, $cookie = null, $referer = null): array {
+	function portal_real_search(?string $user_id, array $query, $cookie = null, $referer = null): array {
 		//$data = ['s_no' => '0', '_eventId' => 'search', 'nendo' => 2019, 'kaikoKamokunmLike' => '英語'];
 		//'s_no=0&'.substr($baseUrl, strpos($baseUrl, "?") + 1).'&_eventId=search&nendo=2019&jikanwariShozokuCode=&gakkiKubunCode=&kaikoKubunCode=&kyokannmLike=&jikanwaricdLike=&kaikoKamokunmLike=%E8%8B%B1%E8%AA%9E&nenji=&yobi=&jigen=&freeWord=&nbrGakubucd=&nbrGakkacd=&nbrSuijuncd=&fukusenkocd=&syReferOrder=&_displayCount=100';
 		//URLやCookieをMySQLから取得
@@ -515,7 +527,7 @@
 		//セッション切れをチェック
 		if (!portal_session_check($site)) {
 			$data = portal_real_search_cookie_url_create();
-			return portal_real_search($userID, $query, $data['cookie'], $data['referer']);
+			return portal_real_search($user_id, $query, $data['cookie'], $data['referer']);
 		}
 		//PHPQueryのインスタンス生成
 		$tbody = phpQuery::newDocument($site['res'])->find('table > tbody');
@@ -543,8 +555,8 @@
 			$classes[] = $class;
 		}
 		//ログイン済みの時、検索履歴に追加
-		if (isset($userID))
-		maria_query("INSERT INTO chibasys.history_search VALUES ('$userID', NOW(), '$query[query]', '$subjectCount');");
+		if (isset($user_id))
+		maria_query("INSERT INTO chibasys.history_search VALUES ('$user_id', NOW(), '$query[query]', '$subjectCount');");
 		
 		return [ 'query'=>$query['query'], 'classes'=>$classes ];
 	}
@@ -837,12 +849,12 @@
 	/**
 	 * 学生ポータルへログインしてセッション取得、MySQLに保存
 	 *
-	 * @param ?string $userID 
+	 * @param ?string $user_id 
 	 * @return mixed 取得したクッキー
 	 */
-	function portal_cookie_create(?string $userID) {
+	function portal_cookie_create(?string $user_id) {
 		$userdata = null;
-		$result = maria_query("SELECT studentID, studentPass FROM chibasys.user WHERE id = '$userID';");
+		$result = maria_query("SELECT studentID, studentPass FROM chibasys.user WHERE user_id='$user_id';");
 		if ($result) {
 			if (mysqli_num_rows($result) === 1)
 				$userdata = mysqli_fetch_assoc($result);
@@ -879,7 +891,7 @@
 		//Cookieの文字列に変換
 		$cookie = implode('; ', $c);
 		//一時データとして保存
-		temp_save('portal_cookie', $cookie, $userID);
+		temp_save('portal_cookie', $cookie, $user_id);
 		return $cookie;
 	}
 	
@@ -911,15 +923,15 @@
 	 *
 	 * @param string $name URLの種類名
 	 * @param $cookie ポータルにログイン済みのクッキー
-	 * @param ?string $userID (Googleの)ユーザーID
+	 * @param ?string $user_id (Googleの)ユーザーID
 	 * @return mixed 取得したURL
 	 */
-	function portal_url_get(string $name, $cookie, ?string $userID) {
+	function portal_url_get(string $name, $cookie, ?string $user_id) {
 		//cURLでアクセス
 		$site = web($cookie, '', '', PORTAL_INIT_URL[$name]);
 		if (isset($site['error_code'])) return $site;
 		//一時データとして保存
-		temp_save($name, $site['url'], $userID);
+		temp_save($name, $site['url'], $user_id);
 	
 		if ($name === 'portal_reg_url') {
 			//各学期の住所確認がある場合、自動で済ます
@@ -938,16 +950,16 @@
 	/**
 	 * 初期設定時に学生情報を取得
 	 *
-	 * @param ?string $userID (Googleの)ユーザーID
+	 * @param ?string $user_id (Googleの)ユーザーID
 	 * @param $cookie クッキー
 	 * @return array 学生情報の連想配列
 	 */
-	function portal_student_info_get(?string $userID, $cookie = null): array {
+	function portal_student_info_get(?string $user_id, $cookie = null): array {
 		//未ログインならば終了
-		if (!$userID) return error_data(ERROR_NO_LOGIN);
+		if (!$user_id) return error_data(ERROR_NO_LOGIN);
 
 		//CookieやURLを取得
-		if (!$cookie) $cookie = temp_load('portal_cookie', $userID);
+		if (!$cookie) $cookie = temp_load('portal_cookie', $user_id);
 		if (isset($cookie['error_code'])) return $cookie;
 		
 		//cURLで学生情報にアクセス
@@ -955,7 +967,7 @@
 		if (isset($site['error_code'])) return $site;
 		//期限切れセッションチェック
 		if (!portal_session_check($site))
-			return portal_student_info_get($userID, portal_cookie_create($userID));
+			return portal_student_info_get($user_id, portal_cookie_create($user_id));
 		
 		$data = [];
 		//PHPQueryのインスタンス生成
@@ -985,19 +997,19 @@
 	/**
 	 * 履修登録を行う (yobi=1-6, jigen=1-7)(集中講義は9,0)
 	 *
-	 * @param ?string $userID (Googleの)ユーザーID
+	 * @param ?string $user_id (Googleの)ユーザーID
 	 * @param array $query POSTデータ
 	 * @param $cookie クッキー
 	 * @param $referer 参照元URL
 	 * @return array 教科コードと教科名の連想配列
 	 */
-	function portal_reg(?string $userID, array $query, $cookie = null, $referer = null) {
+	function portal_reg(?string $user_id, array $query, $cookie = null, $referer = null) {
 		//未ログインならば終了
-		if (!$userID) return error_data(ERROR_NO_LOGIN);
+		if (!$user_id) return error_data(ERROR_NO_LOGIN);
 		//CookieやURLを取得
-		if (!$cookie) $cookie = temp_load('portal_cookie', $userID);
+		if (!$cookie) $cookie = temp_load('portal_cookie', $user_id);
 		if (isset($cookie['error_code'])) return $cookie;
-		if (!$referer) $referer = temp_load('portal_reg_url', $userID);
+		if (!$referer) $referer = temp_load('portal_reg_url', $user_id);
 		if (isset($referer['error_code'])) return $referer;
 		
 		
@@ -1008,21 +1020,21 @@
 			if (isset($site['error_code'])) return $site;
 			//セッション切れをチェック
 			if (!portal_session_check($site)) {
-				$cookie = portal_cookie_create($userID);
-				return portal_reg($userID, $query, $cookie,
-					portal_url_get('portal_reg_url', $cookie, $userID));
+				$cookie = portal_cookie_create($user_id);
+				return portal_reg($user_id, $query, $cookie,
+					portal_url_get('portal_reg_url', $cookie, $user_id));
 				}
 			//時間割所属コードを取得→なくてもOK 間違うとアウト
-			//$jikanwariShozokuCode = maria_query($link, "SELECT jikanwariShozokuCode FROM syllabus_$code[0] WHERE jikanwaricd = '$code[1]';");
+			//$jikanwariShozokuCode = maria_query($link, "SELECT jikanwariShozokuCode FROM syllabus_$code[0] WHERE jikanwaricd='$code[1]';");
 			//cURLで履修登録ボタンをクリック
 			$site = web($cookie, $site['url'], '_eventId=insert&'.url_extract($site['url']).
 				"&nendo=$code[0]&jikanwariShozokuCode=&jikanwariCode=$code[1]&dummy=");
 			if (isset($site['error_code'])) return $site;
 			//セッション切れをチェック
 			if (!portal_session_check($site)) {
-				$cookie = portal_cookie_create($userID);
-				return portal_reg($userID, $query, $cookie,
-					portal_url_get('portal_reg_url', $cookie, $userID));
+				$cookie = portal_cookie_create($user_id);
+				return portal_reg($user_id, $query, $cookie,
+					portal_url_get('portal_reg_url', $cookie, $user_id));
 			}
 			//<span class="error">にエラー内容が入っていることが多いので、それを参照
 			$error = phpQuery::newDocument($site['res'])->find('span.error')->text();
@@ -1033,18 +1045,18 @@
 			if (isset($site['error_code'])) return $site;
 			//セッション切れをチェック
 			if (!portal_session_check($site)) {
-				$cookie = portal_cookie_create($userID);
-				return portal_reg($userID, $query, $cookie,
-					portal_url_get('portal_reg_url', $cookie, $userID));
+				$cookie = portal_cookie_create($user_id);
+				return portal_reg($user_id, $query, $cookie,
+					portal_url_get('portal_reg_url', $cookie, $user_id));
 				}
 			//cURLで履修登録の削除ボタンをクリック
 			$site = web($cookie, $site['url'], '_eventId=delete&'.url_extract($site['url']));
 			if (isset($site['error_code'])) return $site;
 			//セッション切れをチェック
 			if (!portal_session_check($site)) {
-				$cookie = portal_cookie_create($userID);
-				return portal_reg($userID, $query, $cookie,
-					portal_url_get('portal_reg_url', $cookie, $userID));
+				$cookie = portal_cookie_create($user_id);
+				return portal_reg($user_id, $query, $cookie,
+					portal_url_get('portal_reg_url', $cookie, $user_id));
 			}
 			//<span class="error">にエラー内容が入っていることが多いので、それを参照
 			$error = phpQuery::newDocument($site['res'])->find('span.error')->text();
@@ -1054,7 +1066,7 @@
 		else {
 			$data = [ 'code'=>$query['code'], 'bool'=>$query['bool'] ];
 			//通知用に教科名を取得
-			$result = maria_query("SELECT name FROM syllabus_$code[0] WHERE jikanwaricd = '$code[1]';");
+			$result = maria_query("SELECT name FROM syllabus_$code[0] WHERE jikanwaricd='$code[1]';");
 			//無駄にエラーは出さない
 			if ($result && mysqli_num_rows($result) === 1) $data['name'] = mysqli_fetch_assoc($result)['name'];
 			return $data;
@@ -1064,32 +1076,32 @@
 	/**
 	 * 履修登録一覧を取得
 	 *
-	 * @param ?string $userID (Googleの)ユーザーID
+	 * @param ?string $user_id (Googleの)ユーザーID
 	 * @param array $query POSTデータ
 	 * @param $cookie クッキー
 	 * @param $referer 参照元URL
 	 * @return array 教科一覧の連想配列
 	 */
-	function portal_reg_list_get(?string $userID, array $query): array {
+	function portal_reg_list_get(?string $user_id, array $query): array {
 		if (isset($query['publicID']) && $query['publicID']) {
-			$result = maria_query("SELECT id FROM chibasys.user WHERE publicID = '$query[publicID]';");
+			$result = maria_query("SELECT user_id FROM chibasys.user WHERE publicID='$query[publicID]';");
 			if (!$result) return error_data(ERROR_SQL_FAILED);
 			if (mysqli_num_rows($result) !== 1) return error_data(ERROR_USER_NOT_FOUND);
-			$userID = mysqli_fetch_assoc($result)['id'];
+			$user_id = mysqli_fetch_assoc($result)['user_id'];
 		}
-		else if (!isset($userID)) return error_data(ERROR_NO_LOGIN);
+		else if (!isset($user_id)) return error_data(ERROR_NO_LOGIN);
 
 		//更新フラグがある場合は取得しに行く、エラー番号だけ保存してMySQLから取得
 		$refresh_error = null;
 		if (isset($query['refresh']) && $query['refresh']) {
-			$data = portal_reg_list_refresh($userID, $query);
+			$data = portal_reg_list_refresh($user_id, $query);
 			if (isset($data['error_code'])) {
 				$refresh_error = $data['error_code'];
 				if ($refresh_error === ERROR_PORTAL_DOWN) return error_data($refresh_error);
 			}
 		}
 
-		$result = maria_query("SELECT nendo, jikanwariCd FROM chibasys.registration WHERE id='$userID';");
+		$result = maria_query("SELECT nendo, jikanwariCd FROM chibasys.registration WHERE user_id='$user_id';");
 		if ($result) {
 			$reg_code = [];
 			$reg_data = [];
@@ -1113,17 +1125,17 @@
 	/**
 	 * 履修登録一覧を再取得
 	 *
-	 * @param ?string $userID (Googleの)ユーザーID
+	 * @param ?string $user_id (Googleの)ユーザーID
 	 * @param array $query POSTデータ
 	 * @param $cookie クッキー
 	 * @param $referer 参照元URL
 	 * @return array 教科コード一覧と教科一覧の連想配列
 	 */
-	function portal_reg_list_refresh(?string $userID, array $query, $cookie = null, $referer = null) {
+	function portal_reg_list_refresh(?string $user_id, array $query, $cookie = null, $referer = null) {
 		//CookieやURLをMySQLから取得
-		if (!$cookie) $cookie = temp_load('portal_cookie', $userID);
+		if (!$cookie) $cookie = temp_load('portal_cookie', $user_id);
 		if (isset($cookie['error_code'])) return $cookie;
-		if (!$referer) $referer = temp_load('portal_reg_list_url', $userID);
+		if (!$referer) $referer = temp_load('portal_reg_list_url', $user_id);
 		if (isset($referer['error_code'])) return $referer;
 		
 		$reg_code = [];
@@ -1135,9 +1147,9 @@
 			if (isset($site['error_code']))	return $site;
 			//セッション切れをチェック
 			if (!portal_session_check($site)) {
-				$cookie = portal_cookie_create($userID);
-				return portal_reg_list_refresh($userID, $query, $cookie,
-					portal_url_get('portal_reg_list_url', $cookie, $userID));
+				$cookie = portal_cookie_create($user_id);
+				return portal_reg_list_refresh($user_id, $query, $cookie,
+					portal_url_get('portal_reg_list_url', $cookie, $user_id));
 			}
 
 			//PHPQueryのインスタンス生成
@@ -1160,10 +1172,10 @@
 
 		//履修登録が1つでもある場合やゼロでもデータがないことを確認が取れた時のみデータ更新
 		if (count($reg_code) > 0 || (count($reg_code) === 0 && $subjectsZero[1] && $subjectsZero[2])) {
-			if (maria_query("DELETE FROM chibasys.registration WHERE id='$userID' AND nendo='$query[nendo]';"))
+			if (maria_query("DELETE FROM chibasys.registration WHERE user_id='$user_id' AND nendo='$query[nendo]';"))
 				foreach ($reg_code as $c) {
 					$code = explode('-', $c);
-					maria_query("INSERT INTO chibasys.registration (id, nendo, jikanwariCd) VALUES ('$userID', '$code[0]', '$code[1]');");
+					maria_query("INSERT INTO chibasys.registration (user_id, nendo, jikanwariCd) VALUES ('$user_id', '$code[0]', '$code[1]');");
 				}
 		}
 
@@ -1174,26 +1186,26 @@
 	/**
 	 * 成績を取得
 	 *
-	 * @param ?string $userID (Googleの)ユーザーID
+	 * @param ?string $user_id (Googleの)ユーザーID
 	 * @param array $query POSTデータ
 	 * @param $cookie クッキー
 	 * @param $referer 参照元URL
 	 * @return array 教科一覧の連想配列
 	 */
-	function portal_grade_list_get(?string $userID, array $query): array {
-		if (!isset($userID)) return error_data(ERROR_NO_LOGIN);
+	function portal_grade_list_get(?string $user_id, array $query): array {
+		if (!isset($user_id)) return error_data(ERROR_NO_LOGIN);
 
 		//更新フラグがある場合は取得しに行く、エラー番号だけ保存してMySQLから取得
 		$refresh_error = null;
 		if (isset($query['refresh']) && $query['refresh']) {
-			$data = portal_grade_list_refresh($userID);
+			$data = portal_grade_list_refresh($user_id);
 			if (isset($data['error_code'])) {
 				$refresh_error = $data['error_code'];
 				if ($refresh_error === ERROR_PORTAL_DOWN) return error_data($refresh_error);
 			}
 		}
 
-		$result = maria_query("SELECT nendo, jikanwariCd, point, pass FROM chibasys.grade WHERE id='$userID';");
+		$result = maria_query("SELECT nendo, jikanwariCd, point, pass FROM chibasys.grade WHERE user_id='$user_id';");
 		if ($result) {
 			$grade_data = [];
 			while ($row = mysqli_fetch_assoc($result)) {
@@ -1216,18 +1228,18 @@
 	/**
 	 * 成績を再取得
 	 *
-	 * @param ?string $userID (Googleの)ユーザーID
+	 * @param ?string $user_id (Googleの)ユーザーID
 	 * @param $cookie クッキー
 	 * @param $referer 参照元URL
 	 * @return array 教科一覧の連想配列
 	 */
-	function portal_grade_list_refresh(?string $userID, $cookie = null, $referer = null) {
+	function portal_grade_list_refresh(?string $user_id, $cookie = null, $referer = null) {
 		//未ログインならば終了
-		if (!$userID) return error_data(ERROR_NO_LOGIN);
+		if (!$user_id) return error_data(ERROR_NO_LOGIN);
 		//CookieやURLをMySQLから取得
-		if (!$cookie) $cookie = temp_load('portal_cookie', $userID);
+		if (!$cookie) $cookie = temp_load('portal_cookie', $user_id);
 		if (isset($cookie['error_code'])) return $cookie;
-		if (!$referer) $referer = temp_load('portal_grade_url', $userID);
+		if (!$referer) $referer = temp_load('portal_grade_url', $user_id);
 		if (isset($referer['error_code'])) return $referer;
 		
 		//cURLで成績画面を取得
@@ -1235,9 +1247,9 @@
 		if (isset($site['error_code'])) return $site;
 		//セッション切れをチェック
 		if (!portal_session_check($site)) {
-			$cookie = portal_cookie_create($userID);
-			return portal_grade_list_refresh($userID, $cookie,
-				portal_url_get('portal_grade_url', $cookie, $userID));
+			$cookie = portal_cookie_create($user_id);
+			return portal_grade_list_refresh($user_id, $cookie,
+				portal_url_get('portal_grade_url', $cookie, $user_id));
 		}
 		
 		$result = true;
@@ -1246,7 +1258,7 @@
 		//trの数=教科数
 		$trCount = count($tbody->find('tr'));
 		for ($i = 0; $i < $trCount; $i++) {
-			$class = [ $userID ];
+			$class = [];
 			$tr = $tbody->find("tr:eq($i)");
 			//「履修成績データはありません」の時はスルー
 			if (count($tr->find('td')) <= 1) continue;
@@ -1254,14 +1266,13 @@
 				$class[] = shape_line($tr->find("td:eq($j)")->text());
 			$class[] = GRADE_NUM[shape_line($tr->find('td:eq(6)')->text())]; //秀/優/良/可/不可/合格/不合格
 			$class[] = (shape_line($tr->find('td:eq(7)')->text()) === '合' ? 1 : 0); //合/否
-			//$grade_data["$class[1]-$class[2]"] = [ 'grade'=>$class[5], 'pass'=>($class[6] === 1) ];
 			
-			$row = maria_query("SELECT * FROM chibasys.grade WHERE id='$class[0]' AND nendo='$class[1]' AND jikanwaricd='$class[2]';");
-			$syllabus = portal_syllabus_get([ 'code'=>"$class[1]-$class[2]" ]);
+			$row = maria_query("SELECT * FROM chibasys.grade WHERE user_id='$user_id' AND nendo='$class[0]' AND jikanwaricd='$class[1]';");
+			$syllabus = portal_syllabus_get([ 'code'=>"$class[0]-$class[1]" ]);
 			if ($row && mysqli_fetch_assoc($row))
-				$r = maria_query("UPDATE chibasys.grade SET name='$class[3]', teacher='$class[4]', point=".($class[5] === null ? 'null' : $class[5]).", pass=$class[6], credit=".$syllabus['data']['credit']." WHERE id='$class[0]' AND nendo='$class[1]' AND jikanwaricd='$class[2]';");
+				$r = maria_query("UPDATE chibasys.grade SET name='$class[2]', teacher='$class[3]', point=".($class[4] === null ? 'null' : $class[4]).", pass=$class[5], credit=$syllabus[data][credit] WHERE user_id='$user_id' AND nendo='$class[0]' AND jikanwaricd='$class[1]';");
 			else
-				$r = maria_query("INSERT INTO chibasys.grade (id, nendo, jikanwariCd, name, teacher, point, pass, credit) VALUES ('$class[0]','$class[1]','$class[2]','$class[3]','$class[4]',".($class[5] === null ? 'null' : $class[5]).",$class[6],".$syllabus['data']['credit'].");");
+				$r = maria_query("INSERT INTO chibasys.grade (user_id, nendo, jikanwariCd, name, teacher, point, pass, credit) VALUES ('$user_id','$class[0]','$class[1]','$class[2]','$class[3]',".($class[4] === null ? 'null' : $class[4]).",$class[5],".$syllabus['data']['credit'].");");
 			if (!$r) $result = error_data(ERROR_SQL_FAILED);
 		}
 		return $result;
@@ -1276,11 +1287,11 @@
 	 * @return array 日付と教科一覧の連想配列
 	 */
 	function portal_subject_change_refresh(array $query, $cookie = null, $referer = null): array {
-		$userID = '113700091446153817952';
+		$user_id = '113700091446153817952';
 		//CookieやURLをMySQLから取得
-		if (!$cookie) $cookie = temp_load('portal_cookie', $userID);
+		if (!$cookie) $cookie = temp_load('portal_cookie', $user_id);
 		if (isset($cookie['error_code'])) return $cookie;
-		if (!$referer) $referer = temp_load('portal_subject_change_url', $userID);
+		if (!$referer) $referer = temp_load('portal_subject_change_url', $user_id);
 		if (isset($referer['error_code'])) return $referer;
 
 		//日付を用意
@@ -1295,8 +1306,8 @@
 		if (isset($site['error_code'])) return $site;
 		//セッション切れをチェック
 		if (!portal_session_check($site)) {
-			portal_cookie_create($userID);
-			return portal_subject_change_refresh($query, $cookie, portal_url_get('portal_subject_change_url', $cookie, $userID));
+			portal_cookie_create($user_id);
+			return portal_subject_change_refresh($query, $cookie, portal_url_get('portal_subject_change_url', $cookie, $user_id));
 		}
 
 		//PHPQueryのインスタンス生成
@@ -1421,7 +1432,7 @@
 				if (mb_strpos($d, 'lname') !== false) $lastName = mb_substr($d, mb_strpos($d, '=') + 1);
 				else if (mb_strpos($d, 'fname') !== false) $firstName = mb_substr($d, mb_strpos($d, '=') + 1);
 			}
-			$id = intval(str_replace(['[', ']'], '', $section->find('.college span:eq(3) font')->text()));
+			$index = intval(str_replace(['[', ']'], '', $section->find('.college span:eq(3) font')->text()));
 			$richPoint = intval(mb_substr($section->find('.value img:eq(0)')->attr('alt'), 0, 1));
 			$easyPoint = intval(mb_substr($section->find('.value img:eq(1)')->attr('alt'), 0, 1));
 			/**/$credit = explode(' ', $section->find('.subject span')->text());
@@ -1436,7 +1447,7 @@
 			$bringIn = mb_substr($section->find('.apartContents .apartBox .test dd p:eq(2)')->text(), 5);
 			$message = $section->find('.apartContents .apartBox .message span')->html();
 			$data[] = [ 'title'=>$title, 'university'=>$university, 'faculty'=>$faculty, 'department'=>$department,
-				'lastName'=>$lastName, 'firstName'=>$firstName, 'id'=>$id, 'richPoint'=>$richPoint, 'easyPoint'=>$easyPoint,
+				'lastName'=>$lastName, 'firstName'=>$firstName, 'index'=>$index, 'richPoint'=>$richPoint, 'easyPoint'=>$easyPoint,
 				'creditUniversity'=>$creditUniversity, 'creditName'=>$creditName, 'postDate'=>$postDate, 'attend'=>$attend,
 				'textbook'=>$textbook, 'middleExam'=>$middleExam, 'finalExam'=>$finalExam, 'bringIn'=>$bringIn, 'message'=>$message ];
 		}
@@ -1454,7 +1465,7 @@
 		$query = '';
 		foreach ($data as $d)
 			$query += "INSERT IGNORE INTO chibasys.mincam VALUES ('$d[title]', '$d[university]', '$d[faculty]', '$d[department]', ".
-				"'$d[lastName]', '$d[firstName]', $d[id], $d[richPoint], $d[easyPoint], '$d[creditUniversity]', '$d[creditName]', ".
+				"'$d[lastName]', '$d[firstName]', $d[index], $d[richPoint], $d[easyPoint], '$d[creditUniversity]', '$d[creditName]', ".
 				"'$d[postDate]', '$d[attend]', '$d[textbook]', '$d[middleExam]', '$d[finalExam]', '$d[bringIn]', '".mysqli_real_escape_string($maria, $d['message'])."');";
 		//成功か失敗かの真偽値を返す
 		return maria_query($query);
@@ -1501,7 +1512,7 @@
 		}
 		//SQL実行
 		$msc = microtime(true);
-		$result = maria_query('SELECT * FROM chibasys.mincam WHERE '.implode(' AND ', $where).' ORDER BY id DESC;');
+		$result = maria_query('SELECT * FROM chibasys.mincam WHERE '.implode(' AND ', $where).' ORDER BY index DESC;');
 		$msc = microtime(true) - $msc;
 		$classes = [];
 		//データベースをそのまま配列に格納
@@ -1513,18 +1524,18 @@
 	/**
 	 * シラバスに付随するメモデータをMySQLから取得
 	 *
-	 * @param ?string $userID (Googleの)ユーザーID
+	 * @param ?string $user_id (Googleの)ユーザーID
 	 * @param array $query POSTデータ
 	 * @return array テキスト、最終更新日の連想配列
 	 */
-	function memo_get(?string $userID, array $query): array {
+	function memo_get(?string $user_id, array $query): array {
 		//未ログインならば終了
-		if (!$userID) return error_data(ERROR_NO_LOGIN);
+		if (!$user_id) return error_data(ERROR_NO_LOGIN);
 		//シラバスコードを分解
 		$code = explode('-', $query['code']);
 		if (count($code) === 4) $code[1] = $code[2];
 		//メモを取得
-		$result = maria_query("SELECT nendo, jikanwaricd, text, lastUpdated FROM chibasys.memo WHERE id='$userID' and nendo='$code[0]' and jikanwaricd='$code[1]';");
+		$result = maria_query("SELECT nendo, jikanwaricd, text, lastUpdated FROM chibasys.memo WHERE user_id='$user_id' and nendo='$code[0]' and jikanwaricd='$code[1]';");
 		if (!$result) return error_data(ERROR_SQL_FAILED);
 		if (mysqli_num_rows($result) === 1) $data = mysqli_fetch_assoc($result);
 		else $data = [ 'nendo'=>$code[0], 'jikanwaricd'=>$code[1], 'text'=>'', 'lastUpdated'=>null ];
@@ -1535,31 +1546,31 @@
 	/**
 	 * シラバスに付随するメモデータをMySQLに保存
 	 *
-	 * @param ?string $userID (Googleの)ユーザーID
+	 * @param ?string $user_id (Googleの)ユーザーID
 	 * @param array $query POSTデータ
 	 * @return array memo_get()の結果
 	 */
-	function memo_save(?string $userID, array $query): array {
+	function memo_save(?string $user_id, array $query): array {
 		//未ログインならば終了
-		if (!$userID) return error_data(ERROR_NO_LOGIN);
+		if (!$user_id) return error_data(ERROR_NO_LOGIN);
 		//シラバスコードを分解
 		$code = explode('-', $query['code']);
 		if (count($code) === 4) $code[1] = $code[2];
 
 		//テキストがない場合は、レコードを消去
 		if ($query['text'] === '') {
-			$result = maria_query("DELETE FROM chibasys.memo WHERE id='$userID' AND nendo='$code[0]' AND jikanwaricd='$code[1]';");
+			$result = maria_query("DELETE FROM chibasys.memo WHERE user_id='$user_id' AND nendo='$code[0]' AND jikanwaricd='$code[1]';");
 			if (!$result) return error_data(ERROR_SQL_FAILED);
 		}
 		//テキストがある場合はまずSELECTしてレコードの存在をチェックし、INSERTかUPDATEかを使い分ける
 		else {
 			global $maria;
-			$result = maria_query("SELECT text, lastUpdated FROM chibasys.memo WHERE id='$userID' AND nendo='$code[0]' AND jikanwaricd='$code[1]';");
+			$result = maria_query("SELECT text, lastUpdated FROM chibasys.memo WHERE user_id='$user_id' AND nendo='$code[0]' AND jikanwaricd='$code[1]';");
 			if (!$result) return error_data(ERROR_SQL_FAILED);
 			if (mysqli_num_rows($result) === 1)
-				$result2 = maria_query("UPDATE chibasys.memo SET text='".mysqli_real_escape_string($maria, $query['text'])."', lastUpdated=NOW() WHERE id='$userID' AND nendo='$code[0]' AND jikanwaricd='$code[1]';");
+				$result2 = maria_query("UPDATE chibasys.memo SET text='".mysqli_real_escape_string($maria, $query['text'])."', lastUpdated=NOW() WHERE user_id='$user_id' AND nendo='$code[0]' AND jikanwaricd='$code[1]';");
 			else
-				$result2 = maria_query("INSERT INTO chibasys.memo (id, nendo, jikanwaricd, text, lastUpdated) VALUES ('$userID', '$code[0]', '$code[1]', '".mysqli_real_escape_string($maria, $query['text'])."', NOW());");
+				$result2 = maria_query("INSERT INTO chibasys.memo (user_id, nendo, jikanwaricd, text, lastUpdated) VALUES ('$user_id', '$code[0]', '$code[1]', '".mysqli_real_escape_string($maria, $query['text'])."', NOW());");
 			if (!$result2) return error_data(ERROR_SQL_FAILED);
 		}
 		return [ 'result'=>true ];
@@ -1610,13 +1621,13 @@
 	/**
 	 * シラバスに付随するコメントを投稿、MySQLに保存
 	 *
-	 * @param ?string $userID (Googleの)ユーザーID
+	 * @param ?string $user_id (Googleの)ユーザーID
 	 * @param array $query POSTデータ
 	 * @return array comment_get()の結果
 	 */
-	function comment_post(?string $userID, array $query): array {
+	function comment_post(?string $user_id, array $query): array {
 		//未ログインならば終了
-		if (!$userID) return error_data(ERROR_NO_LOGIN);
+		if (!$user_id) return error_data(ERROR_NO_LOGIN);
 		//シラバスコードを分解
 		$code = explode('-', $query['code']);
 		if (count($code) === 4) $code[1] = $code[2];
@@ -1627,8 +1638,8 @@
 		else $num = 1;
 
 		global $maria;
-		$result2 = maria_query("INSERT INTO chibasys.comment (id, num, name, text, datetime, ip, nendo, jikanwaricd) ".
-			"VALUES ('$userID', $num, '".(trim($query['name']) === '' ? '名無しの千葉大生' : trim($query['name']))."', '".
+		$result2 = maria_query("INSERT INTO chibasys.comment (user_id, num, name, text, datetime, ip, nendo, jikanwaricd) ".
+			"VALUES ('$user_id', $num, '".(trim($query['name']) === '' ? '名無しの千葉大生' : trim($query['name']))."', '".
 			mysqli_real_escape_string($maria, $query['text'])."', NOW(), '$_SERVER[REMOTE_ADDR]', $code[0], '$code[1]');");
 		if (!$result2) return error_data(ERROR_SQL_FAILED);
 		
@@ -1638,22 +1649,22 @@
 	/**
 	 * お気に入りのステータスを変更、MySQLに変更適用
 	 *
-	 * @param ?string $userID (Googleの)ユーザーID
+	 * @param ?string $user_id (Googleの)ユーザーID
 	 * @param array $query POSTデータ
 	 * @return array { result: true }
 	 */
-	function fav_change(?string $userID, array $query): array {
+	function fav_change(?string $user_id, array $query): array {
 		//未ログインならば終了
-		if (!$userID) return error_data(ERROR_NO_LOGIN);
+		if (!$user_id) return error_data(ERROR_NO_LOGIN);
 		//シラバスコードを分解
 		$code = explode('-', $query['code']);
 		if (count($code) === 4) $code[1] = $code[2];
 
 		//trueは追加、falseは削除
 		if ($query['bool'])
-			$result = maria_query("INSERT INTO chibasys.favorite (id, nendo, jikanwaricd) VALUES ('$userID', $code[0], '$code[1]');");
+			$result = maria_query("INSERT INTO chibasys.favorite (user_id, nendo, jikanwaricd) VALUES ('$user_id', $code[0], '$code[1]');");
 		else
-			$result = maria_query("DELETE FROM chibasys.favorite WHERE id='$userID' AND nendo=$code[0] AND jikanwaricd='$code[1]';");
+			$result = maria_query("DELETE FROM chibasys.favorite WHERE user_id='$user_id' AND nendo=$code[0] AND jikanwaricd='$code[1]';");
 		if (!$result) return error_data(ERROR_SQL_FAILED);
 
 		return [ 'result'=>true ];
@@ -1662,16 +1673,16 @@
 	/**
 	 * お気に入り一覧をMySQLから取得
 	 *
-	 * @param ?string $userID (Googleの)ユーザーID
+	 * @param ?string $user_id (Googleの)ユーザーID
 	 * @return array お気に入り一覧の連想配列
 	 */
-	function fav_list_get(?string $userID): array {
+	function fav_list_get(?string $user_id): array {
 		//未ログインならば終了
-		if (!$userID) return error_data(ERROR_NO_LOGIN);
+		if (!$user_id) return error_data(ERROR_NO_LOGIN);
 		$data = [];
 		
 		//MySQLからお気に入り一覧を取得
-		$result = maria_query("SELECT nendo, jikanwaricd FROM chibasys.favorite WHERE id='$userID';");
+		$result = maria_query("SELECT nendo, jikanwaricd FROM chibasys.favorite WHERE user_id='$user_id';");
 		if (!$result) return error_data(ERROR_SQL_FAILED);
 		while ($row = mysqli_fetch_assoc($result)) {
 			$result2 = maria_query("SELECT term, time, credit, name, teacher, summary FROM chibasys.syllabus_$row[nendo] WHERE jikanwaricd='$row[jikanwaricd]';");
@@ -1711,9 +1722,9 @@
 	 * @param Google_Client $client Google_Clientのインスタンス
 	 * @return array イベント一覧の連想配列
 	 */
-	function cal_list_get(?string $userID): array {
+	function cal_list_get(?string $user_id): array {
 		//未ログインならば終了
-		if (!$userID) return error_data(ERROR_NO_LOGIN);
+		if (!$user_id) return error_data(ERROR_NO_LOGIN);
 		$client = google_client_create();
 		//Googleアカウントの再ログインが必要ならば終了
 		if ($client->isAccessTokenExpired()) return error_data(ERROR_GOOGLE_EXPIRED);
@@ -1730,20 +1741,20 @@
 			if (strpos($event->getId(), '_') !== false) continue;
 			//idをbase32hexからデコードして&区切りで配列に戻す
 			//UNIX時間&シラバスコード&ターム&曜時&単位数&★ターム&★曜日
-			$id = explode('&', Encoding::base32HexDecode($event->getId()));
+			$event_id = explode('&', Encoding::base32HexDecode($event->getId()));
 			//$idの要素数が6以上の時は連想配列に追加
-			if (count($id) >= 6) {
-				$code = explode('-', $id[1]);
+			if (count($event_id) >= 6) {
+				$code = explode('-', $event_id[1]);
 				if (count($code) === 4)
 					$code = "$code[0]-$code[2]";
 				else
-					$code = $id[1];
+					$code = $event_id[1];
 				$cal_code[] = $code;
-				$cal_data[$code] = [ 'id'=>$event->getId(), 'add'=>date(DateTime::ATOM, $id[0]), 'nendo'=>explode('-', $id[1])[0], 'code'=>$code, 'term'=>$id[2], 'time'=>$id[3], 'credit'=>intval($id[4]), 'index'=>[ 'term'=>$id[5], 'time'=>$id[6] ],
+				$cal_data[$code] = [ 'event_id'=>$event->getId(), 'add'=>date(DateTime::ATOM, $event_id[0]), 'nendo'=>explode('-', $event_id[1])[0], 'code'=>$code, 'term'=>$event_id[2], 'time'=>$event_id[3], 'credit'=>intval($event_id[4]), 'index'=>[ 'term'=>$event_id[5], 'time'=>$event_id[6] ],
 					'name'=>$event['summary'], 'room'=>str_replace('千葉大学 ', '', $event['location']), 'start'=>$event['start']['dateTime'], 'end'=>$event['end']['dateTime'], 'notification'=>(count($event['reminders']['overrides']) > 0) ];
 			}
 			//そうでない場合はなかったものとして処理 !!!!!!!!!!
-			//$cal_data[] = [ 'id'=>$event->getId(), 'name'=>$event['summary'], 'room'=>$event['location'], 'start'=>$event['start']['dateTime'], 'end'=>$event['end']['dateTime'], 'notification'=>(count($event['reminders']['overrides']) > 0) ];
+			//$cal_data[] = [ 'event_id'=>$event->getId(), 'name'=>$event['summary'], 'room'=>$event['location'], 'start'=>$event['start']['dateTime'], 'end'=>$event['end']['dateTime'], 'notification'=>(count($event['reminders']['overrides']) > 0) ];
 		}
 		return [ 'cal_code'=>$cal_code, 'cal_data'=>$cal_data ];
 	}
@@ -1751,12 +1762,12 @@
 	/**
 	 * 今週のGoogleカレンダーのイベントを取得
 	 *
-	 * @param ?string $userID (Googleの)ユーザーID
+	 * @param ?string $user_id (Googleの)ユーザーID
 	 * @return array イベント一覧の連想配列
 	 */
-	function cal_week_get(?string $userID): array {
+	function cal_week_get(?string $user_id): array {
 		//未ログインならば終了
-		if (!$userID) return error_data(ERROR_NO_LOGIN);
+		if (!$user_id) return error_data(ERROR_NO_LOGIN);
 		$client = google_client_create();
 		//Googleアカウントの再ログインが必要ならば終了
 		if ($client->isAccessTokenExpired()) return error_data(ERROR_GOOGLE_EXPIRED);
@@ -1781,15 +1792,15 @@
 		$cal_week_data = [];
 		foreach ($result->getItems() as $event) {
 			//_があるときのみそれより前の文字列をidとしてbase32hexからデコードして&区切りで配列に戻す
-			$id = explode('&', Encoding::base32HexDecode((strpos($event['id'], '_') !== false ? explode('_', $event['id'])[0] : $event['id'])));
+			$event_id = explode('&', Encoding::base32HexDecode((strpos($event['id'], '_') !== false ? explode('_', $event['event_id'])[0] : $event['event_id'])));
 			//$idの要素数が6以上の時は連想配列に追加
-			if (count($id) >= 6) {
-				$code = explode('-', $id[1]);
+			if (count($event_id) >= 6) {
+				$code = explode('-', $event_id[1]);
 				if (count($code) === 4)
 					$code = "$code[0]-$code[2]";
 				else
-					$code = $id[1];
-				$cal_week_data[] = [ 'add'=>date(DateTime::ATOM, $id[0]), 'code'=>$code, 'term'=>$id[2], 'time'=>$id[3], 'credit'=>intval($id[4]), 'index'=>[ 'term'=>$id[5], 'time'=>$id[6] ],
+					$code = $event_id[1];
+				$cal_week_data[] = [ 'add'=>date(DateTime::ATOM, $event_id[0]), 'code'=>$code, 'term'=>$event_id[2], 'time'=>$event_id[3], 'credit'=>intval($event_id[4]), 'index'=>[ 'term'=>$event_id[5], 'time'=>$event_id[6] ],
 					'name'=>$event['summary'], 'room'=>str_replace('千葉大学 ', '', $event['location']), 'start'=>$event['start']['dateTime'], 'end'=>$event['end']['dateTime']  ];
 			}
 		}
@@ -1799,14 +1810,14 @@
 	/**
 	 * Googleカレンダーにイベントを追加
 	 *
-	 * @param ?string $userID (Googleの)ユーザーID
+	 * @param ?string $user_id (Googleの)ユーザーID
 	 * @param array $data シラバスの詳細データ
 	 * @return array 各イベントの返り値の連想配列
 	 */
-	function calender_add(?string $userID, array $data): array {
+	function calender_add(?string $user_id, array $data): array {
 		//data: term (startDate endDate) time (startTime endTime) code name room description
 		//未ログインならば終了
-		if (!$userID) return error_data(ERROR_NO_LOGIN);
+		if (!$user_id) return error_data(ERROR_NO_LOGIN);
 		$client = google_client_create();
 		//Googleアカウントの再ログインが必要ならば終了
 		if ($client->isAccessTokenExpired()) return error_data(ERROR_GOOGLE_EXPIRED);
@@ -1906,7 +1917,7 @@
 				//元のIDの生成
 				//UNIX時間&シラバスコード&ターム&曜時&単位数&★ターム&★曜日
 				//0000000000&2000-XX-XXXXXX-ja_JP&T1&月1&2&0&0
-				$id = "$_SERVER[REQUEST_TIME]&$data[code]&$data[term]&$data[time]&$data[credit]&$i&$j";
+				$event_id = "$_SERVER[REQUEST_TIME]&$data[code]&$data[term]&$data[time]&$data[credit]&$i&$j";
 				//開始日時のDateTimeインスタンスを生成
 				$startDate = new DateTime($terms[$i]['start']);
 				$allDay = false;
@@ -1946,7 +1957,7 @@
 				session_write_close();
 				
 				$result[] = $service->events->insert('primary', new Google_Service_Calendar_Event([
-					'id' => str_replace('=', '', Encoding::base32HexEncode($id)), //base32hexエンコードをしたID
+					'id' => str_replace('=', '', Encoding::base32HexEncode($event_id)), //base32hexエンコードをしたID
 					'colorId' => '2', //アカウントによって違う
 					'summary' => $data['name'], //予定のタイトル
 					'location' => ($data['room'] === '' ? '' : '千葉大学 '.$data['room']), //予定の位置
@@ -1968,20 +1979,20 @@
 			}
 		}
 		//以前の通知設定を変更
-		calender_notification_settings_change($userID, $data['notification'] === 'true');
+		calender_notification_settings_change($user_id, $data['notification'] === 'true');
 		return [ 'result'=>$result ];
 	}
 
 	/**
 	 * Googleカレンダーのイベントを追加や削除する
 	 *
-	 * @param ?string $userID (Googleの)ユーザーID
+	 * @param ?string $user_id (Googleの)ユーザーID
 	 * @param array $query POSTデータ
 	 * @return array イベントの返り値の連想配列
 	 */
-	function cal_change(?string $userID, array $query): array {
+	function cal_change(?string $user_id, array $query): array {
 		//未ログインならば終了
-		if (!$userID) return error_data(ERROR_NO_LOGIN);
+		if (!$user_id) return error_data(ERROR_NO_LOGIN);
 		$client = google_client_create();
 		//Googleアカウントの再ログインが必要ならば終了
 		if ($client->isAccessTokenExpired()) return error_data(ERROR_GOOGLE_EXPIRED);
@@ -2083,7 +2094,7 @@
 					//元のIDの生成
 					//UNIX時間&シラバスコード&ターム&曜時&単位数&★ターム&★曜日
 					//0000000000&2000-XX-XXXXXX-ja_JP&T1&月1&2&0&0
-					$id = "$_SERVER[REQUEST_TIME]&$query[code]&$syllabus[term]&$syllabus[time]&$syllabus[credit]&$i&$j";
+					$event_id = "$_SERVER[REQUEST_TIME]&$query[code]&$syllabus[term]&$syllabus[time]&$syllabus[credit]&$i&$j";
 					//開始日時のDateTimeインスタンスを生成
 					$startDate = new DateTime($terms[$i]['start']);
 					$allDay = false;
@@ -2122,7 +2133,7 @@
 					$description .= "\nシラバスの詳細ページはこちら\nhttps://".$_SERVER['HTTP_HOST']."/syllabus?".$query['code']."\nCreated by chibasys";
 					
 					$result[] = $service->events->insert('primary', new Google_Service_Calendar_Event([
-						'id' => str_replace('=', '', Encoding::base32HexEncode($id)), //base32hexエンコードをしたID
+						'id' => str_replace('=', '', Encoding::base32HexEncode($event_id)), //base32hexエンコードをしたID
 						'colorId' => '2', //アカウントによって違う
 						'summary' => $syllabus['name'], //予定のタイトル
 						'location' => ($syllabus['room'] === '' ? '' : '千葉大学 '.$syllabus['room']), //予定の位置
@@ -2144,12 +2155,12 @@
 				}
 			}
 			//以前の通知設定を変更
-			calender_notification_settings_change($userID, $query['notification'] === 'true');
+			calender_notification_settings_change($user_id, $query['notification'] === 'true');
 			return [ 'result'=>$result ];
 		}
 		else {
 			//idを指定してイベントを消去
-			$result = $service->events->delete('primary', $query['id']);
+			$result = $service->events->delete('primary', $query['event_id']);
 			return [ 'result'=>$result ];
 		}
 	}
@@ -2157,22 +2168,22 @@
 	/**
 	 * Googleカレンダーのイベントの通知設定変更
 	 *
-	 * @param ?string $userID (Googleの)ユーザーID
+	 * @param ?string $user_id (Googleの)ユーザーID
 	 * @param array $query POSTデータ
 	 * @return array イベントの返り値の連想配列
 	 */
-	function calender_notification_toggle(?string $userID, array $query): array {
+	function calender_notification_toggle(?string $user_id, array $query): array {
 		//未ログインならば終了
-		if (!$userID) return error_data(ERROR_NO_LOGIN);
+		if (!$user_id) return error_data(ERROR_NO_LOGIN);
 		$client = google_client_create();
 		//Googleアカウントの再ログインが必要ならば終了
 		if ($client->isAccessTokenExpired()) return error_data(ERROR_GOOGLE_EXPIRED);
 		//カレンダーサービスのインスタンスを生成
 		$service = new Google_Service_Calendar($client);
 		$result = [];
-		foreach ($query['id'] as $id) {
+		foreach ($query['event_id'] as $event_id) {
 			//idごとにイベントを取得
-			$event = $service->events->get('primary', $id);
+			$event = $service->events->get('primary', $event_id);
 			//通知を有効に変更するとき
 			if ($query['notification'] === 'true') {
 				$event['reminders'] =
@@ -2184,23 +2195,23 @@
 				$event['reminders'] = [ 'useDefault' => false, 'overrides' => [] ];
 			}
 			//一部を書き換えたやつをそのままアップデートとして突っ込む
-			$result[] = $service->events->update('primary', $id, $event);  
+			$result[] = $service->events->update('primary', $event_id, $event);  
 		}
 		//以前の通知設定を変更
-		calender_notification_settings_change($userID, $query['notification'] === 'true');
+		calender_notification_settings_change($user_id, $query['notification'] === 'true');
 		return [ 'result'=>$result ];
 	}
 
 	/**
 	 * 以前の変更通知をMySQLに保存
 	 *
-	 * @param ?string $userID (Googleの)ユーザーID
+	 * @param ?string $user_id (Googleの)ユーザーID
 	 * @param bool $bool 有効かどうか
 	 * @return array 成功したかどうかの連想配列
 	 */
-	function calender_notification_settings_change(?string $userID, bool $bool): array {
+	function calender_notification_settings_change(?string $user_id, bool $bool): array {
 		//以前の通知設定をMySQLに保存
-		$result = maria_query("UPDATE chibasys.user SET notification=".($bool ? 1 : 0)." WHERE id='$userID';");
+		$result = maria_query("UPDATE chibasys.user SET notification=".($bool ? 1 : 0)." WHERE user_id='$user_id';");
 		if (!$result) return error_data(ERROR_SQL_FAILED);
 		return [ 'notification'=>$bool ];
 	}

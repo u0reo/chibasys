@@ -102,7 +102,7 @@ function register(button) {
     alert('性別を選択してください');
   else {
     $('#settings-button').prop('disabled', true).text('保存中...');
-    ajax({ userdata_save: { method: 'register', studentName: $('#studentName').val(), studentSex: $('input[name="studentSex"]:checked').val(), studentID: $('#studentID').val(), studentPass: $('#studentPass').val() } });
+    ajax({ userdata_save: { studentName: $('#studentName').val(), studentSex: $('input[name="studentSex"]:checked').val(), studentID: $('#studentID').val(), studentPass: $('#studentPass').val() } });
   }
 }
 
@@ -418,7 +418,7 @@ $('#syllabus-memo').on('input', function (e) {
   if (memo_timeout !== null) clearTimeout(memo_timeout);
   memo_timeout = setTimeout(() => {
     let code = $('#syllabus-modal').data('code');
-    ajax({ memo_save: { code: code, text: $('#syllabus-memo').val() }, memo_get: { code: code } });
+    ajax({ memo_save: { code: code, text: $('#syllabus-memo').val() } });
     memo_timeout = null;
   }, 1000);
 });
@@ -858,11 +858,11 @@ function timetable_top_calc(time) {
 function cal_notify_toggle(button){
   let bool = !$(button).data('bool');
   if (confirm('カレンダーの通知設定を' + (bool ? 'オン' : 'オフ') + 'に切り替えますか？少し時間がかかります。')){
-    let id = [];
+    let event_id = [];
     for (index in cal_data) {
       let sub = cal_data[index];
       if (sub['notification'] !== bool)
-        id.push(sub['id']);
+        event_id.push(sub['event_id']);
     }
     startLoading();
     ajax({ calender_notification_toggle: { notification: bool } });
@@ -881,7 +881,7 @@ function cal_change(code) {
     'メモの変更や手動で削除した一部のイベントなどが失われます。')) return;
 
   $('.cal-' + code).prop('disabled', true).text('読み込み中...');
-  ajax({ cal_change: { show_error: true, code: code, bool: bool, id: bool === false ? cal_data[code].id : null,
+  ajax({ cal_change: { show_error: true, code: code, bool: bool, event_id: bool === false ? cal_data[code].event_id : null,
     notification: ($('#syllabus-calendar-notification').prop('checked') ? true : false) } });
 }
 

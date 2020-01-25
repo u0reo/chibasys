@@ -7,11 +7,12 @@ $title = 'ようこそ、chibasysへ';
 $summary = '';
 $image_url = 'icon.png';
 session_start();
-if (isset($_SESSION['id']) && $_SESSION['id']) {
-  $result = maria_query("SELECT * FROM user WHERE id=$_SESSION[id];");
+if (isset($_SESSION['user_id']) && $_SESSION['user_id'] !== 'new') {
+  $result = maria_query("SELECT * FROM user WHERE user_id=$_SESSION[user_id];");
   if (!$result) {  }
-  if (mysqli_num_rows($result) !== 1) locate_welcome('?error=user_not_found');
-  $userdata = mysqli_fetch_assoc($result);
+  else if (mysqli_num_rows($result) >= 1)
+    //locate_welcome('?error=user_not_found');
+    $userdata = mysqli_fetch_assoc($result);
 }
 else {
   //セッションにリクエストを保存 (syllabus?2000-AAAAAA)
@@ -58,7 +59,7 @@ else {
     <a href="/" class="navbar-brand">chibasys</a>
     <div class="dropdown">
       <button type="button" id="dropdownMenuButton" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-        <div id="username"><?php echo(isset($_SESSION['id']) ? $userdata['studentName'] : '未ログイン'); ?></div>
+        <div id="username"><?php echo(isset($_SESSION['user_id']) ? $userdata['studentName'] : '未ログイン'); ?></div>
         <img class="rounded-circle" src="<?php if (isset($_SESSION['google_photo_url'])) echo ($_SESSION['google_photo_url']); ?>" style="height: 30px;" />
       </button>
       <div class="dropdown-menu dropdown-menu-right" aria-labelledby="dropdownMenuButton" style="z-index:9999">
@@ -66,7 +67,7 @@ else {
         <a class="dropdown-item" href="https://cup.chiba-u.jp/campusweb/" target="_blank">学生ポータルへ</a>
         <a class="dropdown-item" href="https://cup.chiba-u.jp/campusweb/campussquare.do?locale=ja_JP&_flowId=SYW3901100-flow" target="_blank">千葉大シラバス検索へ</a>
         <a class="dropdown-item" data-toggle="modal" data-target="#settings-modal"<?php if (!isset($userdata)) echo(' style="display:none;"'); ?>>設定</a>
-        <?php echo (isset($_SESSION['id']) ? '<a class="dropdown-item" href="/auth?mode=logout">ログアウト</a>' : '<a class="dropdown-item" href="/auth?mode=login">ログイン</a>'); ?>
+        <?php echo (isset($_SESSION['user_id']) ? '<a class="dropdown-item" href="/auth?mode=logout">ログアウト</a>' : '<a class="dropdown-item" href="/auth?mode=login">ログイン</a>'); ?>
       </div>
     </div>
   </nav>
@@ -485,7 +486,7 @@ else {
   <script type="text/javascript" src="core.js"></script>
   <script type="text/javascript">
     <?php
-    if (isset($_SESSION['id']) && !isset($userdata))
+    if (isset($_SESSION['user_id']) && $_SESSION['user_id'] === 'new' && !isset($userdata))
       echo ("var registerWindow = true;\n");
     if (isset($_SESSION['request'])) {
       echo ('var request = \''.$_SESSION['request']."';\n");
