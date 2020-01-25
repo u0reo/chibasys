@@ -8,7 +8,7 @@ $summary = '';
 $image_url = 'icon.png';
 session_start();
 if (isset($_SESSION['user_id']) && $_SESSION['user_id'] !== 'new') {
-  $result = maria_query("SELECT * FROM user WHERE user_id=$_SESSION[user_id];");
+  $result = maria_query("SELECT * FROM user WHERE user_id='$_SESSION[user_id]';");
   if (!$result) {  }
   else if (mysqli_num_rows($result) >= 1)
     //locate_welcome('?error=user_not_found');

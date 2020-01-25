@@ -279,7 +279,7 @@
 		global $maria;
 		$r = mysqli_query($maria, $query);
 		if (!$r || $all)
-			error_log("\nERROR: ".mysqli_error($maria)."\nQUERY: $query", "3", "/var/www/mysql-error.log");
+			error_log("\n[".date('Y-m-d H-i-s')."]ERROR: ".mysqli_error($maria)."\nQUERY: $query", "3", "/var/www/mysql-error.log");
 		return $r;
 	}
 
@@ -1270,7 +1270,7 @@
 			$row = maria_query("SELECT * FROM chibasys.grade WHERE user_id='$user_id' AND nendo='$class[0]' AND jikanwaricd='$class[1]';");
 			$syllabus = portal_syllabus_get([ 'code'=>"$class[0]-$class[1]" ]);
 			if ($row && mysqli_fetch_assoc($row))
-				$r = maria_query("UPDATE chibasys.grade SET name='$class[2]', teacher='$class[3]', point=".($class[4] === null ? 'null' : $class[4]).", pass=$class[5], credit=$syllabus[data][credit] WHERE user_id='$user_id' AND nendo='$class[0]' AND jikanwaricd='$class[1]';");
+				$r = maria_query("UPDATE chibasys.grade SET name='$class[2]', teacher='$class[3]', point=".($class[4] === null ? 'null' : $class[4]).", pass=$class[5], credit=".$syllabus['data']['credit']." WHERE user_id='$user_id' AND nendo='$class[0]' AND jikanwaricd='$class[1]';");
 			else
 				$r = maria_query("INSERT INTO chibasys.grade (user_id, nendo, jikanwariCd, name, teacher, point, pass, credit) VALUES ('$user_id','$class[0]','$class[1]','$class[2]','$class[3]',".($class[4] === null ? 'null' : $class[4]).",$class[5],".$syllabus['data']['credit'].");");
 			if (!$r) $result = error_data(ERROR_SQL_FAILED);
@@ -1432,7 +1432,7 @@
 				if (mb_strpos($d, 'lname') !== false) $lastName = mb_substr($d, mb_strpos($d, '=') + 1);
 				else if (mb_strpos($d, 'fname') !== false) $firstName = mb_substr($d, mb_strpos($d, '=') + 1);
 			}
-			$index = intval(str_replace(['[', ']'], '', $section->find('.college span:eq(3) font')->text()));
+			$post_id = intval(str_replace(['[', ']'], '', $section->find('.college span:eq(3) font')->text()));
 			$richPoint = intval(mb_substr($section->find('.value img:eq(0)')->attr('alt'), 0, 1));
 			$easyPoint = intval(mb_substr($section->find('.value img:eq(1)')->attr('alt'), 0, 1));
 			/**/$credit = explode(' ', $section->find('.subject span')->text());
@@ -1447,7 +1447,7 @@
 			$bringIn = mb_substr($section->find('.apartContents .apartBox .test dd p:eq(2)')->text(), 5);
 			$message = $section->find('.apartContents .apartBox .message span')->html();
 			$data[] = [ 'title'=>$title, 'university'=>$university, 'faculty'=>$faculty, 'department'=>$department,
-				'lastName'=>$lastName, 'firstName'=>$firstName, 'index'=>$index, 'richPoint'=>$richPoint, 'easyPoint'=>$easyPoint,
+				'lastName'=>$lastName, 'firstName'=>$firstName, 'post_id'=>$post_id, 'richPoint'=>$richPoint, 'easyPoint'=>$easyPoint,
 				'creditUniversity'=>$creditUniversity, 'creditName'=>$creditName, 'postDate'=>$postDate, 'attend'=>$attend,
 				'textbook'=>$textbook, 'middleExam'=>$middleExam, 'finalExam'=>$finalExam, 'bringIn'=>$bringIn, 'message'=>$message ];
 		}
@@ -1465,7 +1465,7 @@
 		$query = '';
 		foreach ($data as $d)
 			$query += "INSERT IGNORE INTO chibasys.mincam VALUES ('$d[title]', '$d[university]', '$d[faculty]', '$d[department]', ".
-				"'$d[lastName]', '$d[firstName]', $d[index], $d[richPoint], $d[easyPoint], '$d[creditUniversity]', '$d[creditName]', ".
+				"'$d[lastName]', '$d[firstName]', $d[post_id], $d[richPoint], $d[easyPoint], '$d[creditUniversity]', '$d[creditName]', ".
 				"'$d[postDate]', '$d[attend]', '$d[textbook]', '$d[middleExam]', '$d[finalExam]', '$d[bringIn]', '".mysqli_real_escape_string($maria, $d['message'])."');";
 		//成功か失敗かの真偽値を返す
 		return maria_query($query);
@@ -1512,13 +1512,16 @@
 		}
 		//SQL実行
 		$msc = microtime(true);
-		$result = maria_query('SELECT * FROM chibasys.mincam WHERE '.implode(' AND ', $where).' ORDER BY index DESC;');
+		$result = maria_query('SELECT * FROM chibasys.mincam WHERE '.implode(' AND ', $where).' ORDER BY post_id DESC;');
 		$msc = microtime(true) - $msc;
 		$classes = [];
 		//データベースをそのまま配列に格納
-		if ($result) while ($row = mysqli_fetch_assoc($result)) $classes[] = $row;
-		
-		return [ 'classes'=>$classes, 'num'=>mysqli_num_rows($result), 'time'=>$msc ];
+		if ($result) {
+			while ($row = mysqli_fetch_assoc($result)) $classes[] = $row;
+			return [ 'classes'=>$classes, 'num'=>mysqli_num_rows($result), 'time'=>$msc ];
+		}
+		else
+			return error_data(ERROR_SQL_FAILED);
 	}
 
 	/**
