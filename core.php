@@ -345,6 +345,9 @@
 		if ($user_id === 'new') {
 			$user_id = (new Hashids('e4KrxdB2', 8))->encode(time());
 			$result2 = maria_query("INSERT INTO chibasys.user (user_id, register, ".implode(',', array_keys($query)).", notification) VALUES ('$user_id', NOW(), '".implode("','", array_values($query))."', 1);");
+			session_start();
+			$_SESSION['user_id'] = $user_id;
+			session_write_close();
 		}
 		else if (mysqli_num_rows($result) === 1)
 			$result2 = maria_query("UPDATE chibasys.user SET studentName='$query[studentName]', studentSex='$query[studentSex]', studentID='$query[studentID]'".(isset($query['studentPass']) ? ", studentPass='$query[studentPass]'" : '').(isset($query['google_id']) ? ", google_id='$query[google_id]'" : '')." WHERE user_id='$user_id';");

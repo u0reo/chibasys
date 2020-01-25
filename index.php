@@ -59,7 +59,7 @@ else {
     <a href="/" class="navbar-brand">chibasys</a>
     <div class="dropdown">
       <button type="button" id="dropdownMenuButton" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-        <div id="username"><?php echo(isset($_SESSION['user_id']) ? $userdata['studentName'] : '未ログイン'); ?></div>
+        <div id="username"><?php echo(isset($userdata) ? $userdata['studentName'] : ($_SESSION['user_id'] === 'new' ? '未登録' : '未ログイン')); ?></div>
         <img class="rounded-circle" src="<?php if (isset($_SESSION['google_photo_url'])) echo ($_SESSION['google_photo_url']); ?>" style="height: 30px;" />
       </button>
       <div class="dropdown-menu dropdown-menu-right" aria-labelledby="dropdownMenuButton" style="z-index:9999">

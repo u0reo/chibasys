@@ -68,7 +68,7 @@ function ajax(query, timeout = 60, init = false) {
           url = '';
         history.replaceState(null, null, '/' + url);
         if (typeof (registerWindow) === 'boolean' && registerWindow)
-          $('#register-modal').modal('show');
+          $('#settings-modal').modal('show');
       }
       endLoading();
     });
