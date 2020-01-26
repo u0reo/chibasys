@@ -59,15 +59,15 @@ else {
     <a href="/" class="navbar-brand">chibasys</a>
     <div class="dropdown">
       <button type="button" id="dropdownMenuButton" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-        <div id="username"><?php echo(isset($userdata) ? $userdata['studentName'] : ($_SESSION['user_id'] === 'new' ? '未登録' : '未ログイン')); ?></div>
+        <div id="username"><?php echo(isset($userdata) ? $userdata['studentName'] : (isset($_SESSION['user_id']) && $_SESSION['user_id'] === 'new' ? '未登録' : '未ログイン')); ?></div>
         <img class="rounded-circle" src="<?php if (isset($_SESSION['google_photo_url'])) echo ($_SESSION['google_photo_url']); ?>" style="height: 30px;" />
       </button>
       <div class="dropdown-menu dropdown-menu-right" aria-labelledby="dropdownMenuButton" style="z-index:9999">
         <a class="dropdown-item" href="https://calendar.google.com/" target="_blank">Googleカレンダーへ</a>
         <a class="dropdown-item" href="https://cup.chiba-u.jp/campusweb/" target="_blank">学生ポータルへ</a>
         <a class="dropdown-item" href="https://cup.chiba-u.jp/campusweb/campussquare.do?locale=ja_JP&_flowId=SYW3901100-flow" target="_blank">千葉大シラバス検索へ</a>
-        <a class="dropdown-item" data-toggle="modal" data-target="#settings-modal"<?php if (!isset($userdata)) echo(' style="display:none;"'); ?>>設定</a>
-        <?php echo (isset($_SESSION['user_id']) ? '<a class="dropdown-item" href="/auth?mode=logout">ログアウト</a>' : '<a class="dropdown-item" href="/auth?mode=login">ログイン</a>'); ?>
+        <a id="dropdown-settings-button" class="dropdown-item" data-toggle="modal" data-target="#settings-modal"<?php if (!isset($userdata)) echo(' style="display:none;"'); ?>>設定</a>
+        <a id="dropdown-last-button" class="dropdown-item" onclick="last_button(this);"><?php echo(isset($_SESSION['user_id']) ? 'ログアウト' : 'ログイン'); ?></a>
       </div>
     </div>
   </nav>
@@ -218,6 +218,9 @@ else {
       <div class="modal-content">
         <div class="modal-header">
           <h4 class="modal-title" id="settings-title">chibasys 設定</h4>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
         </div>
         <div class="modal-body">
           <div class="form-group">
@@ -240,7 +243,8 @@ else {
             </div>
           </div>
           <h4>学生ポータルのログイン情報</h4>
-          <h5>これらの項目を入力すると、履修登録や成績確認ができます。<br>匿名での履修/成績データの利用に同意したものとみなします。</h5>
+          <h5>これらの項目を入力すると、履修登録や成績確認ができます。<br>
+            匿名での履修/成績データの利用に同意したものとみなします。</h5>
           <div class="form-group">
             <label for="studentID">学生証番号</label>
             <input type="text" id="studentID" class="form-control" maxlength="10" pattern="^[0-9A-Z]+$" placeholder="00A0000A" value="<?php if (isset($userdata) && $userdata['studentID']) echo($userdata['studentID']); ?>" required>
@@ -254,6 +258,33 @@ else {
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-primary" onclick="register(this);">保存</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade" id="login-modal" tabindex="-1" role="dialog" aria-labelledby="login-title" aria-hidden="true" data-keyboard="false" data-backdrop="false" style="z-index: 2000;">
+    <div class="modal-dialog modal-dialog-centered modal-xl" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h4 class="modal-title" id="login-title">ログイン/新規登録</h4>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <h4>学生証番号とパスワードでログイン</h4>
+          <div class="form-group">
+            <label for="login-portal_id">学生証番号</label>
+            <input type="text" id="login-portal_id" class="form-control" maxlength="10" pattern="^[0-9A-Z]+$" placeholder="00A0000A" value="" required>
+          </div>
+          <div class="form-group">
+            <label for="login_portal_pass">パスワード</label>
+            <input type="password" id="login-portal_pass" class="form-control" pattern="^[!-~]+$" placeholder="" required>
+          </div>
+          <button id="login-with-portal-button" type="button" class="btn btn-primary btn-block" onclick="login_with_portal(this);">ログイン</button>
+          <hr>
+          <button type="button" class="btn btn-danger btn-block" onclick="location.href='/auth?mode=login';">Googleアカウントでログイン</button>
         </div>
       </div>
     </div>

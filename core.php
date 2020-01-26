@@ -334,6 +334,9 @@
 	 * @return array|bool 通常はtrue
 	 */
 	function userdata_save(?string $user_id, array $query) {
+		global $maria;
+
+		foreach ($query as $key => $value) $query[$key] = mysqli_real_escape_string($maria, $value);
 		if (isset($query['studentPass']) && $query['studentPass'] === '') unset($query['studentPass']);
 		//$queryにgoogle_idを追加
 		session_start();
@@ -852,14 +855,17 @@
 	/**
 	 * 学生ポータルへログインしてセッション取得、MySQLに保存
 	 *
-	 * @param ?string $user_id 
+	 * @param ?string $user_id
+	 * @param array $query POSTデータ
 	 * @return mixed 取得したクッキー
 	 */
-	function portal_cookie_create(?string $user_id) {
+	function portal_cookie_create(?string $user_id, array $query = []) {
 		$userdata = null;
 		$result = maria_query("SELECT studentID, studentPass FROM chibasys.user WHERE user_id='$user_id';");
 		if ($result) {
-			if (mysqli_num_rows($result) === 1)
+			if (isset($query['portal_id']) && isset($query['portal_pass']))
+				$userdata = [ 'studentID'=>$query['portal_id'], 'studentPass'=>$query['portal_pass'] ];
+			else if (mysqli_num_rows($result) === 1)
 				$userdata = mysqli_fetch_assoc($result);
 			else
 				return error_data(ERROR_USER_NOT_FOUND);
@@ -876,9 +882,9 @@
 		//成功したとき <!DOCTYPE HTML><div><script type="text/javascript">reloadPortal('', 'main');</script>now loading...<br></div>
 		//失敗したとき <!DOCTYPE HTML><div><script type="text/javascript">$(document).ready(function(){setTimeout(function(){ $("input[name='loginerrok']").focus(); }, 500);});
 		//          <span class="error">ユーザ名またはパスワードの入力に誤りがあります</span><br><br><br><br><center><input type="button" id="loginerrok" name="loginerrok" value="&nbsp; O &nbsp;&nbsp; K &nbsp;" onClick="closeLoginDialog(this)"></center></div>
-		$error_text = phpQuery::newDocument($site['res'])->find('span.error')->text();
+		$error_text = phpQuery::newDocument($site['res'])->find('.error')->text();
 		if ($error_text || strpos($site['res'], 'now loading') === false || strpos($site['res'], 'reloadPortal') === false) {
-			error_log("\nERROR: PORTAL_LOGIN_ERROR\nSITE: ".str_replace("\n", '', json_encode($site)), "3", "/var/www/chibasys-error.log");
+			error_log("\n[".date('Y-m-d H:m:s')."]ERROR: PORTAL_LOGIN_ERROR\nSITE: ".str_replace("\n", '', json_encode($site)), "3", "/var/www/chibasys-error.log");
 			return error_data(ERROR_PORTAL_LOGIN_ADDITIONAL, shape_line($error_text));
 		}
 
@@ -934,7 +940,7 @@
 		$site = web($cookie, '', '', PORTAL_INIT_URL[$name]);
 		if (isset($site['error_code'])) return $site;
 		//一時データとして保存
-		temp_save($name, $site['url'], $user_id);
+		if ($user_id !== null) temp_save($name, $site['url'], $user_id);
 	
 		if ($name === 'portal_reg_url') {
 			//各学期の住所確認がある場合、自動で済ます
@@ -950,16 +956,61 @@
 		return $site['url'];
 	}
 
+	function login_with_portal(array $query): array {
+		global $maria;
+		
+		//$queryのportal_idとportal_passをチェック
+		if (!isset($query['portal_id']) || !isset($query['portal_pass']))
+			return error_data(ERROR_NO_LOGIN);
+
+		$result = maria_query("SELECT * FROM user WHERE studentID='$query[portal_id]'");
+		$student_info = portal_student_info_get(null, $query);
+
+		if (mysqli_num_rows($result) >= 1) {
+			//おそらく登録済み
+			$user = mysqli_fetch_assoc($result);
+			if (isset($student_info['error_code'])) {
+				if ($student_info['error_code'] !== ERROR_PORTAL_DOWN)
+					return $student_info;
+				else if ($query['portal_pass'] !== $user['studentPass'])
+					//乗っ取りを防ぐために
+					return error_data(ERROR_PORTAL_DOWN, "\nパスワード変えた場合はポータルが復活するまで待つか、以前登録したパスワードでログインしてください。");
+			}
+			else {
+				if ($query['portal_pass'] !== $user['studentPass']) {
+					$result2 = maria_query("UPDATE user SET studentPass='".mysqli_real_escape_string($maria, $query['portal_pass'])."' WHERE user_id='$user[user_id]';");
+					if (isset($result2['error_code'])) return $result2;
+				}
+				session_start();
+				session_regenerate_id(true);
+				$_SESSION['user_id'] = $user['user_id'];
+				session_write_close();
+			}
+
+			return [ 'result'=>true, 'name'=>$user['studentName'], 'userdata'=>$user, 'student_info'=>$student_info ];
+		}
+		else {
+			session_start();
+			session_regenerate_id(true);
+			$_SESSION['user_id'] = 'new';
+			session_write_close();
+
+			return [ 'result'=>true, 'name'=>$student_info['学生氏名'], 'student_info'=>$student_info, 'new'=> true ];
+		}
+	}
+
 	/**
-	 * 初期設定時に学生情報を取得
+	 * 学生情報を取得 ($queryのportal_idとportal_passを優先)
 	 *
 	 * @param ?string $user_id (Googleの)ユーザーID
+	 * @param array $query POSTデータ
 	 * @param $cookie クッキー
 	 * @return array 学生情報の連想配列
 	 */
-	function portal_student_info_get(?string $user_id, $cookie = null): array {
-		//未ログインならば終了
-		if (!$user_id) return error_data(ERROR_NO_LOGIN);
+	function portal_student_info_get(?string $user_id, array $query, $cookie = null): array {
+		//$queryのportal_idとportal_passをチェックかつ未ログインならば終了
+		if ((!isset($query['portal_id']) || !isset($query['portal_pass'])) && !$user_id)
+			return error_data(ERROR_NO_LOGIN);
 
 		//CookieやURLを取得
 		if (!$cookie) $cookie = temp_load('portal_cookie', $user_id);
@@ -970,7 +1021,7 @@
 		if (isset($site['error_code'])) return $site;
 		//期限切れセッションチェック
 		if (!portal_session_check($site))
-			return portal_student_info_get($user_id, portal_cookie_create($user_id));
+			return portal_student_info_get($user_id, $query, portal_cookie_create($user_id, $query));
 		
 		$data = [];
 		//PHPQueryのインスタンス生成
@@ -994,7 +1045,7 @@
 			}
 		}
 
-		return [ 'student_info'=>$data ];
+		return $data;
 	}
 
 	/**
@@ -1014,7 +1065,6 @@
 		if (isset($cookie['error_code'])) return $cookie;
 		if (!$referer) $referer = temp_load('portal_reg_url', $user_id);
 		if (isset($referer['error_code'])) return $referer;
-		
 		
 		$code = explode('-', $query['code']);
 		if ($query['bool'] == 'true') {

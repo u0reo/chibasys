@@ -3,8 +3,7 @@ $('.stb').togglebutton();
 if (localStorage['request']) history.replaceState(null, null, localStorage['request']);
 localStorage.clear();
 if (!navigator.share) $('#shareButton').css('display', 'none');
-
-ajax({ fav_list_get: { }, cal_list_get: { }, portal_reg_list_get: { }, portal_grade_list_get: { } }, 60, true);
+init();
 //}
 
 var require_google_login = false;
@@ -70,8 +69,13 @@ function ajax(query, timeout = 60, init = false) {
         if (typeof (registerWindow) === 'boolean' && registerWindow)
           $('#settings-modal').modal('show');
       }
-      endLoading();
+      end_loading();
     });
+}
+
+function init() {
+  start_loading();
+  ajax({ fav_list_get: { }, cal_list_get: { }, portal_reg_list_get: { }, portal_grade_list_get: { } }, 60, true);
 }
 
 function text_get(source, bool) {
@@ -85,8 +89,13 @@ function bool_get(list, code) {
 /**
  * URLのxperd.net/以降を取得
  */
-function request_get(){
+function request_get() {
   return document.location.href.substr(document.location.href.lastIndexOf('/') + 1);
+}
+
+function last_button(button) {
+  if ($(button).text() === 'ログイン') $('#login-modal').modal('show');
+  else location.href = '/auth?mode=logout';
 }
 
 /**
@@ -103,6 +112,46 @@ function register(button) {
   else {
     $('#settings-button').prop('disabled', true).text('保存中...');
     ajax({ userdata_save: { studentName: $('#studentName').val(), studentSex: $('input[name="studentSex"]:checked').val(), studentID: $('#studentID').val(), studentPass: $('#studentPass').val() } });
+  }
+}
+
+function login_with_portal(button) {
+  if ($('#login-portal_id').val().length !== 8)
+    alert('生徒証番号をすべて記入してください');
+  else if ($('#login-portal_pass').val() === '')
+    alert('パスワードを入力してください');
+  else {
+    $('#login-with-portal-button').prop('disabled', true).text('ログイン中...');
+    ajax({ login_with_portal: { portal_id: $('#login-portal_id').val(), portal_pass: $('#login-portal_pass').val() } });
+  }
+}
+
+function login_with_portal_result(data) {
+  if (data.result) {
+    alert(`ようこそ、${data.name}さん`);
+    $('#login-modal').modal('hide');
+    $('#login-with-portal-button').prop('disabled', false).text('ログイン');
+    $('#username').text(data.new ? '未登録' : data.name);
+    $('#dropdown-last-button').text('ログアウト');
+    $('#dropdown-settings-button').css('display', 'block');
+    $('#studentName').val(data.name);
+    init();
+    if (data.new) {
+      $('#studentID').val(data.portal_id);
+      $('#studentPass').val(data.portal_pass);
+      $('#settings-modal').modal('show');
+    }
+    else {
+      if (data.userdata.studentSex === 'male') $('#studentSex-male').prop('checked', true);
+      if (data.userdata.studentSex === 'female') $('#studentSex-female').prop('checked', true);
+      $('#studentID').val(data.userdata.studentID);
+      $('#studentPass').val(data.userdata.studentPass);
+      $('#syllabus-calendar-notification').prop('checked', data.userdata.notification ? true : false);
+    }
+  }
+  else {
+    $('#login-with-portal-button').prop('disabled', false).text('ログイン');
+    alert(data.error_message);
   }
 }
 
@@ -127,7 +176,7 @@ function userdata_save_result(data) {
  */
 $(window).on('popstate', (e) => {
   //if (!e.originalEvent.state) return; //初回アクセス時に再読み込みしてしまう対策
-  endLoading();
+  end_loading();
   let s = '';
   if (e.originalEvent.state === null){
     //最初の画面
@@ -202,13 +251,13 @@ $('.modal-nomal.fade .close').click(() => {
 /**
  * 読み込みオーバーレイを表示
  */
-function startLoading() {
+function start_loading() {
   $('#loading').css('display', 'block');
 }
 /**
  * 読み込みオーバーレイを非表示
  */
-function endLoading() {
+function end_loading() {
   $('#loading').css('display', 'none');
 }
 
@@ -250,7 +299,7 @@ function search(query) {
   $('#search-table').bootstrapTable('removeAll');
   $('.modal.show').modal('hide');
   $('#search-modal').data('query', query).modal('show');
-  startLoading();
+  start_loading();
   ajax({ portal_search: { show_error: true, query: query } });
 }
 
@@ -297,7 +346,7 @@ function mincam(query) {
   $('#mincam-title').text('授業評価検索結果');
   $('.modal.show').modal('hide');
   $('#mincam-modal').data('query', query).modal('show');
-  startLoading();
+  start_loading();
   ajax({ mincam_search: { query: query } });
 }
 
@@ -367,7 +416,7 @@ function syllabus(code, name = null) {
   $('.modal.show').modal('hide');
   $('#syllabus-modal').modal('show');
   $('#syllabus-memo').val('読み込み中...').prop('disabled', true);
-  startLoading();
+  start_loading();
   ajax({ portal_syllabus_get: { show_error: true, code: code }, memo_get: { code: code }, comment_get: { code: code, index: 0 } });
 }
 
@@ -860,7 +909,7 @@ function cal_notify_toggle(button){
       if (sub['notification'] !== bool)
         event_id.push(sub['event_id']);
     }
-    startLoading();
+    start_loading();
     ajax({ calender_notification_toggle: { notification: bool } });
   }
 }
