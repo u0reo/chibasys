@@ -27,7 +27,7 @@ var func_list = [];
 var global_ajax;
 
 function ajax(query, timeout = 60, init = false) {
-  global_ajax = $.ajax({ url: 'ajax', type: 'POST', contentType: 'application/json; charset=utf-8',
+  global_ajax = $.ajax({ url: '/ajax', type: 'POST', contentType: 'application/json; charset=utf-8',
     timeout: timeout * 1000, data: JSON.stringify(query), cache: false })
     .done((result, textStatus, xhr) => {
       let data;
@@ -509,7 +509,6 @@ function calendar(year = false) {
       years = years.filter((x, i, self) => self.indexOf(x) === i);
       //降順にソート
       years.sort((a, b) => b - a);
-      years.push(2020);///////////////////////////////////////
       //selectを生成
       years.forEach((value, index) => $('#calendar-nendo').append(`<option${index === 0 ? ' selected': ''}>${value}</option>`));
       $('#calendar-nendo').change((e) => calendar($(e.target).val())).togglebutton();

@@ -51,7 +51,7 @@ else {
   <link href="https://cdnjs.cloudflare.com/ajax/libs/mdbootstrap/4.8.2/css/mdb.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/gh/gitbrent/bootstrap4-toggle@3.4.0/css/bootstrap4-toggle.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://unpkg.com/bootstrap-table@1.15.5/dist/bootstrap-table.min.css">
-  <link href="core.css" rel="stylesheet">
+  <link href="/core.css" rel="stylesheet">
 </head>
 
 <body>
@@ -81,6 +81,7 @@ else {
           <label for="search-nendo">年度(*必須)</label>
           <select id="search-nendo" class="form-control stb">
             <option selected>2019</option>
+            <option selected>2020</option>
           </select>
         </div>
         <div class="form-group inline-parent">
@@ -512,9 +513,9 @@ else {
   <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mdbootstrap/4.8.2/js/mdb.min.js"></script>
   <script type="text/javascript" src="https://cdn.jsdelivr.net/gh/gitbrent/bootstrap4-toggle@3.4.0/js/bootstrap4-toggle.min.js"></script>
   <script type="text/javascript" src="https://unpkg.com/bootstrap-table@1.15.5/dist/bootstrap-table.min.js"></script>
-  <script type="text/javascript" src="select-togglebutton.js"></script>
-  <script type="text/javascript" src="jquery.qrcode.min.js"></script>
-  <script type="text/javascript" src="core.js"></script>
+  <script type="text/javascript" src="/select-togglebutton.js"></script>
+  <script type="text/javascript" src="/jquery.qrcode.min.js"></script>
+  <script type="text/javascript" src="/core.js"></script>
   <script type="text/javascript">
     <?php
     if (isset($_SESSION['user_id']) && $_SESSION['user_id'] === 'new' && !isset($userdata))

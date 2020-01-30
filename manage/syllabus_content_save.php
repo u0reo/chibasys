@@ -1,12 +1,14 @@
 <?php
-$nendo = 2019;
 require_once(__DIR__.'/../core.php');
 init();
-$total = mysqli_fetch_assoc(maria_query("SELECT COUNT(*) AS 'total' FROM chibasys.syllabus_$nendo;"))['total'];
+$year = intval(date('Y'));
+//一月までは今年度のものを取得。二、三月は次年度のものを取得
+if (intval(date('n')) <= 1) $year -= 1;
+$total = mysqli_fetch_assoc(maria_query("SELECT COUNT(*) AS 'total' FROM chibasys.syllabus_$year;"))['total'];
 $error_list = [];
 for ($i = 0; $i < $total; $i++) {
   set_time_limit(0);
-  $result = portal_real_syllabus_save($nendo, $i);
+  $result = portal_real_syllabus_save($year, $i);
   if (isset($result['error_code']))
     $error_list[$i] = $result;
   else
