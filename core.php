@@ -1450,6 +1450,8 @@
 	 * @return array 投稿別になった「みんなのキャンパス」データの配列
 	 */
 	function mincam_data_get(int $page, $cookie = null): array {
+		global $maria;
+
 		//クッキーがセッションにあるかチェック
 		if (!$cookie) $cookie = temp_load('mincam_cookie', 'general');
 		if (isset($cookie['error_code'])) return $cookie;
@@ -1465,7 +1467,7 @@
 		$doc = phpQuery::newDocument($res);
 
 		//ログイン済みかどうかをチェック
-		if (count($doc->find('.login')) > 0)
+		if (count($doc->find('.login a')) > 0)
 			return mincam_data_get($page, mincam_cookie_create());
 
 		$data = [];
@@ -1499,29 +1501,11 @@
 			$finalExam = mb_substr($section->find('.apartContents .apartBox .test dd p:eq(1)')->text(), 6);
 			$bringIn = mb_substr($section->find('.apartContents .apartBox .test dd p:eq(2)')->text(), 5);
 			$message = $section->find('.apartContents .apartBox .message span')->html();
-			$data[] = [ 'title'=>$title, 'university'=>$university, 'faculty'=>$faculty, 'department'=>$department,
-				'lastName'=>$lastName, 'firstName'=>$firstName, 'post_id'=>$post_id, 'richPoint'=>$richPoint, 'easyPoint'=>$easyPoint,
-				'creditUniversity'=>$creditUniversity, 'creditName'=>$creditName, 'postDate'=>$postDate, 'attend'=>$attend,
-				'textbook'=>$textbook, 'middleExam'=>$middleExam, 'finalExam'=>$finalExam, 'bringIn'=>$bringIn, 'message'=>$message ];
+			$data[$post_id] = maria_query("INSERT IGNORE INTO chibasys.mincam VALUES ('$title', '$university', '$faculty', '$department', ".
+			"'$lastName', '$firstName', $post_id, $richPoint, $easyPoint, '$creditUniversity', '$creditName', ".
+			"'$postDate', '$attend', '$textbook', '$middleExam', '$finalExam', '$bringIn', '".mysqli_real_escape_string($maria, $message)."');");
 		}
 		return $data;
-	}
-
-	/**
-	 * 投稿ごとに配列になったデータを読み、MySQLに挿入
-	 *
-	 * @param array $data 投稿別になった「みんなのキャンパス」データの配列
-	 * @return bool SQLが成功したかどうか
-	 */
-	function mincam_data_save(array $data) {
-		global $maria;
-		$query = '';
-		foreach ($data as $d)
-			$query += "INSERT IGNORE INTO chibasys.mincam VALUES ('$d[title]', '$d[university]', '$d[faculty]', '$d[department]', ".
-				"'$d[lastName]', '$d[firstName]', $d[post_id], $d[richPoint], $d[easyPoint], '$d[creditUniversity]', '$d[creditName]', ".
-				"'$d[postDate]', '$d[attend]', '$d[textbook]', '$d[middleExam]', '$d[finalExam]', '$d[bringIn]', '".mysqli_real_escape_string($maria, $d['message'])."');";
-		//成功か失敗かの真偽値を返す
-		return maria_query($query);
 	}
 
 	/**
