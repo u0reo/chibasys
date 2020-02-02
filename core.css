@@ -9,7 +9,7 @@
   -webkit-box-shadow: unset !important;
   box-shadow: unset !important;
 }
-.form-group .btn {
+.btn-group .btn {
   font-size: 1rem;
 }
 .btn.btn-sm {
@@ -37,6 +37,27 @@
   src: local("HuiFont29"),
       local("HuiFont29"),
       url(/HuiFont29.ttf) format('truetype');
+}
+
+/* フッターの設定 */
+header, footer {
+  position: fixed;
+  width: 100%;
+  z-index: 100;
+}
+
+header { top: 0; }
+footer { bottom: 0; }
+
+footer .nav-link {
+  padding: 1rem .5rem;
+  font-size: .8rem;
+}
+
+footer .nav-pills .nav-link.active {
+  background-color: #e58b8f;
+  color: black;
+  border-radius: 0;
 }
 
 /* その他グローバル設定 */
@@ -90,38 +111,23 @@ div.fixed-table-border {
   display: block;
   margin: .3rem 0;
 }
-.inline-parent {
-  display: flex;
-  justify-content: center;
-}
-.inline-parent label {
-  display: -ms-flexbox;
-  display: flex;
-  -ms-flex-align: center;
-  align-items: center;
-  -ms-flex-pack: center;
-  justify-content: center;
-  margin-bottom: 0;
-  white-space: nowrap;
-  margin-right: 0.2rem;
-}
-.inline-parent input, .inline-parent select, .inline-parent button {
-  display: inline-block;
-  vertical-align: middle;
-  /*max-width: 400px;*/
+#search-form .btn-group {
+  margin-right: auto;
+  margin-bottom: auto;
 }
 
 /* お気に入り関連 */
-.star .table-bordered, .star .table-bordered th, .star .table-bordered td,
-.star .fixed-table-container, #favorite-table th, #favorite-table td
-{ border: 1px solid black !important; }
-
 .fixed-table-container { border: 1px solid #dee2e6; border-bottom-width: 0px; }
 .fixed-table-container div { margin: -1px; }
 
 /* 時間割 */
+@media(max-height: 384px) {
+  #timetable-date { display: none; }
+  #classes-container { top: 30px; }
+  .class-box small { display: none; }
+}
 #timetable-box {
-  height: 80vh;
+  height: calc(100vh - 160px);
   position: relative;
   overflow: hidden;
   padding-bottom: 0.5px;
@@ -134,28 +140,21 @@ div.fixed-table-border {
   padding: 0 !important;
   /*width: calc((100% - 2rem) / 5);*/
   width: 20%;
-  border: 0.5px solid white;
+  border: 0.5px solid gray;
 }
 #timetable-box th {
-  color: white;
+  color: black;
   text-align: center;
   vertical-align: middle;
-}
-#timetable-title {
-  display: inline-block;
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
 }
 #timetable-prev, #timetable-next {
   background: none;
   border: none;
-  color: white;
+  color: black;
   font-size: 1.2rem;
   margin: 0;
   padding: .2rem;
 }
-#timetable-next { float: right; }
 .tt-5 th, .tt-5 td { height: calc((100% - 2rem) / 5); }
 .tt-6 th, .tt-6 td { height: calc((100% - 2rem) / 6); }
 .tt-7 th, .tt-7 td { height: calc((100% - 2rem) / 7); }
@@ -163,18 +162,25 @@ div.fixed-table-border {
 /*曜日*/#timetable-box thead th { height: 30px !important; }
 /*6限,7限は非表示(初期設定)*/
 #timetable-6th, #timetable-7th { display: none; }
+#classes-container {
+  position:absolute;
+  top:60px;
+  left:30px;
+  right:0;
+  bottom:0;
+}
 /*1つの教科のdivボックス*/
-.subject-box {
+.class-box {
   position: absolute;
-  color: white;
+  color: black;
   line-height: 120%;
   padding: .1rem;
-  border: solid 1px white;
-  background-color: hsla(357, 63%, 30%, 1);
+  border: solid 1px gray;
+  background-color: hsla(357, 63%, 90%, 1);
   overflow: hidden;
   font-size: 1.8vmax;
   width: 20%;
-  min-height: 12vh;
+  /*min-height: 12vh;*/
   /*文字を中央寄せ*/
   display: -webkit-flex;
   display: flex;
@@ -191,12 +197,12 @@ div.fixed-table-border {
   -ms-user-select: none;
   user-select: none;
 }
-.subject-box small {
+.class-box small {
   line-height: 110%;
   margin-top: .4rem;
 }
-@media (min-width: 992px) { .subject-box { font-size: 1.5vmax } }
-@media (min-width: 992px) and (min-height: 1250px), (min-width: 1250px){ .subject-box { font-size: 20px; } }
+@media (min-width: 992px) { .class-box { font-size: 1.5vmax } }
+@media (min-width: 992px) and (min-height: 1250px), (min-width: 1250px){ .class-box { font-size: 20px; } }
 
 /* モーダルの設定 */
 .modal-content {
@@ -234,52 +240,30 @@ div.fixed-table-border {
   }
 }
 
-/* 教科の下に出てくるボタン */
-.subject-next td {
-  border-top: none;
-  padding: 0 !important;
-}
-.next-horizontal div {
-  display: -ms-flexbox;
-  display: flex;
-  -ms-flex-align: center;
-  align-items: center;
-  -ms-flex-pack: end;
-  justify-content: flex-end;
-}
-.next-vertical div {
-  padding: .1rem .3rem;
-}
-.subject-next button {
-  margin: .3rem .1rem;
-  padding: .3rem;
-}
-#mincam-table tr td:nth-child(4), #mincam-table tr td:nth-child(5) {
-  letter-spacing: -.2rem;
-}
-
-/* 読み込み画面 */
-#loading {
+/* オーバーレイ画面 */
+.overlay {
   position: fixed;
   top: 0;
   left: 0;
   height: 100%;
   width: 100%;
   background-color: #00000080;
-  z-index: 2000;
+  font-size: 2rem;
+  z-index: 10;
 }
-#loading > div {
+.overlay > div {
   position: absolute;
   top: calc(50% - 2rem);
   left: 50%;
   -webkit-transform: translateY(-50%) translateX(-50%);
   transform: translateY(-50%) translateX(-50%);
 }
-#loading .spinner-border {
+.overlay .spinner-border {
+  font-size: 1rem;
   height: 4rem;
   width: 4rem;
 }
-#loading h4 {
+.overlay h4 {
   position: absolute;
   width: 100vw;
   top: 5rem;
@@ -318,8 +302,8 @@ div.fixed-table-border {
 }
 
 /* [calendar] */
-#calendar-table tr td:nth-child(1), #subjects-table tr td:nth-child(1) { padding: 0; }
-#calendar-table .del-cal, #subjects-table .del-sub {
+#calendar-table tr td:nth-child(1), #classes-table tr td:nth-child(1) { padding: 0; }
+#calendar-table .del-cal, #classes-table .del-sub {
   padding: 0;
   width: calc(100% - .6rem);
   margin: 0 .3rem;

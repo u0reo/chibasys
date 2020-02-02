@@ -1,6 +1,7 @@
 <?php
 require_once($_SERVER['DOCUMENT_ROOT'].'/core.php');
 init();
+$nendo = intval(date('n')) >= 4 ? intval(date('Y')) : intval(date('Y')) - 1;
 $r = explode("?", get_request());
 $type = ($r[0] === '' ? 'website' : 'article');
 $title = 'ようこそ、chibasysへ';
@@ -55,216 +56,17 @@ else {
 </head>
 
 <body>
-  <nav class="navbar navbar-dark bg-dark">
-    <a href="/" class="navbar-brand">chibasys</a>
-    <div class="dropdown">
-      <button type="button" id="dropdownMenuButton" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-        <div id="username"><?php echo(isset($userdata) ? $userdata['studentName'] : (isset($_SESSION['user_id']) && $_SESSION['user_id'] === 'new' ? '未登録' : '未ログイン')); ?></div>
-        <img class="rounded-circle" src="<?php if (isset($_SESSION['google_photo_url'])) echo ($_SESSION['google_photo_url']); ?>" style="height: 30px;" />
+  <header class="zakuro z-depth-1">
+    <div class="container d-flex">
+      <a class="navbar-brand text-white pt-2 mt-1">chibasys</a>
+      <button type="button" class="btn btn-default" onclick="login_proceed_button();" style="margin-left: auto;">
+        <div id="header-name" style="display: inline-block;">未ログイン</div>
+        <img class="rounded-circle" src="<?php if (isset($_SESSION['google_photo_url'])) echo($_SESSION['google_photo_url']); ?>" style="height: 25px;"/>
       </button>
-      <div class="dropdown-menu dropdown-menu-right" aria-labelledby="dropdownMenuButton" style="z-index:9999">
-        <a class="dropdown-item" href="https://calendar.google.com/" target="_blank">Googleカレンダーへ</a>
-        <a class="dropdown-item" href="https://cup.chiba-u.jp/campusweb/" target="_blank">学生ポータルへ</a>
-        <a class="dropdown-item" href="https://cup.chiba-u.jp/campusweb/campussquare.do?locale=ja_JP&_flowId=SYW3901100-flow" target="_blank">千葉大シラバス検索へ</a>
-        <a id="dropdown-settings-button" class="dropdown-item" data-toggle="modal" data-target="#settings-modal"<?php if (!isset($userdata)) echo(' style="display:none;"'); ?>>設定</a>
-        <a id="dropdown-last-button" class="dropdown-item" onclick="last_button(this);"><?php echo(isset($_SESSION['user_id']) ? 'ログアウト' : 'ログイン'); ?></a>
-      </div>
     </div>
-  </nav>
+  </header>
 
-  <div class="d-lg-flex w-100 px-md-3">
-    <div class="my-md-3 mr-lg-3">
-      <div id="search-form" class="bg-light p-3 p-md-5 text-center overflow-hidden">
-        <h2 class="display-5">シラバス検索</h2>
-        <div class="alert alert-info" role="alert">AND検索と大文字小文字混用に対応<br>(例:(1)と（１）)(教科名のみ)</div>
-        <div class="form-group">
-          <label for="search-nendo">年度(*必須)</label>
-          <select id="search-nendo" class="form-control stb">
-            <option selected>2019</option>
-            <option selected>2020</option>
-          </select>
-        </div>
-        <div class="form-group inline-parent">
-          <label for="search-jikanwariShozokuCode">時間割所属</label>
-          <select id="search-jikanwariShozokuCode" class="form-control">
-            <?php foreach (jikanwariShozoku as $k => $v) echo("<option value=\"$k\">".(str_repeat('　', strlen($k) - 2))."$v</option>"); ?>
-          </select>
-        </div>
-        <div class="form-group inline-parent">
-          <label for="search-class_type">授業の種類</label>
-          <select id="search-class_type" class="form-control">
-            <?php foreach (class_type as $k => $v) echo("<option value=\"$k\">".(str_repeat('　', strlen($k) - 1))."$v</option>"); ?>
-          </select>
-        </div>
-        <div class="form-group">
-          <label for="search-term">ターム(複数可)</label>
-          <select id="search-term" class="form-control stb" multiple="multiple">
-            <option value="" selected="selected">全て</option>
-            <option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label for="search-grade">年次(複数可)</label>
-          <select id="search-grade" class="form-control stb" multiple="multiple">
-            <option value="" selected="selected">全て</option>
-            <option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label for="search-day">曜日</label>
-          <select id="search-day" class="form-control stb">
-            <?php foreach (time_day as $k => $v) echo("<option value=\"$k\">$v</option>"); ?>
-          </select>
-        </div>
-        <div class="form-group">
-          <label for="search-hour">時限</label>
-          <select id="search-hour" class="form-control stb">
-            <option value="" selected="selected">全て</option>
-            <option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option>
-          </select>
-        </div>
-        <div class="form-group md-form inline-parent">
-          <label for="search-name">科目名</label>
-          <input id="search-name" type="text" class="form-control">
-        </div>
-        <div class="form-group md-form inline-parent">
-          <label for="search-teacher">教師名</label>
-          <input id="search-teacher" type="text" class="form-control">
-        </div>
-        <div class="form-group inline-parent">
-          <button class="btn btn-primary btn-block" onclick="search_start();">検索</button>
-        </div>
-        <div class="form-group inline-parent">
-          <button class="btn btn-secondary btn-block" onclick="classes_show();">履修登録や成績を確認</button>
-        </div>
-      </div>
-      <div id="mincam-form" class="bg-info p-3 p-md-5 mt-md-3 overflow-hidden text-white text-center">
-        <h2 class="display-5">授業評価検索</h2>
-        <h5>powered by <a class="text-white-50" target="_blank" href="https://campus.nikki.ne.jp/?module=lesson&univ=%C0%E9%CD%D5%C2%E7%B3%D8">みんなのキャンパス</a></h5>
-        <div class="form-group md-form">
-          <label for="title-mincam">教科名</label>
-          <input type="text" id="title-mincam" class="form-control">
-        </div>
-        <div class="form-group md-form">
-          <label for="teacher-mincam">教師名(姓名はスペース区切り)</label>
-          <input type="text" id="teacher-mincam" class="form-control">
-        </div>
-        <div class="form-group md-form">
-          <label for="message-mincam">コメントから検索</label>
-          <input type="text" id="message-mincam" class="form-control">
-        </div>
-        <button class="btn btn-primary btn-block" onclick="mincam_start();">検索</button>
-      </div>
-    </div>
-    <div class="my-md-3">
-      <div class="star p-3 p-md-5 overflow-hidden">
-        <h2 class="display-5 text-center">お気に入り</h2>
-        <table id="favorite-table"></table>
-      </div>
-      <div class="zakuro p-3 p-md-5 mt-md-3 overflow-hidden text-white">
-        <div class="mx-md-0" style="margin: 0 -.75rem; position:relative;">
-          <button id="timetable-prev" class="btn" onclick="timetable_reload(-1);">＜前週</button>
-          <h2 id="timetable-title" class="display-5 text-center">時間割</h2>
-          <button id="timetable-next" class="btn" onclick="timetable_reload(1);">次週＞</button>
-        </div>
-        <div id="timetable-box" class="my-3 mx-md-0" style="margin: 0 -.75rem;">
-          <table class="table tt-5">
-            <thead>
-              <tr id="timetable-date"><th></th><th></th><th></th><th></th><th></th><th></th></tr>
-              <tr id="timetable-dow"><th></th><th>月</th><th>火</th><th>水</th><th>木</th><th>金</th></tr>
-            </thead>
-            <tbody>
-              <tr><th>1</th><td></td><td></td><td></td><td></td><td></td></tr>
-              <tr><th>2</th><td></td><td></td><td></td><td></td><td></td></tr>
-              <tr><th>3</th><td></td><td></td><td></td><td></td><td></td></tr>
-              <tr><th>4</th><td></td><td></td><td></td><td></td><td></td></tr>
-              <tr><th>5</th><td></td><td></td><td></td><td></td><td></td></tr>
-              <tr id="timetable-6th"><th>6</th><td></td><td></td><td></td><td></td><td></td></tr>
-              <tr id="timetable-7th"><th>7</th><td></td><td></td><td></td><td></td><td></td></tr>
-            </tbody>
-          </table>
-          <div id="subjects-container" style="top:60px;left:30px;right:0;bottom:0;position:absolute;"></div>
-        </div>
-        <h5 class="text-center mb-3">タップしてシラバスを確認</h5>
-        <div class="form-group inline-parent">
-          <button class="btn btn-success btn-block" onclick="calendar_show();">カレンダーに追加済みの教科を確認</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <footer class="container py-5">
-    <div class="row">
-      <div class="col-12 col-md">
-        <p>chibasys -授業の予定を簡単にカレンダーへ挿入-</p>
-        <small class="d-block mb-3 text-muted">© 2019 xperd</small>
-      </div>
-    </div>
-  </footer>
-
-  <div style="position:fixed;bottom:0;width:100%;z-index:10;" class="bg-dark">
-    <button id="share-button" class="btn btn-block text-white" data-toggle="modal" data-target="#syllabus-link-modal">このサイトを共有する</button>
-  </div>
-
-  <div class="text-white mr-1 mb-1" style="position:fixed;bottom:0;right:0;font-size:.5rem;z-index:10;">
-    VER.<?php
-        $dateJS = filemtime('core.js');
-        $dateCSS = filemtime('core.css');
-        echo (date('ymdHi', ($dateJS > $dateCSS ? $dateJS : $dateCSS)));
-        ?>
-  </div>
-
-  <div class="modal fade" id="settings-modal" tabindex="-1" role="dialog" aria-labelledby="settings-title" aria-hidden="true" data-keyboard="false" data-backdrop="false" style="z-index: 1500;">
-    <div class="modal-dialog modal-dialog-centered modal-xl" role="document">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h4 class="modal-title" id="settings-title">chibasys 設定</h4>
-          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-            <span aria-hidden="true">&times;</span>
-          </button>
-        </div>
-        <div class="modal-body">
-          <div class="form-group">
-            <label for="studentName">名前</label>
-            <input type="text" id="studentName" class="form-control" value="<?php
-              if (isset($userdata)) echo($userdata['studentName']); else if (isset($_SESSION['google_user_name'])) echo($_SESSION['google_user_name']); ?>" required>
-            <span class="form-text text-muted">
-              コメント以外の名前に使用されます。後から変更できます。
-            </span>
-          </div>
-          <div class="form-group">
-            <label>性別</label>
-            <div class="custom-control custom-radio" style="display: inline-block;">
-              <input class="custom-control-input" type="radio" name="studentSex" id="studentSex-male" value="male" required<?php if (isset($userdata) && $userdata['studentSex'] === 'male') echo(' checked'); ?>>
-              <label class="custom-control-label" for="studentSex-male">男性</label>
-            </div>
-            <div class="custom-control custom-radio" style="display: inline-block;">
-              <input class="custom-control-input" type="radio" name="studentSex" id="studentSex-female" value="female" required<?php if (isset($userdata) && $userdata['studentSex'] === 'female') echo(' checked'); ?>>
-              <label class="custom-control-label" for="studentSex-female">女性</label>
-            </div>
-          </div>
-          <h4>学生ポータルのログイン情報</h4>
-          <h5>これらの項目を入力すると、履修登録や成績確認ができます。<br>
-            匿名での履修/成績データの利用に同意したものとみなします。</h5>
-          <div class="form-group">
-            <label for="studentID">学生証番号</label>
-            <input type="text" id="studentID" class="form-control" maxlength="10" pattern="^[0-9A-Z]+$" placeholder="00A0000A" value="<?php if (isset($userdata) && $userdata['studentID']) echo($userdata['studentID']); ?>" required>
-          </div>
-          <div class="form-group">
-            <label for="studentPass">パスワード</label>
-            <input type="password" id="studentPass" class="form-control" pattern="^[!-~]+$" placeholder="<?php if (isset($userdata) && $userdata['studentPass']) echo('空欄で変更しない'); ?>" required>
-          </div>
-          <div id="login-check-result"></div>
-          <button type="button" class="btn btn-secondary" onclick="loginCheck(this);" style="display:none;">ログインチェック</button>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-primary" onclick="register(this);">保存</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="modal fade" id="login-modal" tabindex="-1" role="dialog" aria-labelledby="login-title" aria-hidden="true" data-keyboard="false" data-backdrop="false" style="z-index: 2000;">
+  <div class="modal fade" id="login-modal" tabindex="-1" role="dialog" aria-labelledby="login-title" aria-hidden="true" style="z-index: 2000;">
     <div class="modal-dialog modal-dialog-centered modal-xl" role="document">
       <div class="modal-content">
         <div class="modal-header">
@@ -274,22 +76,266 @@ else {
           </button>
         </div>
         <div class="modal-body">
-          <h4>学生証番号とパスワードでログイン</h4>
-          <div class="form-group">
-            <label for="login-portal_id">学生証番号</label>
-            <input type="text" id="login-portal_id" class="form-control" maxlength="10" pattern="^[0-9A-Z]+$" placeholder="00A0000A" value="" required>
+          <div class="form-group md-form">
+            <label for="portal_id">学生証番号</label>
+            <input type="text" id="portal_id" class="form-control" maxlength="10" pattern="^[0-9A-Z]+$" value="" required>
           </div>
-          <div class="form-group">
-            <label for="login_portal_pass">パスワード</label>
-            <input type="password" id="login-portal_pass" class="form-control" pattern="^[!-~]+$" placeholder="" required>
+          <div class="form-group md-form">
+            <label for="portal_pass">パスワード</label>
+            <input type="password" id="portal_pass" class="form-control" pattern="^[!-~]+$" placeholder="" required>
           </div>
-          <button id="login-with-portal-button" type="button" class="btn btn-primary btn-block" onclick="login_with_portal(this);">ログイン</button>
+          <button id="login-with-portal-button" type="button" class="btn btn-primary btn-block" onclick="login_with_portal();">ログイン/新規登録</button>
           <hr>
           <button type="button" class="btn btn-danger btn-block" onclick="location.href='/auth?mode=login';">Googleアカウントでログイン</button>
         </div>
       </div>
     </div>
   </div>
+
+  <div id="contents-box" class="container tab-content overflow-hidden px-0 py-5 pb-lg-1" style="min-height: 100vh;">
+    <div class="tab-pane accordion fade" id="syllabus-content" role="tabpanel" aria-labelledby="nav-profile-tab">
+      <div class="card z-depth-0 bg-transparent">
+        <div class="card-header bg-transparent mb-0" data-toggle="collapse" data-target="#search-form" aria-expand="true" aria-controls="search-form">検索</div>
+        <div id="search-form" class="collapse show p-2">
+          <div class="alert alert-info text-center" role="alert">AND検索と大文字小文字混用に対応<br>(例:(1)と（１）)(教科名のみ)</div>
+          <div class="form-row mb-2">
+            <label class="col-3 text-right" for="search-nendo">年度(*必須)</label>
+            <div class="col-9 d-flex">
+              <select id="search-nendo" class="form-control stb">
+                <option selected>2019</option>
+                <option>2020</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row mb-2">
+            <label class="col-3 text-right" for="search-jikanwariShozokuCode">時間割所属</label>
+            <div class="col-9 d-flex">
+              <select id="search-jikanwariShozokuCode" class="form-control">
+                <?php foreach (jikanwariShozoku as $k => $v) echo("<option value=\"$k\">".(str_repeat('　', strlen($k) - 2))."$v</option>"); ?>
+              </select>
+            </div>
+          </div>
+          <div class="form-row mb-2">
+            <label class="col-3 text-right" for="search-class_type">授業の種類</label>
+            <div class="col-9 d-flex">
+              <select id="search-class_type" class="form-control">
+                <?php foreach (class_type as $k => $v) echo("<option value=\"$k\">".(str_repeat('　', strlen($k) - 1))."$v</option>"); ?>
+              </select>
+            </div>
+          </div>
+          <div class="form-row mb-2">
+            <label class="col-3 text-right" for="search-term">ターム(複数可)</label>
+            <div class="col-9 d-flex">
+              <select id="search-term" class="form-control stb" multiple="multiple">
+                <option value="" selected="selected">全て</option>
+                <option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row mb-2">
+            <label class="col-3 text-right" for="search-grade">年次(複数可)</label>
+            <div class="col-9 d-flex">
+              <select id="search-grade" class="form-control stb" multiple="multiple">
+                <option value="" selected="selected">全て</option>
+                <option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row mb-2">
+            <label class="col-3 text-right" for="search-day">曜日</label>
+            <div class="col-9 d-flex">
+              <select id="search-day" class="form-control stb">
+                <?php foreach (time_day as $k => $v) echo("<option value=\"$k\">$v</option>"); ?>
+              </select>
+            </div>
+          </div>
+          <div class="form-row mb-2">
+            <label class="col-3 text-right" for="search-hour">時限</label>
+            <div class="col-9 d-flex">
+              <select id="search-hour" class="form-control stb">
+                <option value="" selected="selected">全て</option>
+                <option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row mb-2">
+            <label class="col-3 text-right" for="search-name">科目名</label>
+            <div class="col-9 md-form my-0">
+              <input id="search-name" type="text" class="form-control pt-0 mb-0">
+            </div>
+          </div>
+          <div class="form-row mb-2">
+            <label class="col-3 text-right" for="search-teacher">教師名</label>
+            <div class="col-9 md-form my-0">
+              <input id="search-teacher" type="text" class="form-control pt-0 mb-0">
+            </div>
+          </div>
+          <div class="form-row mb-2">
+            <button class="btn btn-primary btn-block mx-5" onclick="search_start();">検索</button>
+          </div>
+        </div>
+      </div>
+      <div class="card z-depth-0 bg-transparent">
+        <div class="card-header bg-transparent mb-0" data-toggle="collapse" data-target="#favorite-box" aria-expand="true" aria-controls="favorite-box">お気に入り</div>
+        <div id="favorite-box" class="collapse show p-2">
+          <table id="favorite-table"></table>
+        </div>
+      </div>
+      <div class="card z-depth-0 bg-transparent">
+        <div class="card-header bg-transparent mb-0" data-toggle="collapse" data-target="#mincam-box" aria-expand="true" aria-controls="mincam-box">授業評価検索</div>
+        <div id="mincam-box" class="collapse show p-2">
+          <div class="form-group md-form">
+            <label for="title-mincam">教科名</label>
+            <input type="text" id="title-mincam" class="form-control">
+          </div>
+          <div class="form-group md-form">
+            <label for="teacher-mincam">教師名(姓名はスペース区切り)</label>
+            <input type="text" id="teacher-mincam" class="form-control">
+          </div>
+          <div class="form-group md-form">
+            <label for="message-mincam">コメントから検索</label>
+            <input type="text" id="message-mincam" class="form-control">
+          </div>
+          <button class="btn btn-primary btn-block" onclick="mincam_start();">検索</button>
+          <p class="text-right mt-2">powered by <a target="_blank" href="https://campus.nikki.ne.jp/?module=lesson&univ=%C0%E9%CD%D5%C2%E7%B3%D8">みんなのキャンパス</a></p>
+        </div>
+      </div>
+      <div class="card z-depth-0 bg-transparent">
+        <div class="card-header bg-transparent mb-0" data-toggle="collapse" data-target="#comment-box" aria-expand="true" aria-controls="comment-box">最近のコメント</div>
+        <div id="comment-box" class="collapse show p-2">
+          Coming soon...
+        </div>
+      </div>
+    </div>
+    <div class="tab-pane fade p-2 pb-5" id="classes-content" role="tabpanel" aria-labelledby="nav-home-tab">
+      <h5 id="classes-gp" class="my-2">現時点でのGP: 読み込み中...</h5>
+      <h5 id="classes-gpa" class="my-2">現時点でのGPA: 読み込み中...</h5>
+      <select id="classes-nendo" class="form-control"></select>
+      <table id="classes-table"></table>
+      <div class="overlay portal-overlay" style="display: block;">
+        <div class="container d-flex flex-column justify-content-center p-5">
+          <p class="text-white text-center">
+            学生ポータルのIDとパスワードでのログインが必要です。
+            履修登録や成績の閲覧、シラバスの確認がすばやく行えるようになります。
+          </p>
+          <button class="btn btn-secondary portal-login" onclick="login_proceed_button('portal');">ログイン/新規登録</button>
+        </div>
+      </div>
+    </div>
+    <div class="tab-pane fade p-2 active show" id="timetable-content" role="tabpanel" aria-labelledby="nav-contact-tab">
+      <div class="d-flex justify-content-between" style="position:relative;">
+        <button id="timetable-prev" class="btn" onclick="timetable_reload(-1);">＜前週</button>
+        <h3 id="timetable-title" class="text-center">時間割</h3>
+        <button id="timetable-next" class="btn" onclick="timetable_reload(1);">次週＞</button>
+      </div>
+      <div id="timetable-box" class="my-1">
+        <table class="table tt-5">
+          <thead>
+            <tr id="timetable-date"><th></th><th></th><th></th><th></th><th></th><th></th></tr>
+            <tr id="timetable-dow"><th></th><th>月</th><th>火</th><th>水</th><th>木</th><th>金</th></tr>
+          </thead>
+          <tbody>
+            <tr><th>1</th><td></td><td></td><td></td><td></td><td></td></tr>
+            <tr><th>2</th><td></td><td></td><td></td><td></td><td></td></tr>
+            <tr><th>3</th><td></td><td></td><td></td><td></td><td></td></tr>
+            <tr><th>4</th><td></td><td></td><td></td><td></td><td></td></tr>
+            <tr><th>5</th><td></td><td></td><td></td><td></td><td></td></tr>
+            <tr id="timetable-6th"><th>6</th><td></td><td></td><td></td><td></td><td></td></tr>
+            <tr id="timetable-7th"><th>7</th><td></td><td></td><td></td><td></td><td></td></tr>
+          </tbody>
+        </table>
+        <div id="classes-container"></div>
+      </div>
+      <div class="overlay portal-overlay" style="display: block;">
+        <div class="container d-flex flex-column justify-content-center p-5">
+          <p class="text-white text-center">
+            学生ポータルのIDとパスワードでのログインが必要です。
+            履修登録に基づき、時間割を自動生成します。
+          </p>
+          <button class="btn btn-secondary portal-login" onclick="login_proceed_button('portal');">ログイン/新規登録</button>
+        </div>
+      </div>
+    </div>
+    <div class="tab-pane fade" id="cicle-content" role="tabpanel" aria-labelledby="nav-contact-tab">
+      サークル情報
+    </div>
+    <div class="tab-pane fade" id="others-content" role="tabpanel" aria-labelledby="nav-contact-tab">
+      <div class="card z-depth-0 bg-transparent">
+        <div class="card-header bg-transparent mb-0" data-toggle="collapse" data-target="#userdata-box" aria-expand="true" aria-controls="userdata-box">設定</div>
+        <div id="userdata-box" class="collapse px-2 pb-1">
+          <div id="new-alert" class="alert alert-warning text-center" role="alert" style="display:none;">新規登録のときは必ず一度保存してください。</div>
+          <div class="form-group md-form">
+            <label for="user-name">名前</label>
+            <input type="text" id="user-name" class="form-control" value="" required>
+            <span class="form-text text-muted">
+              コメント以外の名前に使用されます。後から変更できます。
+            </span>
+          </div>
+          <div class="form-group">
+            <label>性別</label>
+            <div class="custom-control custom-radio" style="display: inline-block;">
+              <input class="custom-control-input user-sex-radio" type="radio" name="user-sex" id="user-sex-male" value="male" required>
+              <label class="custom-control-label" for="user-sex-male">男性</label>
+            </div>
+            <div class="custom-control custom-radio" style="display: inline-block;">
+              <input class="custom-control-input user-sex-radio" type="radio" name="user-sex" id="user-sex-female" value="female" required>
+              <label class="custom-control-label" for="user-sex-female">女性</label>
+            </div>
+          </div>
+          <h4>学生ポータルのログイン情報</h4>
+          <h5>これらの項目を入力すると、履修登録や成績確認ができます。<br>
+            匿名での履修/成績データの利用に同意したものとみなします。</h5>
+          <div class="form-group md-form">
+            <label for="user-portal_id">学生証番号</label>
+            <input type="text" id="user-portal_id" class="form-control" maxlength="10" pattern="^[0-9A-Z]+$" placeholder="00A0000A" value="" required>
+          </div>
+          <div class="form-group md-form">
+            <label for="user-portal_pass">パスワード</label>
+            <input type="password" id="user-portal_pass" class="form-control" pattern="^[!-~]+$" placeholder="" required>
+          </div>
+          <div id="login-check-result"></div>
+          <button id="userdata-save-button" type="button" class="btn btn-primary" onclick="userdata_save();">保存</button>
+          <button id="portal-login-check-button" type="button" class="btn btn-secondary" onclick="login_with_portal(true);">ログインチェック</button>
+          <a id="portal-login-check-result"></a>
+        </div>
+      </div>
+      <div class="card z-depth-0 bg-transparent">
+        <div class="card-header bg-transparent mb-0" data-toggle="collapse" data-target="#calendar-box" aria-expand="true" aria-controls="calendar-box">Googleカレンダーの管理</div>
+        <div id="calendar-box" class="collapse show p-2">
+          <button type="button" class="btn btn-danger btn-block mb-2" onclick="location.href='/auth?mode=login';">Googleアカウントでログイン</button>
+          <button type="button" class="btn btn-success btn-block" onclick="calendar_show();">Googleカレンダーに追加済みの教科を確認</button>
+        </div>
+      </div>
+      <div class="card z-depth-0 bg-transparent">
+        <div class="card-header bg-transparent mb-0" data-toggle="collapse" data-target="#link-box" aria-expand="true" aria-controls="link-box">リンク集</div>
+        <div id="link-box" class="collapse show p-2">
+          <a class="btn btn-link btn-block text-left" href="https://cup.chiba-u.jp/campusweb/" target="_blank">千葉大学 学生ポータル</a>
+          <a class="btn btn-link btn-block text-left" href="https://cup.chiba-u.jp/campusweb/campussquare.do?locale=ja_JP&_flowId=SYW3901100-flow" target="_blank">千葉大学 シラバス検索</a>
+          <a class="btn btn-link btn-block text-left" href="https://moodle2.chiba-u.jp/moodle<?php echo($nendo - 2000); ?>/" target="_blank">千葉大学 Moodle(<?php echo($nendo); ?>年度版)</a>
+          <a class="btn btn-link btn-block text-left" href="https://calendar.google.com/" target="_blank">Googleカレンダー</a>
+        </div>
+      </div>
+      <div class="card z-depth-0 bg-transparent">
+        <div class="card-header bg-transparent mb-0" data-toggle="collapse" data-target="#moodle-link-box" aria-expand="true" aria-controls="moodle-link-box">過去年度 Moodleリンク集</div>
+        <div id="moodle-link-box" class="collapse p-2">
+          <?php
+            for ($n = 15; $n < $nendo - 2000; $n++)
+              echo("<a class=\"btn btn-link btn-block text-left\" href=\"https://moodle2.chiba-u.jp/moodle$n/\" target=\"_blank\">".($n + 2000)."年度版</a>");
+          ?>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="zakuro text-white z-depth-2"> <!--flex-sm-row-->
+    <div id="tabs-box" class="container px-0 nav nav-pills flex-row">
+      <a class="flex-fill btn m-0 nav-link" data-toggle="tab" data-target="#syllabus-content">シラバス</a>
+      <a class="flex-fill btn m-0 nav-link" data-toggle="tab" data-target="#classes-content">履修/成績</a>
+      <a class="flex-fill btn m-0 nav-link active" data-toggle="tab" data-target="#timetable-content">時間割</a>
+      <a class="flex-fill btn m-0 nav-link disabled" data-toggle="tab" data-target="#cicle-content" tabindex="-1" aria-disabled="true">サークル</a>
+      <a class="flex-fill btn m-0 nav-link" data-toggle="tab" data-target="#others-content">その他</a>
+    </div>
+  </footer>
 
   <div class="modal modal-nomal fullsize" id="search-modal" tabindex="-1" role="dialog" aria-labelledby="search-title" aria-hidden="true" data-keyboard="false" data-backdrop="false">
     <div class="modal-dialog modal-dialog-centered modal-xl modal-dialog-scrollable" role="document">
@@ -398,42 +444,6 @@ else {
     </div>
   </div>
 
-  <div class="modal modal-nomal fade" id="syllabus-calendar-modal" tabindex="-1" role="dialog" aria-labelledby="syllabus-calendar-title" aria-hidden="true" data-keyboard="false" data-backdrop="false" style="z-index: 1200;">
-    <div class="modal-dialog modal-dialog-centered modal-xl modal-dialog-scrollable" role="document">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h4 class="modal-title" id="syllabus-calendar-title">カレンダーへの追加確認</h4>
-          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-            <span aria-hidden="true">&times;</span>
-          </button>
-        </div>
-        <div class="modal-body">
-          <div class="alert alert-primary" role="alert">
-            講義日時をログイン中のGoogleカレンダーに追加できます。<br>
-            好きなカレンダーアプリで講義内容、評価方法などをすぐに確認でき、授業前に通知でお知らせを受け取れます。
-            また、単位数にカウントできるようになります。
-          </div>
-          <div class="alert alert-danger" role="alert">
-            時限がその他やタームが集中などのシラバスではカレンダーに追加できません。通期は1年ずっとになります。
-          </div>
-          <div class="form-group inline-paprent">
-            <label>カレンダーの通知:</label>
-            <input id="syllabus-calendar-notification" type="checkbox" data-toggle="toggle" data-size="sm" data-on="オン" data-off="オフ" <?php echo (isset($userdata) ? ($userdata['notification'] ? ' checked' : '') : ' checked'); ?>>
-          </div>
-          <button class="btn btn-block btn-info text-left px-3 py-2" data-toggle="collapse" data-target="#syllabus-calendar-collapse" aria-expand="false" aria-controls="syllabus-calendar-collapse">
-            ▼カレンダーのメモ欄をカスタマイズ</button>
-          <div id="syllabus-calendar-collapse" class="p-2 collapse" style="border: solid 1px #33b5e5;">
-            <p>タップして切り替えられます、多すぎると見にくくなる可能性があります。この画面では内容は省略されています。</p>
-            <table id="syllabus-calendar-table" class="table table-sm" style="white-space: nowrap;"></table>
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn" onclick="addCalendar(this);">カレンダーに追加する</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
   <div class="modal modal-nomal fullsize" id="calendar-modal" tabindex="-1" role="dialog" aria-labelledby="calendar-title" aria-hidden="true" data-keyboard="false" data-backdrop="false" style="z-index: 1100;">
     <div class="modal-dialog modal-dialog-centered modal-xl modal-dialog-scrollable" role="document">
       <div class="modal-content">
@@ -452,28 +462,6 @@ else {
           </div>
           <h5 id="calendar-h5" class="my-2">カレンダーに追加済みの教科一覧</h5>
           <table id="calendar-table"></table>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="modal modal-nomal fullsize" id="classes-modal" tabindex="-1" role="dialog" aria-labelledby="classes-title" aria-hidden="true" data-keyboard="false" data-backdrop="false" style="z-index: 1100;">
-    <div class="modal-dialog modal-dialog-centered modal-xl modal-dialog-scrollable" role="document">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h4 class="modal-title" id="classes-title">履修登録と成績</h4>
-          <button type="button" class="close" aria-label="Close">
-            <span aria-hidden="true">&times;</span>
-          </button>
-        </div>
-        <div class="modal-body">
-          <h5 id="classes-grade" class="my-2">現時点でのGP : 読み込み中... / 現時点でのGPA : 読み込み中...</h5>
-          <div class="form-group">
-            <label for="classes-nendo">年度</label>
-            <select id="classes-nendo" class="form-control"></select>
-          </div>
-          <h5 id="classes-h5" class="my-2">履修登録済み教科一覧</h5>
-          <table id="classes-table"></table>
         </div>
       </div>
     </div>
@@ -501,7 +489,7 @@ else {
     </div>
   </div>
 
-  <div id="loading" style="display:block;">
+  <div id="loading" class="overlay" style="z-index: 2000; display: block;">
     <div>
       <div class="spinner-border text-white" role="status"></div>
       <h4 class="text-white">読み込み中...</h4>
@@ -518,10 +506,8 @@ else {
   <script type="text/javascript" src="/core.js"></script>
   <script type="text/javascript">
     <?php
-    if (isset($_SESSION['user_id']) && $_SESSION['user_id'] === 'new' && !isset($userdata))
-      echo ("var registerWindow = true;\n");
     if (isset($_SESSION['request'])) {
-      echo ('var request = \''.$_SESSION['request']."';\n");
+      echo("var request = '$_SESSION[request]';\n");
       unset($_SESSION['request']);
     }
     ?>

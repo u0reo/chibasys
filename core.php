@@ -327,17 +327,30 @@
 	}
 
 	/**
+	 * ユーザーデータを取得
+	 * 
+	 * @param ?string $user_id ユーザーID
+	 */
+	function userdata_get(?string $user_id) {
+		$result = maria_query("SELECT * FROM chibasys.user WHERE user_id='$user_id';");
+		if (!$result) return error_data(ERROR_SQL_FAILED);
+		$userdata = mysqli_fetch_assoc($result);
+		if (isset($userdata['studentPass']) && $userdata['studentPass']) $userdata['studentPass'] = 'secret';
+		return [ 'result'=>true, 'login'=>($user_id !== 'new' ? $user_id !== null : 'new'), 'userdata'=>$userdata ];
+	}
+
+	/**
 	 * ユーザーデータを保存
 	 *
 	 * @param ?string $user_id (Googleの)ユーザーID
 	 * @param array $query POSTデータ
 	 * @return array|bool 通常はtrue
 	 */
-	function userdata_save(?string $user_id, array $query) {
+	function userdata_save(?string &$user_id, array $query) {
 		global $maria;
 
 		foreach ($query as $key => $value) $query[$key] = mysqli_real_escape_string($maria, $value);
-		if (isset($query['studentPass']) && $query['studentPass'] === '') unset($query['studentPass']);
+		if (isset($query['portal_pass']) && $query['portal_pass'] === '') unset($query['portal_pass']);
 		//$queryにgoogle_idを追加
 		session_start();
 		if (isset($_SESSION['google_id'])) $query['google_id'] = $_SESSION['google_id'];
@@ -347,13 +360,13 @@
 		if (!$result) return error_data(ERROR_SQL_FAILED);
 		if ($user_id === 'new') {
 			$user_id = (new Hashids('e4KrxdB2', 8))->encode(time());
-			$result2 = maria_query("INSERT INTO chibasys.user (user_id, register, ".implode(',', array_keys($query)).", notification) VALUES ('$user_id', NOW(), '".implode("','", array_values($query))."', 1);");
+			$result2 = maria_query("INSERT INTO chibasys.user (user_id, register, ".str_replace('name', 'studentName', str_replace('sex', 'studentSex', str_replace('portal_id', 'studentID', str_replace('portal_pass', 'studentPass', implode(',', array_keys($query))).", notification) VALUES ('$user_id', NOW(), '".implode("','", array_values($query)))))."', 1);");
 			session_start();
 			$_SESSION['user_id'] = $user_id;
 			session_write_close();
 		}
 		else if (mysqli_num_rows($result) === 1)
-			$result2 = maria_query("UPDATE chibasys.user SET studentName='$query[studentName]', studentSex='$query[studentSex]', studentID='$query[studentID]'".(isset($query['studentPass']) ? ", studentPass='$query[studentPass]'" : '').(isset($query['google_id']) ? ", google_id='$query[google_id]'" : '')." WHERE user_id='$user_id';");
+			$result2 = maria_query("UPDATE chibasys.user SET studentName='$query[name]', studentSex='$query[sex]', studentID='$query[portal_id]'".(isset($query['portal_pass']) ? ", studentPass='$query[portal_pass]'" : '').(isset($query['google_id']) ? ", google_id='$query[google_id]'" : '')." WHERE user_id='$user_id';");
 		else
 			return error_data(ERROR_USER_NOT_FOUND);
 		
@@ -885,7 +898,7 @@
 		$error_text = phpQuery::newDocument($site['res'])->find('.error')->text();
 		if ($error_text || strpos($site['res'], 'now loading') === false || strpos($site['res'], 'reloadPortal') === false) {
 			error_log("\n[".date('Y-m-d H:m:s')."]ERROR: PORTAL_LOGIN_ERROR\nSITE: ".str_replace("\n", '', json_encode($site)), "3", "/var/www/chibasys-error.log");
-			return error_data(ERROR_PORTAL_LOGIN_ADDITIONAL, shape_line($error_text));
+			return error_data(ERROR_PORTAL_LOGIN_ADDITIONAL, $error_text);
 		}
 
 		//Cookieのみ抽出
@@ -956,7 +969,7 @@
 		return $site['url'];
 	}
 
-	function login_with_portal(array $query): array {
+	function login_with_portal(?string &$user_id, array $query): array {
 		global $maria;
 		
 		//$queryのportal_idとportal_passをチェック
@@ -966,37 +979,36 @@
 		$result = maria_query("SELECT * FROM user WHERE studentID='$query[portal_id]'");
 		$student_info = portal_student_info_get(null, $query);
 
-		if (mysqli_num_rows($result) >= 1) {
-			//おそらく登録済み
-			$user = mysqli_fetch_assoc($result);
-			if (isset($student_info['error_code'])) {
-				if ($student_info['error_code'] !== ERROR_PORTAL_DOWN)
-					return $student_info;
-				else if ($query['portal_pass'] !== $user['studentPass'])
-					//乗っ取りを防ぐために
-					return error_data(ERROR_PORTAL_DOWN, "\nパスワード変えた場合はポータルが復活するまで待つか、以前登録したパスワードでログインしてください。");
-			}
-			else {
-				if ($query['portal_pass'] !== $user['studentPass']) {
-					$result2 = maria_query("UPDATE user SET studentPass='".mysqli_real_escape_string($maria, $query['portal_pass'])."' WHERE user_id='$user[user_id]';");
-					if (isset($result2['error_code'])) return $result2;
+		if ($query['check'] !== 'true') {
+			$user = null;
+			if (mysqli_num_rows($result) >= 1) {
+				//おそらく登録済み
+				$user = mysqli_fetch_assoc($result);
+				if (isset($student_info['error_code'])) {
+					if ($student_info['error_code'] !== ERROR_PORTAL_DOWN)
+						return $student_info;
+					else if ($query['portal_pass'] !== $user['studentPass'])
+						//乗っ取りを防ぐために
+						return error_data(ERROR_PORTAL_DOWN, "\nパスワード変えた場合はポータルが復活するまで待つか、以前登録したパスワードでログインしてください。");
 				}
-				session_start();
-				session_regenerate_id(true);
-				$_SESSION['user_id'] = $user['user_id'];
-				session_write_close();
+				else {
+					if ($query['portal_pass'] !== $user['studentPass']) {
+						$result2 = maria_query("UPDATE user SET studentPass='".mysqli_real_escape_string($maria, $query['portal_pass'])."' WHERE user_id='$user[user_id]';");
+						if (isset($result2['error_code'])) return $result2;
+					}
+					$user_id = $user['user_id'];
+				}
 			}
+			else 
+				$user_id = 'new';
 
-			return [ 'result'=>true, 'name'=>$user['studentName'], 'userdata'=>$user, 'student_info'=>$student_info ];
-		}
-		else {
 			session_start();
 			session_regenerate_id(true);
-			$_SESSION['user_id'] = 'new';
+			$_SESSION['user_id'] = $user_id;
 			session_write_close();
-
-			return [ 'result'=>true, 'name'=>$student_info['学生氏名'], 'student_info'=>$student_info, 'new'=> true ];
 		}
+
+		return [ 'result'=>true, 'student_info'=>$student_info, 'new'=>($user_id === 'new') ];
 	}
 
 	/**
@@ -1149,29 +1161,29 @@
 		if (isset($query['refresh']) && $query['refresh']) {
 			$data = portal_reg_list_refresh($user_id, $query);
 			if (isset($data['error_code'])) {
-				$refresh_error = $data['error_code'];
-				if ($refresh_error === ERROR_PORTAL_DOWN) return error_data($refresh_error);
+				if ($data['error_code'] !== ERROR_PORTAL_DOWN)
+					return $data;
+				else
+					$refresh_error = ERROR_PORTAL_DOWN;
 			}
 		}
 
 		$result = maria_query("SELECT nendo, jikanwariCd FROM chibasys.registration WHERE user_id='$user_id';");
-		if ($result) {
-			$reg_code = [];
-			$reg_data = [];
-			while ($row = mysqli_fetch_assoc($result)) {
-				$result2 = maria_query("SELECT term, time, credit, name, teacher, room FROM chibasys.syllabus_$row[nendo] WHERE jikanwariCd='$row[jikanwariCd]';");
-				if ($result2 && mysqli_num_rows($result2) === 1) {
-					$code = "$row[nendo]-$row[jikanwariCd]";
-					$reg_code[] = $code;
-					$reg_data[$code] = mysqli_fetch_assoc($result2);
-					$reg_data[$code]['code'] = $code;
-				}
+		if (!$result) return error_data(ERROR_SQL_FAILED);
+		$reg_code = [];
+		$reg_data = [];
+		while ($row = mysqli_fetch_assoc($result)) {
+			$result2 = maria_query("SELECT term, time, credit, name, teacher, room FROM chibasys.syllabus_$row[nendo] WHERE jikanwariCd='$row[jikanwariCd]';");
+			if ($result2 && mysqli_num_rows($result2) === 1) {
+				$code = "$row[nendo]-$row[jikanwariCd]";
+				$reg_code[] = $code;
+				$reg_data[$code] = mysqli_fetch_assoc($result2);
+				$reg_data[$code]['code'] = $code;
 			}
 		}
-		else
-			return error_data(ERROR_SQL_FAILED);
 		
-		$data = [ 'reg_code'=>$reg_code, 'reg_data'=>$reg_data ];
+		$data['reg_code'] = $reg_code;
+		$data['reg_data'] = $reg_data;
 		return $refresh_error ? error_data($refresh_error, '', $data) : $data;
 	}
 
@@ -1192,11 +1204,11 @@
 		if (isset($referer['error_code'])) return $referer;
 		
 		$reg_code = [];
-		$subjectsZero = [ 1=>false, 2=>false ];
+		$classes_zero = [ 1=>false, 2=>false ];
 		foreach ([1,2] as $kubun)	{
 			//cURLで履修一覧画面を取得
 			$site = web($cookie, $referer, '_eventId=changeNendoGakkiGakusei&'.
-				url_extract($referer)."&nendo=$query[nendo]&gakkiKbnCd=$kubun");
+				url_extract($referer)."&nendo=2019&gakkiKbnCd=$kubun");
 			if (isset($site['error_code']))	return $site;
 			//セッション切れをチェック
 			if (!portal_session_check($site)) {
@@ -1213,7 +1225,7 @@
 				$tr = $tbody->find("tr:eq($i)");
 				//「該当するデータはありません」の時はスルー
 				if (count($tr->find('td')) <= 1) {
-					$subjectsZero[$kubun] = true;
+					$classes_zero[$kubun] = true;
 					continue;
 				}
 				$q = [];
@@ -1224,7 +1236,7 @@
 		}
 
 		//履修登録が1つでもある場合やゼロでもデータがないことを確認が取れた時のみデータ更新
-		if (count($reg_code) > 0 || (count($reg_code) === 0 && $subjectsZero[1] && $subjectsZero[2])) {
+		if (count($reg_code) > 0 || (count($reg_code) === 0 && $classes_zero[1] && $classes_zero[2])) {
 			if (maria_query("DELETE FROM chibasys.registration WHERE user_id='$user_id' AND nendo='$query[nendo]';"))
 				foreach ($reg_code as $c) {
 					$code = explode('-', $c);
@@ -1251,10 +1263,12 @@
 		//更新フラグがある場合は取得しに行く、エラー番号だけ保存してMySQLから取得
 		$refresh_error = null;
 		if (isset($query['refresh']) && $query['refresh']) {
-			$data = portal_grade_list_refresh($user_id);
+			$data = portal_reg_list_refresh($user_id, $query);
 			if (isset($data['error_code'])) {
-				$refresh_error = $data['error_code'];
-				if ($refresh_error === ERROR_PORTAL_DOWN) return error_data($refresh_error);
+				if ($data['error_code'] !== ERROR_PORTAL_DOWN)
+					return $data;
+				else
+					$refresh_error = ERROR_PORTAL_DOWN;
 			}
 		}
 
@@ -1273,7 +1287,7 @@
 		else
 			return error_data(ERROR_SQL_FAILED);
 		
-		$data = [ 'grade_data'=>$grade_data ];
+		$data['grade_data'] = $grade_data;
 		return $refresh_error ? error_data($refresh_error, '', $data) : $data;
 	}
 
@@ -1854,7 +1868,7 @@
 	 * @param array $data シラバスの詳細データ
 	 * @return array 各イベントの返り値の連想配列
 	 */
-	function calender_add(?string $user_id, array $data): array {
+	function calendar_add(?string $user_id, array $data): array {
 		//data: term (startDate endDate) time (startTime endTime) code name room description
 		//未ログインならば終了
 		if (!$user_id) return error_data(ERROR_NO_LOGIN);
@@ -2019,7 +2033,7 @@
 			}
 		}
 		//以前の通知設定を変更
-		calender_notification_settings_change($user_id, $data['notification'] === 'true');
+		calendar_notification_settings_change($user_id, $data['notification'] === 'true');
 		return [ 'result'=>$result ];
 	}
 
@@ -2078,7 +2092,7 @@
 			//$times = [ [  ] ];
 			$times = []; //[day:月,start:8:50,end:10:20]
 			//終日イベントに、毎日のみ(禁止or未実装)
-			if ($query['allDay'] === 'true' || $syllabus['time'] === '通')
+			if ((isset($query['all_day']) && $query['all_day'] === 'true') || $syllabus['time'] === '通')
 				$times[] = [ 'day'=>'all', 'hour'=>null ];
 			//時間指定を利用、毎日のみ(禁止or未実装)
 			else if ($syllabus['time'] === '他')
@@ -2195,7 +2209,7 @@
 				}
 			}
 			//以前の通知設定を変更
-			calender_notification_settings_change($user_id, $query['notification'] === 'true');
+			calendar_notification_settings_change($user_id, $query['notification'] === 'true');
 			return [ 'result'=>$result ];
 		}
 		else {
@@ -2212,7 +2226,7 @@
 	 * @param array $query POSTデータ
 	 * @return array イベントの返り値の連想配列
 	 */
-	function calender_notification_toggle(?string $user_id, array $query): array {
+	function calendar_notification_toggle(?string $user_id, array $query): array {
 		//未ログインならば終了
 		if (!$user_id) return error_data(ERROR_NO_LOGIN);
 		$client = google_client_create();
@@ -2238,7 +2252,7 @@
 			$result[] = $service->events->update('primary', $event_id, $event);  
 		}
 		//以前の通知設定を変更
-		calender_notification_settings_change($user_id, $query['notification'] === 'true');
+		calendar_notification_settings_change($user_id, $query['notification'] === 'true');
 		return [ 'result'=>$result ];
 	}
 
@@ -2249,7 +2263,7 @@
 	 * @param bool $bool 有効かどうか
 	 * @return array 成功したかどうかの連想配列
 	 */
-	function calender_notification_settings_change(?string $user_id, bool $bool): array {
+	function calendar_notification_settings_change(?string $user_id, bool $bool): array {
 		//以前の通知設定をMySQLに保存
 		$result = maria_query("UPDATE chibasys.user SET notification=".($bool ? 1 : 0)." WHERE user_id='$user_id';");
 		if (!$result) return error_data(ERROR_SQL_FAILED);

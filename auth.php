@@ -22,8 +22,13 @@ else if ($_GET['mode'] === 'success'){
     $_SESSION['google_photo_url'] = $userinfo['photos'][0]['url'];
     $_SESSION['google_user_name'] = $userinfo['names'][0]['displayName'];
 
-    $result = maria_query("SELECT user_id FROM user WHERE google_id='$_SESSION[google_id]'");
-    $_SESSION['user_id'] = mysqli_num_rows($result) >= 1 ? mysqli_fetch_assoc($result)['user_id'] : 'new';
+    if (isset($_SESSION['user_id']) && $_SESSION['user_id'] !== 'new') {
+      $result = maria_query("UPDATE user SET google_id='$_SESSION[google_id]' WHERE user_id='$_SESSION[user_id]'");
+    }
+    else {
+      $result = maria_query("SELECT user_id FROM user WHERE google_id='$_SESSION[google_id]'");
+      $_SESSION['user_id'] = mysqli_num_rows($result) >= 1 ? mysqli_fetch_assoc($result)['user_id'] : 'new';
+    }
     session_write_close();
     header('location: /');
   }

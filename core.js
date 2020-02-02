@@ -2,11 +2,12 @@
 $('.stb').togglebutton();
 if (localStorage['request']) history.replaceState(null, null, localStorage['request']);
 localStorage.clear();
-if (!navigator.share) $('#shareButton').css('display', 'none');
+if (!navigator.share) $('#shareButton').hide();
+//$('#main-tabs-box a').each((i, e) => $(e).click(() => $(`#main-contents-box div:eq[${i}]`).tabs('show')) );
 init();
 //}
 
-var require_google_login = false;
+var login　= false, portal_login = false, google_login = false;
 var poped = false; //ユーザーの手で主要ウィンドウを開いたかどうか
 var fav_text = [ '★お気に入りから削除', '☆お気に入りに追加' ];
 var fav_code; //お気に入りに登録済みのコードの配列
@@ -61,7 +62,7 @@ function ajax(query, timeout = 60, init = false) {
         //dialogの保持はあきらめた
         let url = request_get().split('#')[0];
         let data = url.split('?');
-        if (['search', 'syllabus', 'classes', 'mincam', 'calendar'].indexOf(data[0]) >= 0)
+        if (['search', 'syllabus', 'mincam', 'calendar'].indexOf(data[0]) >= 0)
           eval(data[0] + (data.length <= 1 ? '();' : '(data[1]);'));
         else
           url = '';
@@ -75,7 +76,7 @@ function ajax(query, timeout = 60, init = false) {
 
 function init() {
   start_loading();
-  ajax({ fav_list_get: { }, cal_list_get: { }, portal_reg_list_get: { }, portal_grade_list_get: { } }, 60, true);
+  ajax({ userdata_get: { }, fav_list_get: { }, cal_list_get: { }, portal_reg_list_get: { }, portal_grade_list_get: { } }, 60, true);
 }
 
 function text_get(source, bool) {
@@ -99,70 +100,112 @@ function last_button(button) {
 }
 
 /**
- * 初回登録処理
- * @param {Element} button ボタンの要素
+ * ログイン画面へ遷移するボタン
+ * @param {string} type null/portal/google
  */
-function register(button) {
-  if ($('#studentName').val() === '')
-    alert('名前を入力してください');
-  /*else if (!(new RegExp(/[0-9][0-9][A-Z][0-9][0-9]/).test($('#studentID').val())))
-    alert('正しい学生証番号の一部を入力してください');*/
-  else if ($('input[name="studentSex"]:checked').val() === undefined)
-    alert('性別を選択してください');
-  else {
-    $('#settings-button').prop('disabled', true).text('保存中...');
-    ajax({ userdata_save: { studentName: $('#studentName').val(), studentSex: $('input[name="studentSex"]:checked').val(), studentID: $('#studentID').val(), studentPass: $('#studentPass').val() } });
+function login_proceed_button(type = null) {
+  if (type === null) {
+    if (login) { if (confirm('ログアウトしますか？')) location.href = '/auth?mode=logout'; }
+    else $('#login-modal').modal('show');
+  }
+  else if (type === 'portal') {
+    if (login) {
+      $('#tabs-box a:last-child').tab('show');
+      $('#userdata-box').collapse('show');
+    }
+    else $('#login-modal').modal('show');
+  }
+  else if (type === 'google') {
+    if (login) $('#tabs-box a:last-child').tab('show');
+    else $('#login-modal').modal('show');
   }
 }
 
-function login_with_portal(button) {
-  if ($('#login-portal_id').val().length !== 8)
+/**
+ * 学生証番号とパスワードでポータルにログイン
+ */
+function login_with_portal(check = false) {
+  if ($(`#${check ? 'user-' : ''}portal_id`).val().length !== 8)
     alert('生徒証番号をすべて記入してください');
-  else if ($('#login-portal_pass').val() === '')
+  else if ($(`#${check ? 'user-' : ''}portal_pass`).val() === '')
     alert('パスワードを入力してください');
   else {
-    $('#login-with-portal-button').prop('disabled', true).text('ログイン中...');
-    ajax({ login_with_portal: { portal_id: $('#login-portal_id').val(), portal_pass: $('#login-portal_pass').val() } });
+    if (check) 
+      $('#portal-login-check-button').attr('disabled', true).text('ログインチェック中...');
+    else
+      $('#login-with-portal-button').prop('disabled', true).text('ログイン中...');
+    ajax({ login_with_portal: { show_error: true, portal_id: $(`#${check ? 'user-' : ''}portal_id`).val(), portal_pass: $(`#${check ? 'user-' : ''}portal_pass`).val(), check: check } });
   }
 }
 
 function login_with_portal_result(data) {
-  if (data.result) {
-    alert(`ようこそ、${data.name}さん`);
-    $('#login-modal').modal('hide');
-    $('#login-with-portal-button').prop('disabled', false).text('ログイン');
-    $('#username').text(data.new ? '未登録' : data.name);
-    $('#dropdown-last-button').text('ログアウト');
-    $('#dropdown-settings-button').css('display', 'block');
-    $('#studentName').val(data.name);
-    init();
-    if (data.new) {
-      $('#studentID').val(data.portal_id);
-      $('#studentPass').val(data.portal_pass);
-      $('#settings-modal').modal('show');
-    }
-    else {
-      if (data.userdata.studentSex === 'male') $('#studentSex-male').prop('checked', true);
-      if (data.userdata.studentSex === 'female') $('#studentSex-female').prop('checked', true);
-      $('#studentID').val(data.userdata.studentID);
-      $('#studentPass').val(data.userdata.studentPass);
-      $('#syllabus-calendar-notification').prop('checked', data.userdata.notification ? true : false);
-    }
+  $('#login-with-portal-button').prop('disabled', false).text('ログイン');
+  if (data.check) {
+    $('#portal-login-check-button').attr('disabled', false).text('ログインチェック');
+    $('#portal-login-check-result').text(data.result ? '成功' : '失敗');
+    return;
   }
+  if (!data.result) return;
+  $('#login-modal').modal('hide');
+  init();
+  if (data.new) {
+    $('#user-name').val(data.student_info['学生氏名']);
+    $('#user-portal_id').val(data.portal_id);
+    $('#user-portal_pass').val(data.portal_pass);
+  }
+}
+
+function userdata_get_result(data) {
+  if (data.login === 'new') {
+    $('#new-alert').show();
+    $('#tabs-box a:last-child').tab('show');
+    $('#userdata-box').collapse('show');
+    //記入済みのフォームをいじらない
+    $('#header-name').text('未登録');
+    return;
+  }
+  //リセット
+  $('#new-alert').hide();
+  $('.user-sex-radio').prop('checked', false);
+  for (key in ['name', 'portal_id', 'portal_pass'])
+    $(`#user-${['name', 'portal_id', 'portal_pass'][key]}`).val('').attr('placeholder', '');
+  //ログインのフラグ変更
+  login = (data.login === true);
+  if (!data.login) {
+    $('#header-name').text('未ログイン');
+    return;
+  }
+
+  for (k in data.userdata) {
+    key = k.replace('studentName', 'name').replace('studentSex', 'sex').replace('studentID', 'portal_id').replace('studentPass', 'portal_pass');
+    if (key === 'portal_pass')
+      $('#user-portal_pass').attr('placeholder', data.userdata[k] === 'secret' ? '空欄で変更しない' : '');
+    else if (key === 'sex')
+      $(`#user-${key}-${data.userdata[k]}`).prop('checked', true);
+    else
+      $(`#user-${key}`).val(data.userdata[k]);
+    if (key === 'name')
+      $('#header-name').text(data.userdata[k]);
+  }
+}
+
+function userdata_save() {
+  if ($('#user-name').val() === '')
+    alert('名前を入力してください');
+  else if ($('.user-sex-radio:checked').val() === undefined)
+    alert('性別を選択してください');
   else {
-    $('#login-with-portal-button').prop('disabled', false).text('ログイン');
-    alert(data.error_message);
+    $('#userdata-save-button').prop('disabled', true).text('保存中...');
+    ajax({ userdata_save: { name: $('#user-name').val(), sex: $('.user-sex-radio:checked').val(), portal_id: $('#user-portal_id').val(), portal_pass: $('#user-portal_pass').val() }, userdata_get: {} });
   }
 }
 
 function userdata_save_result(data) {
-  if (data['result']) {
-    $('#settings-modal').modal('hide');
-    $('#settings-button').prop('disabled', false).text('保存');
-    $('#username').text($('#studentName').val());
-    ajax({ portal_reg_list_get: { refresh: true, nendo: new Date().getFullYear() + (new Date().getMonth() < 3 ? -1 : 0) } });
-    ajax({ portal_grade_list_get: { refresh: true } });
-  }
+  if (!data.result) return;
+  $('#userdata-save-button').text('保存完了');
+  setTimeout(() => $('#userdata-save-button').prop('disabled', false).text('保存'), 3000);
+  ajax({ portal_reg_list_get: { refresh: true, nendo: new Date().getFullYear() + (new Date().getMonth() < 3 ? -1 : 0) } });
+  ajax({ portal_grade_list_get: { refresh: true } });
 }
 
 
@@ -221,9 +264,6 @@ $(window).on('popstate', (e) => {
   else if (s[0] === 'calendar') {
     calendar();
   }
-  else if (s[0] === 'classes') {
-    classes();
-  }
   else if (s[0] === 'dialog') {
     $('#' + e.originalEvent.state['dialog'] + '-modal').modal('show');
   }
@@ -249,16 +289,35 @@ $('.modal-nomal.fade .close').click(() => {
 });
 
 /**
+ * タブボタンの監視
+ */
+$('#tabs-box a').on('shown.bs.tab', (e) => {
+  var activated_tab = e.target // activated tab
+  var previous_tab = e.relatedTarget // previous tab
+  $('.navbar-brand').text($(activated_tab).text());
+});
+
+/**
+ * 設定を開けるのはログイン済みのときのみ
+ */
+$('#userdata-box').on('show.bs.collapse', (e) => {
+  if (!login) {
+    alert('設定はログイン/新規登録すると開けます。');
+    e.preventDefault();
+  }
+});
+
+/**
  * 読み込みオーバーレイを表示
  */
 function start_loading() {
-  $('#loading').css('display', 'block');
+  $('#loading').show();
 }
 /**
  * 読み込みオーバーレイを非表示
  */
 function end_loading() {
-  $('#loading').css('display', 'none');
+  $('#loading').hide();
 }
 
 $('.modal.fade').on('hidden.bs.modal', () => { if ($('.modal.show').length > 0) $('body').addClass('modal-open'); });
@@ -347,7 +406,7 @@ function mincam(query) {
   $('.modal.show').modal('hide');
   $('#mincam-modal').data('query', query).modal('show');
   start_loading();
-  ajax({ mincam_search: { query: query } });
+  ajax({ mincam_search: { show_error: true, query: query } });
 }
 
 function mincam_search_result(data) {
@@ -427,7 +486,7 @@ function portal_syllabus_get_result(data) {
     let params = new URLSearchParams();
     params.append('title', data.data['name'].replace(/  |[!-@]|[\[-`]|[{-~]|[Ⅰ-Ⅹ]|[A-Z]$|[a-z]$|[A-Z] |[a-z] /g, ' ').replace(/[A-Z]$|[a-z]$|  /g, ' ').trim());
     params.append('teacher', ('teacher' in data.data ? data.data['teacher'] : ''));
-    ajax({ mincam_search: { query: params.toString(), by_syllabus: true } });
+    ajax({ mincam_search: { show_error: true, query: params.toString(), by_syllabus: true } });
     
     $('#syllabus-modal').data('name', data.data['name']);
     $('#syllabus-title').text(data.data['name'] + 'の詳細');
@@ -467,7 +526,7 @@ $('#syllabus-memo').on('input', function (e) {
   if (memo_timeout !== null) clearTimeout(memo_timeout);
   memo_timeout = setTimeout(() => {
     let code = $('#syllabus-modal').data('code');
-    ajax({ memo_save: { code: code, text: $('#syllabus-memo').val() } });
+    ajax({ memo_save: { show_error: true, code: code, text: $('#syllabus-memo').val() } });
     memo_timeout = null;
   }, 1000);
 });
@@ -483,9 +542,10 @@ function memo_save_result(data) {
  * 手動でカレンダー管理を表示、PushStateあり
  */
 function calendar_show() {
-  if (cal_data === null || cal_data === undefined) {
+  if (cal_data === undefined) {
     //未ログインははじく
     alert('ログインしてください');
+    login_proceed_button('google');
   }
   else {
     history.pushState({ method: 'calendar' }, 'カレンダー管理 -chibasys-', 'calendar');
@@ -499,93 +559,46 @@ function calendar_show() {
  */
 function calendar(year = false) {
   $('#calendar-modal').modal('show');
-  if (cal_code && cal_code !== null && cal_code !== undefined) {
-    if (!year) {
-      $('#calendar-nendo').html('');
-      $('#calendar-nendo-btn').remove();
-      let years = [];
-      cal_code.forEach((value) => years.push(parseInt(value.split('-')[0])));
-      //重複削除
-      years = years.filter((x, i, self) => self.indexOf(x) === i);
-      //降順にソート
-      years.sort((a, b) => b - a);
-      //selectを生成
-      years.forEach((value, index) => $('#calendar-nendo').append(`<option${index === 0 ? ' selected': ''}>${value}</option>`));
-      $('#calendar-nendo').change((e) => calendar($(e.target).val())).togglebutton();
-      if (years.length > 0) year = years[0];
-    }
-    let table_data = [];
-    cal_code.forEach((value) => { if (value.split('-')[0] === year.toString()) table_data.push(cal_data[value]) });
-    if ($('#calendar-modal .bootstrap-table').length > 0)
-      $('#calendar-table').bootstrapTable('destroy');
-    table_create('calendar', table_data, 160, [ 'check', 'term', 'time', 'credit', 'name', 'room' ]);
-    $('#calendar-credit').html(`単位数合計: <b>${Object.values(cal_data).reduce((prev, current) => prev + parseInt(current.credit), 0)}</b>`);
-
-    //通知スイッチ
-    let notify_bool = false;
-    cal_code.forEach((value) => { if (cal_data[value].notification) notify_bool = true; });
-    $('#switch-calendar-notification')[0].className = 'ml-2 mb-2 btn ' + (notify_bool ? 'btn-success' : 'btn-dark');
-    $('#switch-calendar-notification').data('bool', notify_bool).text('カレンダーの通知設定を変更(現在:' + (notify_bool ? 'オン' : 'オフ') + ')');
-  }
-  else {
+  if (cal_data === undefined) {
     //未ログインははじく
     alert('ログインするか、設定からGoogleアカウントと連携してください');
     setTimeout(() => $('#calendar-modal .close').click(), 100);
+    login_proceed_button('google');
+    return;
   }
-}
+  if (!year) {
+    $('#calendar-nendo').html('');
+    $('#calendar-nendo-btn').remove();
+    let years = [];
+    cal_code.forEach((value) => years.push(parseInt(value.split('-')[0])));
+    //重複削除
+    years = years.filter((x, i, self) => self.indexOf(x) === i);
+    //降順にソート
+    years.sort((a, b) => b - a);
+    //selectを生成
+    years.forEach((value, index) => $('#calendar-nendo').append(`<option${index === 0 ? ' selected': ''}>${value}</option>`));
+    $('#calendar-nendo').change((e) => calendar($(e.target).val())).togglebutton();
+    if (years.length > 0) year = years[0];
+  }
+  let table_data = [];
+  cal_code.forEach((value) => { if (value.split('-')[0] === year.toString()) table_data.push(cal_data[value]) });
+  if ($('#calendar-modal .bootstrap-table').length > 0)
+    $('#calendar-table').bootstrapTable('destroy');
+  table_create('calendar', table_data, 160, [ 'check', 'term', 'time', 'credit', 'name', 'room' ]);
+  $('#calendar-credit').html(`単位数合計: <b>${Object.values(cal_data).reduce((prev, current) => prev + parseInt(current.credit), 0)}</b>`);
 
-/**
- * 手動で履修管理を表示、PushStateあり
- */
-function classes_show() {
-    history.pushState({ method: 'classes' }, '履修管理 -chibasys-', 'classes');
-    gtag('config', 'UA-44630639-4',
-{ page_path: request_get() });
-    poped = true;
-    classes();
+  //通知スイッチ
+  let notify_bool = false;
+  cal_code.forEach((value) => { if (cal_data[value].notification) notify_bool = true; });
+  $('#switch-calendar-notification')[0].className = 'ml-2 mb-2 btn ' + (notify_bool ? 'btn-success' : 'btn-dark');
+  $('#switch-calendar-notification').data('bool', notify_bool).text('カレンダーの通知設定を変更(現在:' + (notify_bool ? 'オン' : 'オフ') + ')');
 }
 let grade_point_text = { null: '-', '0': '不可', '1': '可', '2': '良', '3': '優', '4': '秀' };
 let grade_pass_text = { null: '-', '0': '×', '1': '○' };
-/**
- * 追加済みのカレンダー管理をモーダルで表示
- */
-function classes(year = false) {
-  $('#classes-modal').modal('show');
-  if (reg_code && reg_code !== null && reg_code !== undefined) {
-    if (!year) {
-      $('#classes-nendo').html('');
-      $('#classes-nendo-btn').remove();
-      let years = [];
-      reg_code.forEach((value) => years.push(parseInt(value.split('-')[0])));
-      //重複削除
-      years = years.filter((x, i, self) => self.indexOf(x) === i);
-      //降順にソート
-      years.sort((a, b) => b - a);
-      years.push(2020);///////////////////////////////////////
-      //selectを生成
-      years.forEach((value, index) => $('#classes-nendo').append(`<option${index === 0 ? ' selected': ''}>${value}</option>`));
-      $('#classes-nendo').change((e) => {
-        classes($(e.target).val());
-      }).togglebutton();
-      if (years.length > 0) year = years[0];
-    }
-    let table_data = [];
-    reg_code.forEach((value) => { if (value.split('-')[0] === year.toString()) table_data.push(grade_data[value] ? Object.assign(reg_data[value], grade_data[value]) : reg_data[value]) });
-    if ($('#classes-modal .bootstrap-table').length > 0)
-      $('#classes-table').bootstrapTable('destroy');
-    table_create('classes', table_data, 160, [ 'check', 'term', 'time', 'credit', 'name', 'point', 'pass' ]);
-    $('#classes-grade').html(`現時点でのGP: <b>${gp_calc(grade_data)}</b> / GPA: <b>${gpa_calc(grade_data)}</b>`);
-  }
-  else {
-    //未ログインははじく
-    alert('ログインするか、学生ポータルのIDとパスワードを設定から入力してください');
-    setTimeout(() => $('#classes-modal .close').click(), 100);
-  }
-}
 
 function table_create(id, data, margin, columns = [ 'check', 'term', 'time', 'credit', 'name', 'teacher' ], search = true, footer = true, detail = false) {
   let col = [
-    { field: 'check', checkbox: true, width: 3, widthUnit: 'em', align: 'center', footerFormatter: () => '合計',  },
+    { field: 'check', checkbox: true, width: 3, widthUnit: 'em', visible: false, align: 'center', footerFormatter: () => '合計',  },
     { field: 'term', title: '開講', sortable: true, width: 3, widthUnit: 'em', footerFormatter: (data) => Object.keys(data).length + '件' },
     { field: 'time', title: '曜時', sortable: true, width: 5, widthUnit: 'em', footerFormatter: (data) => Object.keys(data).reduce((prev, current) => prev += data[current].time.split(',').length, 0) + '時間' },
     { field: 'credit', title: '単位', width: 3, widthUnit: 'em', footerFormatter: (data) => data.reduce((prev, current) => prev + parseInt(current.credit), 0) },
@@ -605,6 +618,50 @@ function table_create(id, data, margin, columns = [ 'check', 'term', 'time', 'cr
     onClickRow: (row, element, field) => field !== 'check' && row.code ? syllabus_show(row.code) : '',
     onPostHeader: () => $(`#${id}-table`).parent().parent().find('.fixed-table-header').find('th').each((i, e) => $(`#${id}-table`).parent().parent().find('.fixed-table-footer').find('th').eq(i).attr('style', $(e).attr('style'))),
     locale: 'ja-JP', sortable: true, showSearchButton: true, showColumns: true, detailViewByClick: true, MaintainMetaData: true, MultipleSelectRow: true, formatLoadingMessage: () => '読み込み中...', formatSearch: () => '検索', formatNoMatches: () => 'データがありません' });
+}
+
+table_create('classes', [], window.innerHeight > 600 ? window.innerHeight - 260 : 340 , [ 'check', 'term', 'time', 'credit', 'name', 'point', 'pass' ]);
+$(window).resize(() => {
+  $('#classes-table').bootstrapTable('refreshOptions', { height: classes_height() });
+});
+
+function classes_reload(year) {
+  if (!reg_code) return;
+
+  let years = [];
+  if (!year) {
+    //以前の選択を記憶しておく
+    year = $('#classes-nendo').val();
+    //年度選択要素をリセット
+    $('#classes-nendo').html('');
+    $('#classes-nendo-btn').remove();
+    //年度を抽出
+    reg_code.forEach((value) => years.push(parseInt(value.split('-')[0])));
+    //重複削除
+    years = years.filter((x, i, self) => self.indexOf(x) === i);
+    //降順にソート
+    years.sort((a, b) => b - a);
+    //selectを生成
+    years.forEach((value, index) => $('#classes-nendo').append(`<option${index === 0 ? ' selected': ''}>${value}</option>`));
+    $('#classes-nendo').change((e) => classes_reload($(e.target).val())).togglebutton();
+
+    //年度一覧がからの場合はnull
+    if (years.length === 0) year = null;
+    //以前の年度がなかったり、選択していない場合は一番新しい年度を選択。
+    else if (years.indexOf(year)) year = years[0];
+  }
+
+  let table_data = [];
+  if (grade_data)
+    reg_code.forEach((value) => { if (value.split('-')[0] === year.toString()) table_data.push(grade_data[value] ? Object.assign(reg_data[value], grade_data[value]) : reg_data[value]) });
+  $('#classes-table').bootstrapTable('load', table_data);
+  
+  $('#classes-gp').html(`現時点でのGP: <b>${grade_data ? gp_calc(grade_data) : '不明'}</b>`);
+  $('#classes-gpa').html(`現時点でのGPA: <b>${grade_data ? gpa_calc(grade_data) : '不明'}</b>`);
+}
+
+function classes_height() {
+  return window.innerHeight > 600 ? window.innerHeight - 260 : 340;
 }
 
 function gp_calc(data) {
@@ -627,123 +684,111 @@ const Holiday = [ '2019-04-29', '2019-04-30', '2019-05-01', '2019-05-02', '2019-
 const RDATE = { '2019-07-16':'月', '2019-10-16':'月', '2019-01-14':'月', '2019-01-15':'金' };
 const DOW = ['月', '火', '水', '木', '金', '土'];
 
-var TimetableWeek = 0;
-function timetable_reload(addWeek = 0){
-  $('.subject-box').remove();
-  TimetableWeek += addWeek;
-  let addHTML= '';
-  if (reg_code !== undefined && reg_code.length > 0){
-    let endMax = 5;
-    for (i in reg_data) {
-      let sub = reg_data[i];
-      if (sub['term'].indexOf('T') < 0) continue;
-      else if (sub['time'].indexOf('他') >= 0) continue;
-      sub['time'] = sub['time'].replace(/,/g, '、');
+var timetable_week = 0;
+function timetable_reload(add_week = 0){
+  $('.class-box').remove();
+  if (!reg_code) return;
 
-      //6限があるなら最大時限を6に
-      if (sub['time'].indexOf('6') >= 0) endMax = (endMax <= 5 ? 6 : endMax);
-      //7限があるなら最大時限を7に
-      else if (sub['time'].indexOf('7') >= 0) endMax = 7; //7限開始より後
-    }
-    $('#timetable-box table').removeClass('tt-5').removeClass('tt-6').removeClass('tt-7').removeClass('tt-' + endMax);
-    $('#timetable-6th').css('display', (endMax >= 6 ? 'table-row' : 'none'));
-    $('#timetable-7th').css('display', (endMax >= 7 ? 'table-row' : 'none'));
+  timetable_week += add_week;
+  let html= '';
+  let end_max = 5;
+  for (i in reg_data) {
+    let sub = reg_data[i];
+    if (sub['term'].indexOf('T') < 0) continue;
+    else if (sub['time'].indexOf('他') >= 0) continue;
+    sub['time'] = sub['time'].replace(/,/g, '、');
 
-    //月火水木金土の時間割上の曜日
-    let days = [];
-    //月火水木金土のターム
-    let terms = [];
-    //年度を計算
-    let date = new Date();
-    let year = (date.getMonth() < 3 ? date.getFullYear() - 1 : date.getFullYear());
-    //月曜日の日付を取得
-    date.setDate(date.getDate() - date.getDay() + 1 + TimetableWeek * 7);
-    for (let i = 0; i < 5; i++, date.setDate(date.getDate() + 1)) {
-      let dateString = date.getFullYear() + '-' + ('0' + (date.getMonth() + 1)).slice(-2) + '-' + ('0' + date.getDate()).slice(-2);
-      //休みかどうか判定
-      if (Holiday.indexOf(dateString) >= 0)
-        days[i] = false;
-      //振替曜日ならそれを優先
-      else if (Object.keys(RDATE).indexOf(dateString) >= 0)
-        days[i] = RDATE[dateString];
-      else
-        days[i] = DOW[i];
-      //日付が属するタームを決める
-      for (let j = 1; j <= 6; j++)
-        if (new Date(StartTerm[year][j]) <= date && date < new Date(StartTerm[year][j + 1])) {
-          terms[i] = j.toString();
-          break;
-        }
-      //日付表示
-      $('#timetable-date th:eq(' + (i + 1) + ')').text((date.getMonth() + 1) + '/' + date.getDate());
-      //曜日とターム表示
-      $('#timetable-dow th:eq(' + (i + 1) + ')').text((days[i] ? days[i] : '休') + '(T' + terms[i] + ')');
-    }
-    for (let i = 0; i < reg_code.length; i++) {
-      let sub = reg_data[reg_code[i]];
-      if (sub['term'].indexOf('T') < 0 || sub['term'].indexOf('集') >= 0) continue;
-      else if (sub['time'].indexOf('他') >= 0) continue;
-      sub['time'] = sub['time'].replace(/、/g, ',');
-      
-      //教科の属する曜時配列
-      let subTimes = sub['time'].split(',');
-      //教科の属するターム
-      let subTerms = sub['term'].replace('1-3', '123').replace('4-6', '456').replace(/[T\-]/g, '').split('');
-      for (let ii in subTimes) {
-        //曜日ごとにタームチェック
-        //if (terms.indexOf(subTerms[ii]) < 0) continue;
+    //6限があるなら最大時限を6に
+    if (sub['time'].indexOf('6') >= 0) end_max = (end_max <= 5 ? 6 : end_max);
+    //7限があるなら最大時限を7に
+    else if (sub['time'].indexOf('7') >= 0) end_max = 7; //7限開始より後
+  }
+  $('#timetable-box table').removeClass('tt-5').removeClass('tt-6').removeClass('tt-7').removeClass('tt-' + end_max);
+  $('#timetable-6th').css('display', (end_max >= 6 ? 'table-row' : 'none'));
+  $('#timetable-7th').css('display', (end_max >= 7 ? 'table-row' : 'none'));
 
-        for (let iii in days) {
-          //曜日が一致しなければスルー
-          if (days[iii] !== subTimes[ii].substr(0, 1)) continue;
-          else if (subTerms.indexOf(terms[iii]) < 0) continue;
+  //月火水木金土の時間割上の曜日
+  let days = [];
+  //月火水木金土のターム
+  let terms = [];
+  //年度を計算
+  let date = new Date();
+  let year = (date.getMonth() < 3 ? date.getFullYear() - 1 : date.getFullYear());
+  //月曜日の日付を取得
+  date.setDate(date.getDate() - date.getDay() + 1 + timetable_week * 7);
+  for (let i = 0; i < 5; i++, date.setDate(date.getDate() + 1)) {
+    let date_str = date.getFullYear() + '-' + ('0' + (date.getMonth() + 1)).slice(-2) + '-' + ('0' + date.getDate()).slice(-2);
+    //休みかどうか判定
+    if (Holiday.indexOf(date_str) >= 0)
+      days[i] = false;
+    //振替曜日ならそれを優先
+    else if (Object.keys(RDATE).indexOf(date_str) >= 0)
+      days[i] = RDATE[date_str];
+    else
+      days[i] = DOW[i];
+    //日付が属するタームを決める
+    for (let j = 1; j <= 6; j++)
+      if (new Date(StartTerm[year][j]) <= date && date < new Date(StartTerm[year][j + 1])) {
+        terms[i] = j.toString();
+        break;
+      }
+    //日付表示
+    $('#timetable-date th:eq(' + (i + 1) + ')').text((date.getMonth() + 1) + '/' + date.getDate());
+    //曜日とターム表示
+    $('#timetable-dow th:eq(' + (i + 1) + ')').text((days[i] ? days[i] : '休') + '(T' + terms[i] + ')');
+  }
+  for (let i = 0; i < reg_code.length; i++) {
+    let sub = reg_data[reg_code[i]];
+    if (sub['term'].indexOf('T') < 0 || sub['term'].indexOf('集') >= 0) continue;
+    else if (sub['time'].indexOf('他') >= 0) continue;
+    sub['time'] = sub['time'].replace(/、/g, ',');
+    
+    //教科の属する曜時配列
+    let sub_times = sub['time'].split(',');
+    //教科の属するターム
+    let sub_terms = sub['term'].replace('1-3', '123').replace('4-6', '456').replace(/[T\-]/g, '').split('');
+    for (let ii in sub_times) {
+      //曜日ごとにタームチェック
+      //if (terms.indexOf(sub_terms[ii]) < 0) continue;
 
-          //重なる教科チェック
-          let count = 0, start = 0;
-          for (let iiii = 0; iiii < reg_code.length; iiii++) {
-            let sub2 = reg_data[reg_code[iiii]];
-            if (sub2['term'].indexOf('T') < 0 || sub['term'].indexOf('集') >= 0) continue;
-            else if (sub2['time'].indexOf('他') >= 0) continue;
-            sub2['time'] = sub2['time'].replace(/、/g, ',');
+      for (let iii in days) {
+        //曜日が一致しなければスルー
+        if (days[iii] !== sub_times[ii].substr(0, 1)) continue;
+        else if (sub_terms.indexOf(terms[iii]) < 0) continue;
 
-            //教科の属する曜時配列
-            let subTimes2 = sub2['time'].split(',');
-            //教科の属するターム
-            let subTerms2 = sub2['term'].replace('1-3', '123').replace('4-6', '456').replace(/[T\-]/g, '').split('');
-            
-            //曜日ごとにタームチェック
-            if (subTerms2.indexOf(terms[iii]) < 0) continue;
-            //曜時ごとに重なりチェック
-            if (subTimes2.indexOf(subTimes[ii]) >= 0){
-              count++; //重なる教科数をカウント
-              if (iiii < i) start++; //インデックスが後なら右にずれていく
-            }
-          }
+        //重なる教科チェック
+        let count = 0, start = 0;
+        for (let iiii = 0; iiii < reg_code.length; iiii++) {
+          let sub2 = reg_data[reg_code[iiii]];
+          if (sub2['term'].indexOf('T') < 0 || sub['term'].indexOf('集') >= 0) continue;
+          else if (sub2['time'].indexOf('他') >= 0) continue;
+          sub2['time'] = sub2['time'].replace(/、/g, ',');
+
+          //教科の属する曜時配列
+          let sub_times2 = sub2['time'].split(',');
+          //教科の属するターム
+          let sub_terms2 = sub2['term'].replace('1-3', '123').replace('4-6', '456').replace(/[T\-]/g, '').split('');
           
-          let ts = parseInt(subTimes[ii].substr(1, 1)) - 1;//, te = timetable_top_calc(timetable_min_calc(sub['end']));
-          addHTML += '<div class="subject-box waves-effect waves-light" data-code="' + reg_code[i] + '" style="' +
-            'left:' + (20 * iii + 20 / count * start) + '%;' +
-            'top:' + ((100 / endMax) * ts) + '%;' +
-            'height:' + ((100 / endMax) * (1 /*te - ts*/)) + '%;' +
-            'width:' + 20 / count + '%;' +
-            '" onclick="syllabus_show(\'' + reg_code[i] + '\');">' + sub['name'] + '<small>' + sub['room'] + '</small>' + '</div>';
+          //曜日ごとにタームチェック
+          if (sub_terms2.indexOf(terms[iii]) < 0) continue;
+          //曜時ごとに重なりチェック
+          if (sub_times2.indexOf(sub_times[ii]) >= 0){
+            count++; //重なる教科数をカウント
+            if (iiii < i) start++; //インデックスが後なら右にずれていく
+          }
         }
+        
+        let ts = parseInt(sub_times[ii].substr(1, 1)) - 1;//, te = timetable_top_calc(timetable_min_calc(sub['end']));
+        html += '<div class="class-box waves-effect waves-light" data-code="' + reg_code[i] + '" style="' +
+          'left:' + (20 * iii + 20 / count * start) + '%;' +
+          'top:' + ((100 / end_max) * ts) + '%;' +
+          'height:' + ((100 / end_max) * (1 /*te - ts*/)) + '%;' +
+          'width:' + 20 / count + '%;' +
+          '" onclick="syllabus_show(\'' + reg_code[i] + '\');">' + sub['name'] + '<small>' + sub['room'] + '</small>' + '</div>';
       }
     }
-    if (reg_code.length === 0){
-      //時間割に教科がないとき
-      addHTML = '<div class="w-100 h-100 p-5 text-white" style="font-size: 1.8rem;">検索をしてシラバス詳細画面から「カレンダーに追加」をして時間割を作成しよう！</div>';
-    }
   }
-  else {
-    //未ログインの時
-    addHTML = '<div class="w-100 h-100 p-5 text-white" style="font-size: 1.8rem;">ログインして時間割も便利かつ簡単に作成しよう！</div>';
-  }
-  $('#subjects-container').html(addHTML);
-  /*$('.subject-box').on('click', (e) => {
-    let code = ($(e.target).hasClass('subject-box') ? $(e.target).data('code') : $(e.target).parent().data('code'));
-    if (code !== 'undefined') syllabus_show(code);
-  });*/
+  $('#classes-container').html(html);
 }
 //////////////////////////////////////////////////
 //////////コメント関連メソッド/////////////////////////
@@ -753,6 +798,12 @@ function timetable_reload(addWeek = 0){
  * コメントの投稿
  */
 function comment_post() {
+  if (!login) {
+    alert('コメントの投稿にはログインが必要です');
+    login_proceed_button();
+    return;
+  }
+
   if ($('#comment-text').val().trim() === '')
     alert('コメントを記入してください');
   else {
@@ -788,12 +839,12 @@ function comment_get_result(data) {
       if (reload && i === 0) $('#syllabus-body-comment').data('num', parseInt(s['num'])); //numの最大値
       body += '<h6>' + s['num'] + '. ' + s['name'] + ': ' + s['datetime'] + '</h6>' +
         '<p>' + s['text'].replace(/\n/g, '<br>') + '</p>';
-      if (s['num'] <= 1) $('#syllabus-body-comment-load').css('display', 'none'); ////////////////////全学年対応
+      if (s['num'] <= 1) $('#syllabus-body-comment-load').hide(); ////////////////////全学年対応
     }
   }
   else { //コメントがないとき
     body = '<h2 class="my-5" align="center">コメントなし</h2>';
-    $('#syllabus-body-comment-load').css('display', 'none');
+    $('#syllabus-body-comment-load').hide();
     $('#syllabus-body-comment').data('num', 0);
   }
   $('#syllabus-body-comment').data('index', data.index).html(body);//append(body);
@@ -809,10 +860,11 @@ function comment_get_result(data) {
  * @param {boolean} init 初回フラグ
  */
 function cal_list_get_result(data) {
-  //Google再ログイン必要
-  require_google_login = (data.error_code === 1 || data.error_code === 2);
-  if (data.cal_code) cal_code = data.cal_code;
-  if (data.cal_data) cal_data = data.cal_data;
+  google_login = (data.error_code !== 1 && data.error_code !== 2);
+  if (data.cal_code && data.cal_data) {
+    cal_code = data.cal_code;
+    cal_data = data.cal_data;
+  }
 }
 
 /**
@@ -900,6 +952,12 @@ function timetable_top_calc(time) {
 }
 
 function cal_notify_toggle(button){
+  if (!google_login) {
+    alert('カレンダー連携の利用にはGoogleログインが必要です');
+    login_proceed_button('google');
+    return;
+  }
+
   let bool = !$(button).data('bool');
   if (confirm('カレンダーの通知設定を' + (bool ? 'オン' : 'オフ') + 'に切り替えますか？少し時間がかかります。')){
     let event_id = [];
@@ -909,16 +967,22 @@ function cal_notify_toggle(button){
         event_id.push(sub['event_id']);
     }
     start_loading();
-    ajax({ calender_notification_toggle: { notification: bool } });
+    ajax({ calendar_notification_toggle: { notification: bool } });
   }
 }
 
-function calender_notification_toggle_result(data) {
+function calendar_notification_toggle_result(data) {
   console.log(data);
   ajax({ cal_list_get: {}, cal_week_list_get: {} });
 }
 
 function cal_change(code) {
+  if (!google_login) {
+    alert('カレンダー連携の利用にはGoogleログインが必要です');
+    login_proceed_button('google');
+    return;
+  }
+
   let bool = !bool_get(cal_code, code);
   //カレンダーから削除する時は確認
   if (!bool && !confirm('本当に「' + cal_data[code].name + '」をカレンダーから削除しますか？\n' +
@@ -956,7 +1020,7 @@ function fav_list_get_result(data) {
   }
   if ($('.star .bootstrap-table').length > 0)
     $('#favorite-table').bootstrapTable('destroy');
-  table_create('favorite', fav_data, window.innerHeight - 100, [ 'term', 'time', 'credit', 'name', 'teacher' ], true, false);
+  table_create('favorite', fav_data, null, [ 'term', 'time', 'name', 'teacher' ], true, false);
 }
 
 /**
@@ -964,9 +1028,14 @@ function fav_list_get_result(data) {
  * @param {string} code 教科コード
  */
 function fav_change(code) {
+  if (!login) {
+    alert('お気に入りの利用にはログインが必要です');
+    login_proceed_button();
+    return;
+  }
   let bool = !bool_get(fav_code, code);
   $('.fav-' + code).prop('disabled', true).text('処理中...');
-  ajax({ fav_change: { code: code, bool: bool }, fav_list_get: {} });
+  ajax({ fav_change: { show_error: true, code: code, bool: bool }, fav_list_get: {} });
 }
 
 function fav_change_result(data) {
@@ -980,30 +1049,44 @@ function fav_change_result(data) {
 
 
 //////////////////////////////////////////////////
-/////ポータル関連のデータを更新し取得するメソッド/////
+////////ポータル関連のデータを更新し取得するメソッド/////////
 //////////////////////////////////////////////////
 
 function portal_reg_list_get_result(data) {
-  if (!data.refresh) ajax({ portal_reg_list_get: { refresh: true, publicID: (data.publicID ? data.publicID : null),
-    nendo: new Date().getFullYear() + (new Date().getMonth() < 3 ? -1 : 0) } });
-  if (data.reg_code) reg_code = data.reg_code;
-  if (data.reg_data) reg_data = data.reg_data;
+  if (!data.refresh && !data.error_message)
+    ajax({ portal_reg_list_get: { show_error: true, refresh: true, publicID: (data.publicID ? data.publicID : null),
+      nendo: new Date().getFullYear() + (new Date().getMonth() < 3 ? -1 : 0) } });
+  let reg = (data.reg_code !== undefined && data.reg_data !== undefined);
+  if (reg) {
+    reg_code = data.reg_code;
+    reg_data = data.reg_data;
+  }
+  portal_login = reg;
+  $('.portal-overlay').css('display', (reg || data.error_code === 12) ? 'none' : 'block');
+  $('.portal-login').text(login ? '設定画面へ' : 'ログイン/新規登録');
   timetable_reload();
+  classes_reload();
 }
 
 function portal_grade_list_get_result(data) {
-  if (!data.refresh) ajax({ portal_grade_list_get: { refresh: true } });
-  if (data.grade_data) grade_data = data.grade_data;
+  if (!data.refresh && !data.error_message) ajax({ portal_grade_list_get: { /*show_error: true,*/ refresh: true } });
+  if (data.grade_data !== undefined) grade_data = data.grade_data;
+  classes_reload();
 }
 
 function portal_reg_change(code) {
+  if (!portal_login) {
+    alert('履修登録にはポータルログインが必要です');
+    login_proceed_button('portal');
+    return;
+  }
   $(`.reg-${code}`).prop('disabled', true).text('処理中...');
-  ajax({ portal_reg: { code: code, bool: !bool_get(reg_code, code) } });
+  ajax({ portal_reg: { show_error: true, code: code, bool: !bool_get(reg_code, code) } });
 }
 
 function portal_reg_result(data) {
-  if (data.code && data.name) {
-    ajax({ portal_reg_list_get: { refresh: true,  nendo: new Date().getFullYear() + (new Date().getMonth() < 3 ? -1 : 0) } });
+  if (data.code !== undefined && data.name !== undefined) {
+    ajax({ portal_reg_list_get: { show_error: true, refresh: true,  nendo: new Date().getFullYear() + (new Date().getMonth() < 3 ? -1 : 0) } });
     alert(data.name + (data.bool ? 'の履修登録完了' : 'の履修登録の削除完了'));
     $(`.reg-${code}`).prop('disabled', false).text(text_get(reg_text, bool));
   }
@@ -1089,53 +1172,5 @@ const En2Ja = {"jikanwaricd":"授業コード","department":"所属学部","subj
   "purpose":"目的・目標","content":"授業計画・授業内容","homework":"授業外学習","keyword":"キーワード",
   "textbook":"教科書・参考書","evaluation_method":"評価方法・基準","related_subject":"関連科目",
   "requirement":"履修要件","remark":"備考","related_url":"関連URL","detail":"授業計画詳細情報"};
-/**
- * カレンダーに追加する際のモーダルの表示準備
- */
-$('#syllabus-calendar-modal').on('show.bs.modal', (e) => {
-  if (cal_data === null || cal_data === undefined){
-    checkResponse({ status: 'expired' }, true);
-    e.preventDefault();
-    e.stopImmediatePropagation();
-    return false;
-  }
-  $('#syllabus-calendar-notification').bootstrapToggle($('#syllabus-calendar-notification').data('init'));
-  if (e.relatedTarget){
-    //ボタンから表示した場合、履歴に追加
-    history.pushState({ method: 'dialog', dialog: 'syllabus-calendar' }, 'カレンダーに追加 -chibasys-', request_get() + '#syllabus-calendar');
-    gtag('config', 'UA-44630639-4',
-{'page_path': request_get()});
-  }
-
-  /*var list = ["学科(専攻)・科目の種別等", "授業コード", "授業の方法", "単位数", "時間数", "履修年次/ターム", "曜日・時限", "担当教員", "受講対象", "教室",
-    "概要", "目的・目標", "授業計画・授業内容", "授業外学習", "教科書・参考書", "評価方法・基準", "履修要件", "備考", "関連URL", "授業計画詳細情報"];*/
-  let bodyDetail = '<thead><tr><th style="width:5%;">&#9745;</th><th style="width:25%;">項目</th><th style="width:70%;">内容</th></tr></thead><tbody>';
-  for (key in syllabusResult['data'])
-    if (syllabusResult['data'][key] !== null && Object.keys(En2Ja).indexOf(key) >= 0)
-      bodyDetail += '<tr ' + (Object.keys(En2Ja).indexOf(key) < 0 ? 'data-bool="false"' : 'class="lime-green" data-bool="true"') +
-        ' data-key="' + key + '"><td class="check">&#974' + (Object.keys(En2Ja).indexOf(key) < 0 ? 4 : 5) + ';</td><td>' + En2Ja[key] + '</td><td>' +
-        syllabusResult['data'][key] + '</td></tr>';
-  /*for (key in syllabusResult['detail-1'])
-    bodyDetail += '<tr ' + (list.indexOf(key) < 0 ? 'data-bool="false"' : 'class="lime-green" data-bool="true"') + ' data-index="1"><td class="check">&#974' + (list.indexOf(key) < 0 ? 4 : 5) + ';</td><td>' + key + '</td><td>' + syllabusResult['detail-1'][key] + '</td></tr>';
-  for (key in syllabusResult['detail-2'])
-    bodyDetail += '<tr ' + (list.indexOf(key) < 0 ? 'data-bool="false"' : 'class="lime-green" data-bool="true"') + ' data-index="2"><td class="check">&#974' + (list.indexOf(key) < 0 ? 4 : 5) + ';</td><td>' + key + '</td><td>' + syllabusResult['detail-2'][key].replace(/<br>/g, ' ') + '</td></tr>';*/
-  if (syllabusResult['data']['detail']) {
-    bodyDetail += '<tr ' + (Object.keys(En2Ja).indexOf(key) < 0 ? 'data-bool="false"' : 'class="lime-green" data-bool="true"') + ' data-key="' + key + '"><td class="check">&#974' + (Object.keys(En2Ja).indexOf(key) < 0 ? 4 : 5) + ';</td><td colspan="2">授業計画詳細情報<br>';
-    for (index in syllabusResult['data']['detail'])
-      bodyDetail += syllabusResult['data']['detail'][index] + '<br>';
-  }
-  bodyDetail += '</tbody>';
-
-  $(e.target).find('table').html(bodyDetail);
-  $(e.target).find('tbody tr').on('click', (e) => {
-    let tr = $(e.target).parent();
-    let bool = tr.data('bool');
-    if (typeof (bool) === 'string') bool = (bool === 'true');
-    tr.data('bool', !bool);
-    if (!bool) tr.addClass('lime-green');
-    else tr.removeClass('lime-green');
-    tr.find('.check').html(!bool ? '&#9745;' : '&#9744;');
-  });
-});
 
 $('#year').change((e) => { console.log(e); });
