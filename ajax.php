@@ -4,7 +4,7 @@ const FUNC_QUERY = [ 'portal_syllabus_get', 'portal_real_syllabus', 'portal_subj
 const FUNC_ID = [ 'portal_student_info_get', 'fav_list_get', 'cal_list_get', 'cal_week_get', 'userdata_get' ];
 const FUNC_ID_QUERY = [ 'portal_search', 'portal_registration', 'portal_reg_list_get', 'portal_grade_list_get',
   'portal_reg', 'memo_get', 'memo_save', 'comment_post', 'fav_change', 'cal_change',
-  'calendar_notification_toggle', 'userdata_save', 'login_with_portal' ];
+  'calendar_notification_toggle', 'userdata_save', 'login_with_portal', 'apply_circle' ];
 
 $request = isset($_SERVER['HTTP_X_REQUESTED_WITH']) ? strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) : '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $request === 'xmlhttprequest') {

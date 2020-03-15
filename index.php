@@ -46,6 +46,50 @@ else {
   <meta property="og:description" content="<?php echo($summary); ?>" />
   <meta property="og:site_name" content="chibasys  by reolink" />
   <meta property="og:image" content="<?php echo($image_url); ?>" />
+  <meta name="msapplication-square70x70logo" content="/site-tile-70x70.png">
+  <meta name="msapplication-square150x150logo" content="/site-tile-150x150.png">
+  <meta name="msapplication-wide310x150logo" content="/site-tile-310x150.png">
+  <meta name="msapplication-square310x310logo" content="/site-tile-310x310.png">
+  <meta name="msapplication-TileColor" content="#0078d7">
+  <link rel="shortcut icon" type="image/vnd.microsoft.icon" href="/favicon.ico">
+  <link rel="icon" type="image/vnd.microsoft.icon" href="/favicon.ico">
+  <link rel="apple-touch-icon" sizes="57x57" href="/apple-touch-icon-57x57.png">
+  <link rel="apple-touch-icon" sizes="60x60" href="/apple-touch-icon-60x60.png">
+  <link rel="apple-touch-icon" sizes="72x72" href="/apple-touch-icon-72x72.png">
+  <link rel="apple-touch-icon" sizes="76x76" href="/apple-touch-icon-76x76.png">
+  <link rel="apple-touch-icon" sizes="114x114" href="/apple-touch-icon-114x114.png">
+  <link rel="apple-touch-icon" sizes="120x120" href="/apple-touch-icon-120x120.png">
+  <link rel="apple-touch-icon" sizes="144x144" href="/apple-touch-icon-144x144.png">
+  <link rel="apple-touch-icon" sizes="152x152" href="/apple-touch-icon-152x152.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon-180x180.png">
+  <link rel="icon" type="image/png" sizes="36x36" href="/android-chrome-36x36.png">
+  <link rel="icon" type="image/png" sizes="48x48" href="/android-chrome-48x48.png">
+  <link rel="icon" type="image/png" sizes="72x72" href="/android-chrome-72x72.png">
+  <link rel="icon" type="image/png" sizes="96x96" href="/android-chrome-96x96.png">
+  <link rel="icon" type="image/png" sizes="128x128" href="/android-chrome-128x128.png">
+  <link rel="icon" type="image/png" sizes="144x144" href="/android-chrome-144x144.png">
+  <link rel="icon" type="image/png" sizes="152x152" href="/android-chrome-152x152.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="/android-chrome-192x192.png">
+  <link rel="icon" type="image/png" sizes="256x256" href="/android-chrome-256x256.png">
+  <link rel="icon" type="image/png" sizes="384x384" href="/android-chrome-384x384.png">
+  <link rel="icon" type="image/png" sizes="512x512" href="/android-chrome-512x512.png">
+  <link rel="icon" type="image/png" sizes="36x36" href="/icon-36x36.png">
+  <link rel="icon" type="image/png" sizes="48x48" href="/icon-48x48.png">
+  <link rel="icon" type="image/png" sizes="72x72" href="/icon-72x72.png">
+  <link rel="icon" type="image/png" sizes="96x96" href="/icon-96x96.png">
+  <link rel="icon" type="image/png" sizes="128x128" href="/icon-128x128.png">
+  <link rel="icon" type="image/png" sizes="144x144" href="/icon-144x144.png">
+  <link rel="icon" type="image/png" sizes="152x152" href="/icon-152x152.png">
+  <link rel="icon" type="image/png" sizes="160x160" href="/icon-160x160.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="/icon-192x192.png">
+  <link rel="icon" type="image/png" sizes="196x196" href="/icon-196x196.png">
+  <link rel="icon" type="image/png" sizes="256x256" href="/icon-256x256.png">
+  <link rel="icon" type="image/png" sizes="384x384" href="/icon-384x384.png">
+  <link rel="icon" type="image/png" sizes="512x512" href="/icon-512x512.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/icon-16x16.png">
+  <link rel="icon" type="image/png" sizes="24x24" href="/icon-24x24.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/icon-32x32.png">
+  <link rel="manifest" href="/manifest.json">
   <title>chibasys by reolink</title>
   <link href="https://use.fontawesome.com/releases/v5.8.2/css/all.css" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.3.1/css/bootstrap.min.css" rel="stylesheet">
@@ -257,7 +301,12 @@ else {
       </div>
     </div>
     <div class="tab-pane fade" id="cicle-content" role="tabpanel" aria-labelledby="nav-contact-tab">
-      サークル情報
+      <div class="card z-depth-0 bg-transparent">
+        <div class="card-header bg-transparent mb-0" data-toggle="collapse" data-target="#circle_manage-box" aria-expand="true" aria-controls="circle_manage-box">団体申請</div>
+        <div id="circle_manage-box" class="collapse show p-2">
+          <button type="button" class="btn btn-success btn-block" onclick="apply_circle_show();">サークル等の団体登録申請</button>
+        </div>
+      </div>
     </div>
     <div class="tab-pane fade" id="others-content" role="tabpanel" aria-labelledby="nav-contact-tab">
       <div class="card z-depth-0 bg-transparent">
@@ -319,7 +368,7 @@ else {
         <div class="card-header bg-transparent mb-0" data-toggle="collapse" data-target="#moodle-link-box" aria-expand="true" aria-controls="moodle-link-box">過去年度 Moodleリンク集</div>
         <div id="moodle-link-box" class="collapse p-2">
           <?php
-            for ($n = 15; $n < $nendo - 2000; $n++)
+            for ($n = 18; $n < $nendo - 2000; $n++)
               echo("<a class=\"btn btn-link btn-block text-left\" href=\"https://moodle2.chiba-u.jp/moodle$n/\" target=\"_blank\">".($n + 2000)."年度版</a>");
           ?>
         </div>
@@ -332,7 +381,7 @@ else {
       <a class="flex-fill btn m-0 nav-link" data-toggle="tab" data-target="#syllabus-content">シラバス</a>
       <a class="flex-fill btn m-0 nav-link" data-toggle="tab" data-target="#classes-content">履修/成績</a>
       <a class="flex-fill btn m-0 nav-link active" data-toggle="tab" data-target="#timetable-content">時間割</a>
-      <a class="flex-fill btn m-0 nav-link disabled" data-toggle="tab" data-target="#cicle-content" tabindex="-1" aria-disabled="true">サークル</a>
+      <a class="flex-fill btn m-0 nav-link" data-toggle="tab" data-target="#cicle-content">サークル</a>
       <a class="flex-fill btn m-0 nav-link" data-toggle="tab" data-target="#others-content">その他</a>
     </div>
   </footer>
@@ -462,6 +511,221 @@ else {
           </div>
           <h5 id="calendar-h5" class="my-2">カレンダーに追加済みの教科一覧</h5>
           <table id="calendar-table"></table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal modal-nomal fullsize" id="apply_circle-modal" tabindex="-1" role="dialog" aria-labelledby="apply_circle-title" aria-hidden="true" data-keyboard="false" data-backdrop="false" style="z-index: 1100;">
+    <div class="modal-dialog modal-dialog-centered modal-xl modal-dialog-scrollable can-scroll" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h4 class="modal-title" id="apply_circle-title">サークル等の団体登録申請</h4>
+          <button type="button" class="close" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+            <p class="mb-3" style="line-height:1.5;">登録するには代表者の方がchibasysにログイン済みの状態で以下のフォームに記入していただく必要があります。
+              なお、現時点ではサークルのページができておりません。でき次第、Twitter(@chibasys)にてご案内いたします。
+              また、どの項目も後に変更ができます。その場合はxperd00@gmail.comまたはTwitterのDMにお申し付けください。<br>
+              <font color="red">また画像はメールでの提出をお願いしております。xperd00@gmail.comまで団体名を名乗ってお送りください。</font></p>
+            <h4>団体について</h4>
+            <div class="form-group md-form">
+              <label for="circle-name">部活・サークル名*</label>
+              <input type="text" id="circle-name" class="form-control" placeholder="XXXX部" required>
+            </div>
+            <div class="form-group md-form">
+              <label for="circle-id">団体ID(半角英数字3文字以上)*</label>
+              <input type="text" id="circle-id" class="form-control" placeholder="chibasys" pattern="^([a-zA-Z0-9]{3,})$" required>
+            </div>
+            <span class="form-text text-muted mb-3">付与されるURL(https://chibasys.xperd.net/circle?######)に影響します</span>
+            <div class="form-group mb-form">
+              <label for="circle-official">公認/順公認/非公認*</label>
+              <div>
+                <select id="circle-official" class="form-control" required>
+                  <option value="1">公認</option>
+                  <option value="2">準公認</option>
+                  <option value="3">非公認</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-group mb-form">
+              <label for="circle-type">団体の種別*</label>
+              <div>
+                <select id="circle-type" class="form-control" required>
+                  <option value="1">運動系部活</option>
+                  <option value="2">文化系部活</option>
+                  <option value="3">運動系サークル</option>
+                  <option value="4">文化系サークル</option>
+                  <option value="5">ボランティア団体</option>
+                  <option value="-1">その他(備考欄にお書きください)</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-group mb-form">
+              <label for="circle-base">団体の本拠地*</label>
+              <div>
+                <select id="circle-base" class="form-control" value="1" required>
+                  <option value="0">特になし</option>
+                  <option value="1" selected>西千葉キャンパス</option>
+                  <option value="2">亥鼻キャンパス</option>
+                  <option value="3">松戸キャンパス</option>
+                  <option value="4">柏の葉キャンパス</option>
+                  <option value="5">インカレ(備考欄に主な所属大学をお書きください)</option>
+                  <option value="-1">その他(備考欄にお書きください)</option>
+                </select>
+              </div>
+            </div>
+            <h4>団体のメンバーについて</h4>
+            <div class="form-group md-form">
+              <label for="circle-scale">人数*</label>
+              <input type="text" id="circle-scale" class="form-control" placeholder="約100人" required>
+            </div>
+            <div class="form-group md-form">
+              <label for="circle-sex">男女比*</label>
+              <input type="text" id="circle-sex" class="form-control" placeholder="男:女=3:7" required>
+            </div>
+            <div class="form-group md-form">
+              <label for="circle-active">出席率(1回の活動で来る人数の割合)</label>
+              <input type="text" id="circle-active" class="form-control" placeholder="X割">
+            </div>
+            <div class="form-group md-form">
+              <label for="circle-multi">兼サー率</label>
+              <input type="text" id="circle-multi" class="form-control" placeholder="X割">
+            </div>
+            <div class="form-group mb-form">
+              <label for="circle-international">留学生の在籍履歴*</label>
+              <div>
+                <select id="circle-international" class="form-control" value="-1" required>
+                  <option value="0">ここ最近はなし</option>
+                  <option value="1">昨年度あり</option>
+                  <option value="2">過去にあったが昨年度はなし</option>
+                  <option value="-1" selected>わからない</option>
+                </select>
+              </div>
+            </div>
+            <h4>団体の活動について</h4>
+            <div class="form-group md-form">
+              <label for="circle-place">活動場所*</label>
+              <textarea id="circle-place" class="md-textarea form-control" placeholder="月 第一体育館&#13;&#10;水木 千葉市立XX体育館" required></textarea>
+            </div>
+            <div class="form-group md-form">
+              <label for="circle-room">団体専有部屋の場所*</label>
+              <textarea id="circle-room" class="md-textarea form-control" placeholder="文化系サークル会館1階" required></textarea>
+            </div>
+            <div class="form-group md-form">
+              <label for="circle-freq">活動頻度*</label>
+              <input type="text" id="circle-freq" class="form-control" placeholder="週に、月に、年にX回" required>
+            </div>
+            <div class="form-group md-form">
+              <label for="circle-date">活動日時*</label>
+              <textarea id="circle-date" class="md-textarea form-control" placeholder="月 17:00〜21:00&#13;&#10;水木 18:00〜19:30&#13;&#10;不定期" required></textarea>
+            </div>
+            <div class="form-group md-form">
+              <label for="circle-cost">活動費用*</label>
+              <textarea id="circle-cost" class="md-textarea form-control" placeholder="新規 XXXX円&#13;&#10;半期 XXXX円&#13;&#10;道具 XXXX円〜&#13;&#10;" required></textarea>
+            </div>
+            <div class="form-group md-form">
+              <label for="circle-last_fes">昨年の大祭の活動内容*</label>
+              <textarea id="circle-last_fes" class="md-textarea form-control" placeholder="たこ焼き販売&#13;&#10;各バンドの屋内ライブ&#13;&#10;ない場合は「なし」と記入" required></textarea>
+            </div>
+            <div class="form-group md-form">
+              <label for="circle-content">主なの活動内容*</label>
+              <textarea id="circle-content" class="md-textarea form-control" placeholder="100字を目安に" required></textarea>
+            </div>
+            <h5>年間スケジュール(合宿は内容も併記)</h5>
+            <div class="form-group md-form">
+              <label for="circle-schedule_4">4月</label>
+              <input type="text" id="circle-schedule_4" class="form-control" placeholder="新歓">
+            </div>
+            <div class="form-group md-form">
+              <label for="circle-schedule_5">5月</label>
+              <input type="text" id="circle-schedule_5" class="form-control" placeholder="歓迎会">
+            </div>
+            <div class="form-group md-form">
+              <label for="circle-schedule_6">6月</label>
+              <input type="text" id="circle-schedule_6" class="form-control" placeholder="夏大会">
+            </div>
+            <div class="form-group md-form">
+              <label for="circle-schedule_7">7月</label>
+              <input type="text" id="circle-schedule_7" class="form-control" placeholder="夏ライブ">
+            </div>
+            <div class="form-group md-form">
+              <label for="circle-schedule_8">8月</label>
+              <input type="text" id="circle-schedule_8" class="form-control" placeholder="BBQ">
+            </div>
+            <div class="form-group md-form">
+              <label for="circle-schedule_9">9月</label>
+              <input type="text" id="circle-schedule_9" class="form-control" placeholder="夏合宿(バスケ)">
+            </div>
+            <div class="form-group md-form">
+              <label for="circle-schedule_10">10月</label>
+              <input type="text" id="circle-schedule_10" class="form-control" placeholder="秋合宿(北海道旅行)">
+            </div>
+            <div class="form-group md-form">
+              <label for="circle-schedule_11">11月</label>
+              <input type="text" id="circle-schedule_11" class="form-control" placeholder="大祭">
+            </div>
+            <div class="form-group md-form">
+              <label for="circle-schedule_12">12月</label>
+              <input type="text" id="circle-schedule_12" class="form-control" placeholder="クリスマス会">
+            </div>
+            <div class="form-group md-form">
+              <label for="circle-schedule_1">1月</label>
+              <input type="text" id="circle-schedule_1" class="form-control" placeholder="冬合宿(スノボ)">
+            </div>
+            <div class="form-group md-form">
+              <label for="circle-schedule_2">2月</label>
+              <input type="text" id="circle-schedule_2" class="form-control" placeholder="春合宿(バレー)">
+            </div>
+            <div class="form-group md-form">
+              <label for="circle-schedule_3">3月</label>
+              <input type="text" id="circle-schedule_3" class="form-control" placeholder="追いコン">
+            </div>
+            <h4>団体の広報について</h4>
+            <div class="form-group md-form">
+              <label for="circle-repre_name">代表者氏名*</label>
+              <input type="url" id="circle-repre_name" class="form-control" placeholder="千葉 太郎" required>
+            </div>
+            <span class="form-text text-muted mb-3">※ログインした学生の氏名と一致する必要があります</span>
+            <div class="form-group md-form">
+              <label for="circle-repre_email">代表者連絡先メールアドレス*</label>
+              <input type="url" id="circle-repre_email" class="form-control" placeholder="reolink@gmail.com" required>
+            </div>
+            <span class="form-text text-muted mb-3">※不備があった場合、連絡させていただきます</span>
+            <div class="form-group md-form">
+              <label for="circle-email">団体メールアドレス</label>
+              <input type="url" id="circle-email" class="form-control" placeholder="chibasys@xperd.net">
+            </div>
+            <div class="form-group md-form">
+              <label for="circle-website">公式サイト</label>
+              <input type="url" id="circle-website" class="form-control" placeholder="https://chibasys.xperd.net/">
+            </div>
+            <div class="form-group md-form">
+              <label for="circle-twitter">Twitter</label>
+              <input type="text" id="circle-twitter" class="form-control" placeholder="@chibasys">
+            </div>
+            <div class="form-group md-form">
+              <label for="circle-instagram">Instagram</label>
+              <input type="text" id="circle-instagram" class="form-control" placeholder="@chibasys">
+            </div>
+            <div class="form-group md-form">
+              <label for="circle-line">LINE(URL)</label>
+              <input type="text" id="circle-line" class="form-control" placeholder="http://line.me/ti/p/%40abcdefg">
+            </div>
+            <span class="form-text text-muted">LINE@のアプリ▶友達追加▶URL▶URLをコピー</span>
+            <div class="form-group md-form">
+              <label for="circle-other_sns">その他のアカウント等</label>
+              <textarea id="circle-other_sns" class="md-textarea form-control" placeholder="新歓Twitter @chibasys_2020"></textarea>
+            </div>
+            <div class="form-group md-form">
+              <label for="circle-remark">備考</label>
+              <textarea id="circle-remark" class="md-textarea form-control" placeholder=""></textarea>
+            </div>
+            <span class="form-text text-muted"></span>
+            <button id="apply_circle_send-button" class="btn btn-primary btn-block my-3" onclick="apply_cricle_send(this);">送信</button>
+          </div>
         </div>
       </div>
     </div>

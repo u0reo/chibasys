@@ -836,6 +836,7 @@
 	function web($cookie = '', $referer = '', string $post = '',
 		string $url = 'https://cup.chiba-u.jp/campusweb/campussquare.do', int $down_code = ERROR_PORTAL_DOWN, bool $follow = true) : array {
 		global $curl;
+		if (isset($referer['error_code'])) return $referer;
 		if (isset($cookie['error_code'])) return $cookie;
 
 		curl_setopt_array($curl, [
@@ -1160,7 +1161,8 @@
 		$refresh_error = null;
 		if (isset($query['refresh']) && $query['refresh']) {
 			$data = portal_reg_list_refresh($user_id, $query);
-			if (isset($data['error_code'])) {
+			if ($data === true) $data = [];
+			else if (isset($data['error_code'])) {
 				if ($data['error_code'] !== ERROR_PORTAL_DOWN)
 					return $data;
 				else
@@ -1197,6 +1199,8 @@
 	 * @return array 教科コード一覧と教科一覧の連想配列
 	 */
 	function portal_reg_list_refresh(?string $user_id, array $query, $cookie = null, $referer = null) {
+		$query['nendo'] = '2019';
+
 		//CookieやURLをMySQLから取得
 		if (!$cookie) $cookie = temp_load('portal_cookie', $user_id);
 		if (isset($cookie['error_code'])) return $cookie;
@@ -1263,8 +1267,9 @@
 		//更新フラグがある場合は取得しに行く、エラー番号だけ保存してMySQLから取得
 		$refresh_error = null;
 		if (isset($query['refresh']) && $query['refresh']) {
-			$data = portal_reg_list_refresh($user_id, $query);
-			if (isset($data['error_code'])) {
+			$data = portal_grade_list_refresh($user_id);
+			if ($data === true) $data = [];
+			else if (isset($data['error_code'])) {
 				if ($data['error_code'] !== ERROR_PORTAL_DOWN)
 					return $data;
 				else
@@ -1288,7 +1293,7 @@
 			return error_data(ERROR_SQL_FAILED);
 		
 		$data['grade_data'] = $grade_data;
-		return $refresh_error ? error_data($refresh_error, '', $data) : $data;
+		return ($refresh_error ? error_data($refresh_error, '', $data) : $data);
 	}
 
 	const GRADE_NUM = [ '秀'=>4, '優'=>3, '良'=>2, '可'=>1, '不可'=>0, '合格'=>null, '不合格'=>null ];
@@ -2269,4 +2274,32 @@
 		if (!$result) return error_data(ERROR_SQL_FAILED);
 		return [ 'notification'=>$bool ];
 	}
+
+	/**
+	 * ユーザーデータを保存
+	 *
+	 * @param ?string $user_id (Googleの)ユーザーID
+	 * @param array $query POSTデータ
+	 * @return array 通常はtrue
+	 */
+	function apply_circle(?string &$user_id, array $query) {
+		global $maria;
+
+		if (!$user_id) return error_data(ERROR_NO_LOGIN);
+		$query['user_id'] = $user_id;
+		unset($query['show_error']);
+		foreach ($query as $key => $value) {
+			$num = ($key === 'official' || $key === 'type' || $key === 'base' || $key === 'international');
+			$query[$key] = ($num ? "" : "'").mysqli_real_escape_string($maria, $value).($num ? "" : "'");
+		}
+		
+		if (true) {
+			$result = maria_query("INSERT INTO chibasys.circle (".implode(",", array_keys($query)).") VALUES (".implode(",", array_values($query)).");");
+		}
+		else
+			$result = maria_query("UPDATE chibasys.circle SET studentName='$query[name]' WHERE user_id='$user_id';");
+		if (!$result) return error_data(ERROR_SQL_FAILED);
+		else return [ 'result'=>true, 'data'=>$query ];
+	}
+
 ?>

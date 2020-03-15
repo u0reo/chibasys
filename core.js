@@ -62,7 +62,7 @@ function ajax(query, timeout = 60, init = false) {
         //dialogの保持はあきらめた
         let url = request_get().split('#')[0];
         let data = url.split('?');
-        if (['search', 'syllabus', 'mincam', 'calendar'].indexOf(data[0]) >= 0)
+        if (['search', 'syllabus', 'mincam', 'calendar', 'apply_circle'].indexOf(data[0]) >= 0)
           eval(data[0] + (data.length <= 1 ? '();' : '(data[1]);'));
         else
           url = '';
@@ -145,6 +145,7 @@ function login_with_portal_result(data) {
     $('#portal-login-check-result').text(data.result ? '成功' : '失敗');
     return;
   }
+  portal_status_refresh(data.result);
   if (!data.result) return;
   $('#login-modal').modal('hide');
   init();
@@ -155,13 +156,21 @@ function login_with_portal_result(data) {
   }
 }
 
+function portal_status_refresh(vaild) {
+  portal_login = vaild;
+  $('.portal-overlay').css('display', portal_login ? 'none' : 'block');
+  $('.portal-login').text(login ? '設定画面へ' : 'ログイン/新規登録');
+}
+
 function userdata_get_result(data) {
   if (data.login === 'new') {
     $('#new-alert').show();
     $('#tabs-box a:last-child').tab('show');
+    login = true;
     $('#userdata-box').collapse('show');
     //記入済みのフォームをいじらない
     $('#header-name').text('未登録');
+    setTimeout(() => { login = false; }, 500);
     return;
   }
   //リセット
@@ -263,6 +272,9 @@ $(window).on('popstate', (e) => {
   }
   else if (s[0] === 'calendar') {
     calendar();
+  }
+  else if (s[0] === 'apply_circle') {
+    apply_circle();
   }
   else if (s[0] === 'dialog') {
     $('#' + e.originalEvent.state['dialog'] + '-modal').modal('show');
@@ -1054,22 +1066,20 @@ function fav_change_result(data) {
 
 function portal_reg_list_get_result(data) {
   if (!data.refresh && !data.error_message)
-    ajax({ portal_reg_list_get: { show_error: true, refresh: true, publicID: (data.publicID ? data.publicID : null),
+    ajax({ portal_reg_list_get: { show_error: portal_login, refresh: true, publicID: (data.publicID ? data.publicID : null),
       nendo: new Date().getFullYear() + (new Date().getMonth() < 3 ? -1 : 0) } });
   let reg = (data.reg_code !== undefined && data.reg_data !== undefined);
   if (reg) {
     reg_code = data.reg_code;
     reg_data = data.reg_data;
   }
-  portal_login = reg;
-  $('.portal-overlay').css('display', (reg || data.error_code === 12) ? 'none' : 'block');
-  $('.portal-login').text(login ? '設定画面へ' : 'ログイン/新規登録');
+  portal_status_refresh(reg || data.error_code === 12);
   timetable_reload();
   classes_reload();
 }
 
 function portal_grade_list_get_result(data) {
-  if (!data.refresh && !data.error_message) ajax({ portal_grade_list_get: { /*show_error: true,*/ refresh: true } });
+  if (!data.refresh && !data.error_message) ajax({ portal_grade_list_get: { show_error: portal_login, refresh: true } });
   if (data.grade_data !== undefined) grade_data = data.grade_data;
   classes_reload();
 }
@@ -1081,17 +1091,73 @@ function portal_reg_change(code) {
     return;
   }
   $(`.reg-${code}`).prop('disabled', true).text('処理中...');
-  ajax({ portal_reg: { show_error: true, code: code, bool: !bool_get(reg_code, code) } });
+  ajax({ portal_reg: { show_error: portal_login, code: code, bool: !bool_get(reg_code, code) } });
 }
 
 function portal_reg_result(data) {
   if (data.code !== undefined && data.name !== undefined) {
-    ajax({ portal_reg_list_get: { show_error: true, refresh: true,  nendo: new Date().getFullYear() + (new Date().getMonth() < 3 ? -1 : 0) } });
+    ajax({ portal_reg_list_get: { show_error: portal_login, refresh: true,  nendo: new Date().getFullYear() + (new Date().getMonth() < 3 ? -1 : 0) } });
     alert(data.name + (data.bool ? 'の履修登録完了' : 'の履修登録の削除完了'));
     $(`.reg-${code}`).prop('disabled', false).text(text_get(reg_text, bool));
   }
 }
 
+///////////////////////////////////////////
+////////////サークルに関するメソッド/////////////
+///////////////////////////////////////////
+/**
+ * 手動で団体申請画面を表示、PushStateあり
+ */
+function apply_circle_show() {
+  if (!portal_login) {
+    //未ログインははじく
+    alert('ログインしてください');
+    login_proceed_button('portal');
+  }
+  else {
+    history.pushState({ method: 'apply_circle' }, 'サークル等の団体登録申請 -chibasys-', 'apply_circle');
+    gtag('config', 'UA-44630639-4', {'page_path': request_get()});
+    poped = true;
+    apply_circle();
+  }
+}
+/**
+ * 団体申請画面をモーダルで表示
+ */
+function apply_circle() {
+  $('#apply_circle-modal').modal('show');
+  if (!portal_login) {
+    //未ログインははじく
+    alert('学生ポータルにログインしてください');
+    setTimeout(() => $('#apply_circle-modal .close').click(), 100);
+    login_proceed_button('portal');
+    return;
+  }
+}
+
+/**
+ * 団体登録申請の送信
+ */
+function apply_cricle_send() {
+  let error = false;
+  let data = { show_error: true };
+  $('#apply_circle-modal .form-control').each((i, e) => {
+    if (e.required && e.value === '') {
+      error = true;
+      alert($(e).prev().text() + 'が未入力です');
+    }
+    data[e.id.substr(7)] = e.value;
+  });
+  if (error) return;
+  else ajax({ apply_circle: data });
+}
+
+function apply_circle_result(data) {
+  if (data.result) {
+    alert('登録成功しました！');
+    $('#apply_circle-modal').modal('hide');
+  }
+}
 
 //////////////////////////////////////////////////
 ///////サブ画面の準備とそれに付随するメソッド////////
